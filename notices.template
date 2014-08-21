@@ -1,0 +1,9 @@
+<div id="content">
+
+<ul>
+{% for notice in notices %}
+<li> {{ escape(notice['description']) }} </li>
+{% end %}
+</ul>
+
+</div>

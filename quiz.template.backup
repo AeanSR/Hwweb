@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <title>计算机导论 quiz1</title>
+    <link href="static/css/mystyle.css" rel="stylesheet" type="text/css" media="all" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <meta name="keywords" content="计算机导论,作业题,国科大,本科生,计算所" />
+    <meta name="Description" content="国科大本科生计算机导论作业" />
+</head>
+
+<body>
+{% include "./person_status.template"}
+
+{% include "./navigator.template"}
+
+<div id="content">
+        <form method="post" action=".">
+            <table class="surveybody" border="0" cellpadding="0" cellspacing="5">
+                <tr>
+                    <td height="15">
+                        <div id="surveyTitle">计算机导论——计算科学史</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div id="surveycontent" class="surveyinfo" style="font-size: 13px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 作业题分为单选题和问答题，选择题每一题2分，问答题每一题10分，总分100分。
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <div id="quiz_detail" style="width:100%;">
+                <table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+                    <tbody>
+                        <tr align="left">
+                            <td height="25" class="hot">1. 用户用计算机高级语言编写的程序,通常称为____。</td>
+                        </tr>
+                        <tr align="left">
+                            <td height="25">
+                                <div align="left">
+                                    <table cellspacing="0" cellpadding="0">
+                                        <tr valign="top">
+                                            <td align="left" height="22">
+                                                <input id="1_A" name="quiz_1_1" type="radio" value="A" onclick="" />
+                                                <span style="cursor: pointer;" onclick="">A. 汇编程序</span>
+                                            </td>
+                                        </tr>
+                                        <tr valign="top">
+                                            <td align="left" height="22">
+                                                <input id="1_B" name="quiz_1_1" type="radio" value="B" onclick="" />
+                                                <span style="cursor: pointer;" onclick="">B. 目标程序</span>
+                                            </td>
+                                        </tr>
+                                        <tr valign="top">
+                                            <td align="left" height="22">
+                                                <input id="1_C" name="quiz_1_1" type="radio" value="C" onclick="" />
+                                                <span style="cursor: pointer;" onclick="">C. 源程序</span>
+                                            </td>
+                                        </tr>
+                                        <tr valign="top">
+                                            <td align="left" height="22">
+                                                <input id="1_D" name="quiz_1_1" type="radio" value="D" onclick="" />
+                                                <span style="cursor: pointer;" onclick="">D. 二进制代码程序</span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div align="left"></div>
+                            </td>
+                        </tr>
+                        <tr align="left">
+                            <td height="15"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+                    <tbody>
+                        <tr align="left">
+                            <td height="25" class="hot">2. 计算机的内存储器比外存储器____。</td>
+                        </tr>
+                        <tr align="left">
+                            <td height="25">
+                                <div align="left">
+                                    <table cellspacing="0" cellpadding="0">
+                                        <tr valign="top">
+                                            <td align="left" height="22">
+                                                <input id="2_A" name="quiz_1_2" type="radio" value="A" onclick="" />
+                                                <span style="cursor: pointer;" onclick="">A. 更便宜</span>
+                                            </td>
+                                        </tr>
+                                        <tr valign="top">
+                                            <td align="left" height="22">
+                                                <input id="2_B" name="quiz_1_2" type="radio" value="B" onclick="" />
+                                                <span style="cursor: pointer;" onclick="">B. 存储容量更大</span>
+                                            </td>
+                                        </tr>
+                                        <tr valign="top">
+                                            <td align="left" height="22">
+                                                <input id="2_C" name="quiz_1_2" type="radio" value="C" onclick="" />
+                                                <span style="cursor: pointer;" onclick="">C. 存取速度快</span>
+                                            </td>
+                                        </tr>
+                                        <tr valign="top">
+                                            <td align="left" height="22">
+                                                <input id="2_D" name="quiz_1_2" type="radio" value="D" onclick="" />
+                                                <span style="cursor: pointer;" onclick="">D. 虽贵但能存储更多的信息</span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div align="left"></div>
+                            </td>
+                        </tr>
+                        <tr align="left">
+                            <td height="15"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+                    <tbody>
+                        <tr align="left">
+                            <td height="25" class="hot">3. 实现计算机网络需要硬件和软件。其中负责管理整个网络各种资源、协调各种操作的软件叫做____。</td>
+                        </tr>
+                        <tr align="left">
+                            <td height="25">
+                                <div align="left">
+                                    <table cellspacing="0" cellpadding="0">
+                                        <tr valign="top">
+                                            <td align="left" height="22">
+                                                <input id="3_A" name="quiz_1_3" type="radio" value="A" onclick="" />
+                                                <span style="cursor: pointer;" onclick="">A. 网络应用软件</span>
+                                            </td>
+                                        </tr>
+                                        <tr valign="top">
+                                            <td align="left" height="22">
+                                                <input id="3_B" name="quiz_1_3" type="radio" value="B" onclick="" />
+                                                <span style="cursor: pointer;" onclick="">B. 通信协议软件</span>
+                                            </td>
+                                        </tr>
+                                        <tr valign="top">
+                                            <td align="left" height="22">
+                                                <input id="3_C" name="quiz_1_3" type="radio" value="C" onclick="" />
+                                                <span style="cursor: pointer;" onclick="">C. OSI</span>
+                                            </td>
+                                        </tr>
+                                        <tr valign="top">
+                                            <td align="left" height="22">
+                                                <input id="3_D" name="quiz_1_3" type="radio" value="D" onclick="" />
+                                                <span style="cursor: pointer;" onclick="">D. 网络操作系统</span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div align="left"></div>
+                            </td>
+                        </tr>
+                        <tr align="left">
+                            <td height="15"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+                    <tbody>
+                        <tr align="left">
+                            <td height="25" class="hot">4. 请简述计算机发展的历史</td>
+                        </tr>
+                        <tr align="left">
+                            <td height="25">
+                                <div align="left">
+                                    <textarea id="4_Text" name="quiz_4"></textarea>
+                                </div>
+                                <div align="left"></div>
+                            </td>
+                        </tr>
+                        <tr align="left">
+                            <td height="15"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <input type="submit" name="save" value="保存" />
+                <input type="submit" name="submit" value="提交" />
+            </div>
+        </form>
+    </div>
+    
+</body>
+
+</html>
+
