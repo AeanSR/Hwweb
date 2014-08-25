@@ -10,8 +10,5 @@
 #导入quizs到test数据库
 #mongoimport -h localhost --port 27017 -d test -c quizs --jsonArray --file quizs.mongo
 
-#导入results到test数据库
-mongoimport -h localhost --port 27017 -d test -c results --jsonArray --file results.mongo
-
-
-
+#导入solutions到test数据库
+mongoimport -h localhost --port 27017 -d test -c solutions --jsonArray --file solutions.mongo
