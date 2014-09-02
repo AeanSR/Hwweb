@@ -7,10 +7,12 @@ import tornado.ioloop
 import tornado.web
 
 # the quiz self has four status:
-# UNPUBLISH PUBLISH END RIVIEW
+# UNPUBLISH PUBLISH REVIEW
 # the solution done by user has two status:
-# SAVE SUBMIT
-QuizStatus = {"UNPUBLISH":0, "PUBLISH":1, "SAVE":2, "SUBMIT":3, "END":4, "RIVIEW":5}
+# SAVE SUBMIT REVIEW
+# note: solution在SUBMIT后，若quiz已经截止，则可以查看到客观题分数，此时用flag=QuizFlag["SEMI_SCORED"]来表示
+# note: solution的REVIEW条件：admin对其非客观题打分
+QuizStatus = {"UNPUBLISH":0, "PUBLISH":1, "SAVE":2, "SUBMIT":3, "REVIEW":4}
 QuesStatus = {"UNDONE":0, "DONE":1}
 
 # END: the user only save when passing the deadline
@@ -18,7 +20,9 @@ QuesStatus = {"UNDONE":0, "DONE":1}
 # SAVE: the user save before the deadline
 # SEMI_SCORED: submit but the subjective questions haven't been reviewed
 # FULL_SCORED: submit and the subjective questions have been reviewed
-QuizFlag = {"END": -1,"UNDONE":0,"SAVE":1,"SEMI_SCORED":2 ,"FULL_SCORED":3}
+QuizFlag = {"END": -1,"UNDONE":0,"SAVE":1,"SUB_NOTSCORED":2,"SEMI_SCORED":3 ,"FULL_SCORED":4}
+
+QuizType = {"SINCHOICE":1, "MULTICHOICE":2, "ESSAYQUES":3}
 
 class HwWebUtil:
 	@staticmethod

@@ -1,0 +1,39 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <title>计算机导论 管理系统</title>
+    <link href="/static/css/mystyle.css" rel="stylesheet" type="text/css" media="all" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <meta name="keywords" content="计算机导论,作业题,国科大,本科生,计算所" />
+    <meta name="Description" content="国科大本科生计算机导论作业" />
+</head>
+
+<body>
+
+{% include "./review_navigator.template" %}
+   <div>
+   	title:{{a_quiz["title"]}}&nbsp;
+   	{% for content in a_quiz["content"] %}
+   		<div>
+   			type:{{content["type"] }}&nbsp;head:{{escape(content["head"]) }}&nbsp;标准答案:{% raw ",".join(content['answer']) %}
+   		</div>
+   	{% end %}
+   </div>
+   <div>
+   	<table border="1">
+   		{% for user_solutions in users_solutions %}
+   		<tr>
+   			<td>userId:{{user_solutions["userId"]}}&nbsp;name:{{user_solutions["name"]}}&nbsp;all_score:{{user_solutions["all_score"]}}</td>
+   			{% for a_solu in user_solutions["solutions"] %}	
+   			<td>
+   				{% raw a_solu['solution'][0] %}
+   			</td>
+   			{% end %}
+   		</tr>
+   		{% end %}
+   	</table>
+   </div>
+</body>
+
+</html>

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
-    <title>计算机导论 作业系统</title>
+    <title>计算机导论 管理系统</title>
     <link href="/static/css/mystyle.css" rel="stylesheet" type="text/css" media="all" />
     <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
     <meta name="keywords" content="计算机导论,作业题,国科大,本科生,计算所" />
@@ -10,9 +10,8 @@
 </head>
 
 <body>
-{% include "./person_status.template" %}
 
-{% include "./navigator.template" %}
+{% include "./review_navigator.template" %}
 
 {% include "./notices.template" %}
     

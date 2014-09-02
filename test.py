@@ -5,6 +5,7 @@ import tornado.ioloop
 import tornado.web
 import motor
 import json
+import pymongo
 
 from datetime import datetime
 from apscheduler.schedulers.tornado import TornadoScheduler
@@ -13,6 +14,7 @@ from HwWebUtil import HwWebUtil
 from HwWebUtil import QuizStatus
 from HwWebUtil import QuesStatus
 from HwWebUtil import QuizFlag
+from HwWebUtil import QuizType
 
 
 
@@ -42,10 +44,10 @@ class BaseHandler(tornado.web.RequestHandler):
 # test case
 class TestHandler(tornado.web.RequestHandler):
 
-	@staticmethod
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
-	def quartz(doc) :
+	def quartz(self, doc, time) :
+		print "Start run at %s."  % time
 		cursor =  db.solutions.find({"quiz_id":doc["quiz_id"], "status":QuizStatus["SUBMIT"]} )
 		user_quizs = yield cursor.to_list(length=1000)
 		for user_quiz in user_quizs:
@@ -84,9 +86,9 @@ class TestHandler(tornado.web.RequestHandler):
 		if not doc:
 			self.finish()
 		doc = json.loads(doc)
-		print "doc['deadline'].strptime('%Y-%m-%d %H:%M:%S') = ", doc['deadline'].strptime("%Y-%m-%d %H:%M:%S")
+		print "datetime.strptime(doc['deadline'], '%Y-%m-%d %H:%M:%S') = ", datetime.strptime(doc["deadline"], "%Y-%m-%d %H:%M:%S")
 		
-		scheduler.add_job(quartz, 'date', run_date=doc['deadline'].strptime("%Y-%m-%d %H:%M:%S"), args=[doc])
+		scheduler.add_job(self.quartz, 'date', run_date=datetime.strptime(doc["deadline"], "%Y-%m-%d %H:%M:%S"), args=[doc, datetime.now()])
 		
 		
 		self.finish()
@@ -100,11 +102,11 @@ class MainHandler(BaseHandler):
     	def get(self):
     		nt_cursor = db.notices.find()
     		# to_list (length ?)
-    		notices = yield nt_cursor.to_list(length=20)
+    		notices = yield nt_cursor.to_list(None)
     		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1})
-    		quizs = yield quiz_cursor.to_list(length=20)
+    		quizs = yield quiz_cursor.to_list(None)
 	 	#self.render("./main" ,info = self.online_data[self.get_current_user()], notices = notices)
-	 	self.render("./main.template" ,info = self.online_data[self.get_current_user()], notices = notices, quizs=quizs, QuizStatus=QuizStatus)
+	 	self.render("./main.template" ,info = self.online_data[self.get_current_user()], notices = notices, quizs=quizs)
 
 
 
@@ -218,17 +220,33 @@ class QuizHandler(BaseHandler):
 			flag = 0 #it mark the quiz_flag out of the QuizFlag map
 			if not user_quiz:
 				flag = QuizFlag["UNDONE"]
-			elif user_quiz["status"] == QuizStatus["SAVE"] and a_quiz["status"] >= QuizStatus["END"]:
+			elif user_quiz["status"] == QuizStatus["SAVE"] and not datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):#a_quiz["status"] >= QuizStatus["END"]:
 				flag = QuizFlag["END"]
 			elif user_quiz["status"] == QuizStatus["SAVE"]:
 				flag = QuizFlag["SAVE"]
-			elif user_quiz["status"] == QuizStatus["SUBMIT"] and a_quiz["status"] != QuizStatus["RIVIEW"]:
+			elif user_quiz["status"] == QuizStatus["SUBMIT"] and datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
+				flag = QuizFlag["SUB_NOTSCORED"]
+			# note: solution在SUBMIT后，若quiz已经截止，则可以查看到客观题分数
+			elif user_quiz["status"] == QuizStatus["SUBMIT"]:
+				#initial value of all_score is -1, all_score == -1 means it hasn't ever been calculated 
+				if user_quiz["all_score"] == -1 :
+					all_score = 0 
+					cnt = 0
+					for a_content in a_quiz["content"]:
+						score = 0
+						if a_content["type"] != QuizType["ESSAYQUES"] and set(a_content["answer"])  == set(user_quiz["solutions"][cnt]["solution"]) :
+							score = a_content["score"]
+							all_score += a_content["score"]
+						user_quiz["solutions"][cnt]["score"] = score
+						cnt += 1
+					user_quiz["all_score"] = all_score
+					yield db.solutions.save(user_quiz)
 				flag = QuizFlag["SEMI_SCORED"]
+			# user_quiz["status"] == QuizStatus["REVIEW"] 
 			else:
 				flag = QuizFlag["FULL_SCORED"]
-			print "flag = " ,flag
 
-			self.render("./quiz.template", a_quiz = a_quiz, info = self.online_data[self.get_current_user()],  quizs=quizs, QuizStatus=QuizStatus,user_quiz=user_quiz, flag=flag,QuizFlag=QuizFlag)
+			self.render("./quiz.template", a_quiz = a_quiz, info = self.online_data[self.get_current_user()],  quizs=quizs, user_quiz=user_quiz, flag=flag)
 		return
 
 
@@ -268,6 +286,111 @@ class QuizCreateHandler(BaseHandler):
 			yield db.solutions.save(user_quiz)
 		self.finish()
 
+class StudentListHandler(BaseHandler):
+	
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def get(self):
+		# page
+		# quiz_id
+		page = int(self.get_argument("page", 1))
+		quiz_id = int(self.get_argument("quiz_id", 0))
+		quiz_cursor = None
+		if quiz_id == 0:
+			quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1,"content":1}).sort("quiz_id", pymongo.ASCENDING)
+		else:
+			quiz_cursor = db.quizs.find({"quiz_id":quiz_id},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1,"content":1})
+		users_list = []
+		users_cursor = db.users.find({}, {"name":1, "userId":1}).sort('userId', pymongo.ASCENDING).skip((page-1) * 30)
+		users = yield users_cursor.to_list(length=30)
+	    	quizs = yield quiz_cursor.to_list(None) 
+	    	if not quizs:
+	    		self.redirect("./admin")
+		for user in users:
+			quiz_info=[]
+			for a_quiz in quizs:
+				user_quiz = yield db.solutions.find_one({"quiz_id":a_quiz['quiz_id'], "userId":user["userId"]}, {"all_score":1, "status":1})
+				flag = 0 #it mark the quiz_flag out of the QuizFlag map
+				if not user_quiz:
+					flag = QuizFlag["UNDONE"]
+					quiz_info.append({"quiz_id":a_quiz["quiz_id"], "all_score":-1, "flag":flag})
+					continue
+				elif user_quiz["status"] == QuizStatus["SAVE"] and not datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):#a_quiz["status"] >= QuizStatus["END"]:
+					flag = QuizFlag["END"]
+				elif user_quiz["status"] == QuizStatus["SAVE"]:
+					flag = QuizFlag["SAVE"]
+				elif user_quiz["status"] == QuizStatus["SUBMIT"] and datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
+					flag = QuizFlag["SUB_NOTSCORED"]
+				elif user_quiz["status"] == QuizStatus["SUBMIT"]:
+					# all_score == -1 means it hasn't ever been calculated 
+					if user_quiz["all_score"] == -1 :
+						all_score = 0 
+						cnt = 0
+						for a_content in a_quiz["content"]:
+							score = 0
+							if a_content["type"] != QuizType["ESSAYQUES"] and set(a_content["answer"])  == set(user_quiz["solutions"][cnt]["solution"]) :
+								score = a_content["score"]
+								all_score += a_content["score"]
+							user_quiz["solutions"][cnt]["score"] = score
+							cnt += 1
+						user_quiz["all_score"] = all_score
+						yield db.solutions.save(user_quiz)
+					flag = QuizFlag["SEMI_SCORED"]
+				else:
+					flag = QuizFlag["FULL_SCORED"]
+				quiz_info.append({"quiz_id":a_quiz["quiz_id"], "all_score":user_quiz["all_score"], "flag":flag})
+			users_list.append({"userId":user["userId"],"name":user["name"], "quiz_info":quiz_info})
+		self.render("./studentlist.template", users_list=users_list,quizs=quizs)
+
+
+class ReviewHandler(BaseHandler):
+	
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+    	def get(self, quiz_id):
+    		# 只选取问答题
+    		a_quiz = yield db.quizs.find_one({"quiz_id": int(quiz_id)}, {"content":{"$elemMatch":{"type":QuizType["ESSAYQUES"]}},"status":1, "quiz_id":1, "releaseTime":1, "deadline":1,"title":1})
+    		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1})
+    		quizs = yield quiz_cursor.to_list(None)
+    		if not a_quiz or a_quiz["status"] == QuizStatus["UNPUBLISH"]:
+    			nt_cursor = db.notices.find()
+    			notices = yield nt_cursor.to_list(None)
+    			self.render("./admin.template", notices = notices, quizs=quizs)
+    			return
+    		# can't be reviewd because it's before the deadline, so just list the questions.
+    		elif datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
+    			a_quiz = yield db.quizs.find_one({"quiz_id": int(quiz_id)}, {"content":1,"status":1, "quiz_id":1, "releaseTime":1, "deadline":1,"title":1})
+    			self.render("./quiz_view.template", a_quiz=a_quiz,quizs=quizs)
+    			return
+    		# it has been reviewd 
+    		elif a_quiz["status"] == QuizStatus["REVIEW"]:
+    			self.redirect("/studentlist?quiz_id=" + quiz_id)
+    			return
+
+    		# 选择查看已经批阅的用户，还是未批阅的用户。默认是未批阅的用户
+    		reviewed = int(self.get_argument("reviewed", 0))
+    		page = int(self.get_argument("page", 1))
+    		if reviewed == 0:
+    			users_solutions=[]
+    			solutions_cursor = db.solutions.find({"quiz_id":a_quiz["quiz_id"], "status":QuizStatus["SUBMIT"]}, {"solutions" : {"$elemMatch":{"type":QuizType["ESSAYQUES"]}} , "all_score":1, "userId":1} ).sort("userId", pymongo.ASCENDING).skip((page-1) * 30)
+    			solutions = yield solutions_cursor.to_list(length=30)
+    			for a_user_solu in solutions:
+    				user = yield db.users.find_one({"userId":a_user_solu["userId"]}, {"name":1, "_id":0,"userId":1})
+    				users_solutions.append({"userId":user["userId"], "solutions":a_user_solu["solutions"],"all_score":a_user_solu["all_score"], "name":user["name"]})
+	    		self.render("./quiz_review.template", a_quiz=a_quiz, quizs=quizs, users_solutions=users_solutions)
+	 	
+
+class AdminHandler(BaseHandler):
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+    	def get(self):
+    		nt_cursor = db.notices.find()
+    		notices = yield nt_cursor.to_list(None)
+    		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1})
+    		quizs = yield quiz_cursor.to_list(None)
+	 	#self.render("./main" ,info = self.online_data[self.get_current_user()], notices = notices)
+	 	self.render("./admin.template", notices = notices, quizs=quizs)
 
 class LoginHandler(BaseHandler):
 	def get(self):
@@ -323,7 +446,10 @@ application = tornado.web.Application([
     (r"/quiz/([0-9]+)/submit", QuizSubmitHandler),
     (r"/quiz/([0-9]+)/save", QuizSaveHandler),
     (r"/quiz/([0-9]+)", QuizHandler),
-    (r"/test", TestHandler)
+    (r"/test", TestHandler),
+    (r"/studentlist", StudentListHandler),
+    (r"/admin", AdminHandler),
+    (r"/review/([0-9]+)", ReviewHandler)
     ],**settings )
 scheduler = TornadoScheduler()
 scheduler.add_jobstore('mongodb', collection='quiz_semi_review')
@@ -331,7 +457,7 @@ scheduler.add_jobstore('mongodb', collection='quiz_semi_review')
 if __name__ == "__main__":
 	application.listen(8888)
 	scheduler.start()
-	
+	print "The apscheduler has been started."
 	tornado.ioloop.IOLoop.instance().start()
 	
 	print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))

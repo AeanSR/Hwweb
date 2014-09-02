@@ -3,22 +3,22 @@
 
 <div id="navigator">
         <ul id="menu">
+        <li><a href="/studentlist">查看学生作业情况</a></li>
         {% for quizIndex in quizs %}
         	{% set clickEvent = "" %}
        	{% if quizIndex['status']  == QuizStatus["UNPUBLISH"] %} 
 		{% set statusStr = "未发布" %}
-		{% set clickEvent = "javascript:alert('未发布');href='/main'" %}
+		{% set clickEvent = "javascript:alert('未发布');href='/admin'" %}
 	{% elif quizIndex['status']  == QuizStatus["PUBLISH"]  and datetime.now() < datetime.strptime(quizIndex["deadline"],"%Y-%m-%d %H:%M:%S")   %}
 		{# set clickEvent = "javascript:alert('已发布')" #}
-		{% set statusStr = "已发布" %}
+		{% set statusStr = "未截止，无法评分" %}
 	{% elif  quizIndex['status'] != QuizStatus["REVIEW"] and not (datetime.now() < datetime.strptime(quizIndex["deadline"],"%Y-%m-%d %H:%M:%S") ) %}
-		{# set clickEvent = "javascript:alert('已截止')" #}
-		{% set statusStr = "已截止" %}
+		{% set statusStr = "等待评分" %}
 	{% elif quizIndex['status'] == QuizStatus["REVIEW"] %}
 		{# set clickEvent = "javascript:alert('已评分')" #}
 		{% set statusStr = "已评分" %}
 	{% end %}
-            <li><a href="/quiz/{{quizIndex['quiz_id']}}" title="quiz{{quizIndex['quiz_id']}}" onclick=" {% raw clickEvent %}">Quiz{{quizIndex['quiz_id']}} 
+            <li><a href="/review/{{quizIndex['quiz_id']}}" title="quiz{{quizIndex['quiz_id']}}" onclick=" {% raw clickEvent %}">Quiz{{quizIndex['quiz_id']}} 
 ({{escape(statusStr)}})
             	&nbsp; </a>
             </li>
