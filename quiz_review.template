@@ -13,27 +13,50 @@
 
 {% include "./review_navigator.template" %}
    <div>
-   	title:{{a_quiz["title"]}}&nbsp;
-   	{% for content in a_quiz["content"] %}
-   		<div>
-   			type:{{content["type"] }}&nbsp;head:{{escape(content["head"]) }}&nbsp;标准答案:{% raw ",".join(content['answer']) %}
-   		</div>
+   	<span>{{a_quiz["title"]}}&nbsp;</span>
+      <span>问答题描述如下：</span>
+   	{% for ques in a_quiz["content"] %}	
+              <div>
+   		     {{ques["id"]}}.&nbsp;{{escape(ques["head"]) }}<br/>标准答案为:{% raw ",".join(ques['answer']) %}
+              </div>
    	{% end %}
    </div>
    <div>
+    <form action="" method="post">
    	<table border="1">
-   		{% for user_solutions in users_solutions %}
+              <tr>
+                <td>学号</td>
+                <td>姓名</td>
+                {% for ques in a_quiz["content"] %} 
+                  <td>{{ques["id"]}}.&nbsp;{{escape(ques["head"]) }}</td>
+                {% end %}
+              </tr>
+              
+   		{% for user_solutions in users_solutions %} 
+                
    		<tr>
-   			<td>userId:{{user_solutions["userId"]}}&nbsp;name:{{user_solutions["name"]}}&nbsp;all_score:{{user_solutions["all_score"]}}</td>
-   			{% for a_solu in user_solutions["solutions"] %}	
-   			<td>
-   				{% raw a_solu['solution'][0] %}
+   			<td>{{user_solutions["userId"]}}</td>
+                    <td>{{user_solutions["name"]}}</td>
+                    {% set count = 0 %}
+   			{% for a_solu in user_solutions["solutions"] %}
+   			    <td>
+   				{% raw a_solu['solution'][0] %}&nbsp;打分:
+                            <select name="{{a_quiz['quiz_id']}}{{user_solutions['userId']}}_{{a_solu['id']}}">
+                              {% for i in range(1, a_quiz['content'][count]['score']) %}
+                                    <option value ="{{i}}">{{i}}</option>
+                              {% end %}
+                               <option value ="{{a_quiz['content'][count]['score']}}" selected="selected">{{a_quiz['content'][count]['score']}}</option>
+                            </select>
    			</td>
+                        {% set count = count + 1 %}
    			{% end %}
    		</tr>
    		{% end %}
    	</table>
+   </form>
    </div>
+
+{% include "./page_navigator.template" %}
 </body>
 
 </html>

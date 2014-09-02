@@ -1,10 +1,86 @@
-<table border=1>
-	{% for stu in users_list %}
-	<tr>
-		<td>{{ stu["name"] }}&nbsp;{{ stu["userId"] }}</td>
-		{% for a_quiz in stu["quiz_info"] %}
-		<td>quiz_id={{a_quiz["quiz_id"]}}&nbsp;all_score={{a_quiz["all_score"]}}&nbsp;flag={{a_quiz["flag"]}}</td>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+{% from datetime import datetime %}
+{% from HwWebUtil import QuizStatus %}
+{% from HwWebUtil import QuesStatus %}
+{% from HwWebUtil import QuizFlag %}
+{% from HwWebUtil import QuizType %}
+<head>
+    <title>学生作业情况列表</title>
+    <link href="/static/css/mystyle.css" rel="stylesheet" type="text/css" media="all" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <meta name="keywords" content="计算机导论,作业题,国科大,本科生,计算所" />
+    <meta name="Description" content="国科大本科生计算机导论作业" />
+
+    <script type="text/javascript" src="/static/js/jquery.min.js"></script>
+    <script>
+        $(document).ready(function(c) {
+            {% set i = 0 %}
+            {% for quiz in quizs %}
+                {% if quiz['status'] == QuizStatus['UNPUBLISH'] %}
+                    $("td#{{quiz['quiz_id']}}").text("Quiz{{quiz['quiz_id']}}(暂未发布)")
+                    {% for stu in users_list %}
+                        $("td#{{stu['userId']}}_{{quiz['quiz_id']}}").text("无记录")
+                    {% end %}
+                {% elif quiz['status'] == QuizStatus['PUBLISH'] and datetime.now() < datetime.strptime(quiz["deadline"], "%Y-%m-%d %H:%M:%S") %}
+                    $("td#{{quiz['quiz_id']}}").text("Quiz{{quiz['quiz_id']}}(已发布)")
+                    {% for stu in users_list %}
+                        {% if stu['quiz_info'][i]["flag"] == QuizFlag["UNDONE"] %}
+                            $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").text("还未开始")
+                        {% elif stu['quiz_info'][i]["flag"] == QuizFlag["SAVE"] %}
+                            $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").text("正在做")
+                        {% elif stu['quiz_info'][i]["flag"] == QuizFlag["SUB_NOTSCORED"]  %}
+                            $("td#{{ stu['userId']}}_{{ quiz['quiz_id'] }}").text("已提交")
+                        {% end %}
+                    {% end %}
+                {% elif quiz['status'] == QuizStatus['PUBLISH'] %}
+                    $("td#{{quiz['quiz_id']}}").text("Quiz{{quiz['quiz_id']}}(已截止，等待批改)")
+                    {% for stu in users_list %}
+                        {% if stu['quiz_info'][i]["flag"] == QuizFlag["UNDONE"] %}
+                            $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").text("0分，无记录")
+                            $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").css("color","red")
+                        {% elif stu['quiz_info'][i]["flag"] == QuizFlag["SEMI_SCORED"] %}
+                            $("td#{{ stu['userId'] }}_{{ quiz['quiz_id'] }}").text("客观题分数：{{stu['quiz_info'][i]['all_score']}}/主观题未评分")
+                        {% elif stu['quiz_info'][i]["flag"] == QuizFlag["FULL_SCORED"] %}
+                            $("td#{{ stu['userId'] }}_{{ quiz['quiz_id'] }}").text("总分：{{stu['quiz_info'][i]['all_score']}}")
+                        {% end %}
+                    {% end %}
+                {% elif quiz['status'] == QuizStatus['REVIEW']%}
+                    $("td#{{quiz['quiz_id']}}").text("Quiz{{quiz['quiz_id']}}(已完全批改)")
+                    {% for stu in users_list %}
+                        $("td#{{stu['userId']}}_{{quiz['quiz_id']}}").text("总分：{{stu['quiz_info'][i]['all_score']}}")
+                    {% end %}
+                {% end %}
+
+                {% set i = i + 1 %}
+            {% end %}
+        });
+        </script>
+</head>
+
+<body>
+{% include "./review_navigator.template" %}
+<div>
+	<table border=1>
+		<tr>
+			<td>学号</td>
+			<td>姓名</td>
+			{% for quiz in quizs %}
+				<td id="{{quiz['quiz_id']}}">Quiz{{quiz["quiz_id"]}}</td>
+			{% end %}
+		</tr>
+		{% for stu in users_list %}
+		<tr>
+			<td>{{ stu["userId"] }}</td>
+			<td>{{ stu["name"] }}</td>
+			{% for a_quiz in stu["quiz_info"] %}
+			<td id="{{stu['userId']}}_{{a_quiz['quiz_id']}}"></td>
+			{% end %}
+		</tr>
 		{% end %}
-	</tr>
-	{% end %}
-</table>
+	</table>
+</div>
+{% include "./page_navigator.template" %}
+
+</body>
+</html>

@@ -11,24 +11,6 @@
     <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
     <meta name="keywords" content="计算机导论,作业题,国科大,本科生,计算所" />
     <meta name="Description" content="国科大本科生计算机导论作业" />
-    <link rel="stylesheet" href="/static/css/editor-themes/default.css" />
-    <script charset="utf-8" src="/static/js/kindeditor-min.js"></script>
-    <script charset="utf-8" src="/static/zh_CN.js"></script>
-    <script>
-            var editor;
-            KindEditor.ready(function(K) {
-                editor = K.create('textarea[name="content"]', {
-                    resizeType : 1,
-                    allowPreviewEmoticons : false,
-                    allowImageUpload : false,
-                    items : [
-                        'fontname', 'fontsize', '|', 'forecolor', 'hilitecolor', 'bold', 'italic', 'underline',
-                        'removeformat', '|', 'justifyleft', 'justifycenter', 'justifyright', 'insertorderedlist',
-                        'insertunorderedlist', '|', 'emoticons', 'image', 'link']
-                });
-            });
-    </script>
-
     <script type="text/javascript" src="/static/js/jquery.min.js"></script>
     <script>
         $(document).ready(function(c) {

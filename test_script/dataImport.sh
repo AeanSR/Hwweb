@@ -3,6 +3,7 @@
 
 #导入users到test数据库
 #mongoimport -h localhost --port 27017 -d test -c users --jsonArray --file users.mongo
+#mongoimport -h localhost --port 27017 -d test -c users --jsonArray --file quiz_3_users.mongo
 
 #导入notices到test数据库
 #mongoimport -h localhost --port 27017 -d test -c notices --jsonArray --file notices.mongo
@@ -12,3 +13,4 @@
 
 #导入solutions到test数据库
 mongoimport -h localhost --port 27017 -d test -c solutions --jsonArray --file solutions.mongo
+mongoimport -h localhost --port 27017 -d test -c solutions --jsonArray --file quiz_3_solutions.mongo

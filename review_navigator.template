@@ -4,7 +4,7 @@
 <div id="navigator">
         <ul id="menu">
         <li><a href="/studentlist">查看学生作业情况</a></li>
-        {% for quizIndex in quizs %}
+        {% for quizIndex in quizs_index %}
         	{% set clickEvent = "" %}
        	{% if quizIndex['status']  == QuizStatus["UNPUBLISH"] %} 
 		{% set statusStr = "未发布" %}

@@ -296,20 +296,28 @@ class StudentListHandler(BaseHandler):
 		page = int(self.get_argument("page", 1))
 		quiz_id = int(self.get_argument("quiz_id", 0))
 		quiz_cursor = None
+
+		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1,"content":1}).sort("quiz_id", pymongo.ASCENDING)
+		quizs_index = yield quiz_cursor.to_list(None)
+		# 列出学生所有成绩情况
 		if quiz_id == 0:
+			quizs = quizs_index
 			quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1,"content":1}).sort("quiz_id", pymongo.ASCENDING)
 		else:
 			quiz_cursor = db.quizs.find({"quiz_id":quiz_id},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1,"content":1})
-		users_list = []
+			quizs = yield quiz_cursor.to_list(None)
+		# 以30条目为一页
 		users_cursor = db.users.find({}, {"name":1, "userId":1}).sort('userId', pymongo.ASCENDING).skip((page-1) * 30)
+		cnt = yield users_cursor.count()
+    		page_num = (cnt-1)/30 + 1
 		users = yield users_cursor.to_list(length=30)
-	    	quizs = yield quiz_cursor.to_list(None) 
+	    	users_list=[]
 	    	if not quizs:
 	    		self.redirect("./admin")
 		for user in users:
 			quiz_info=[]
 			for a_quiz in quizs:
-				user_quiz = yield db.solutions.find_one({"quiz_id":a_quiz['quiz_id'], "userId":user["userId"]}, {"all_score":1, "status":1})
+				user_quiz = yield db.solutions.find_one({"quiz_id":a_quiz['quiz_id'], "userId":user["userId"]})
 				flag = 0 #it mark the quiz_flag out of the QuizFlag map
 				if not user_quiz:
 					flag = QuizFlag["UNDONE"]
@@ -336,11 +344,12 @@ class StudentListHandler(BaseHandler):
 						user_quiz["all_score"] = all_score
 						yield db.solutions.save(user_quiz)
 					flag = QuizFlag["SEMI_SCORED"]
+				# user_quiz["status"] == QuizStatus["REVIEW"] 即可
 				else:
 					flag = QuizFlag["FULL_SCORED"]
 				quiz_info.append({"quiz_id":a_quiz["quiz_id"], "all_score":user_quiz["all_score"], "flag":flag})
 			users_list.append({"userId":user["userId"],"name":user["name"], "quiz_info":quiz_info})
-		self.render("./studentlist.template", users_list=users_list,quizs=quizs)
+		self.render("./studentlist.template", users_list=users_list, quizs_index=quizs_index, quizs=quizs, current_page=page,page_num=page_num,url="/studentlist")
 
 
 class ReviewHandler(BaseHandler):
@@ -348,10 +357,9 @@ class ReviewHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
     	def get(self, quiz_id):
-    		# 只选取问答题
-    		a_quiz = yield db.quizs.find_one({"quiz_id": int(quiz_id)}, {"content":{"$elemMatch":{"type":QuizType["ESSAYQUES"]}},"status":1, "quiz_id":1, "releaseTime":1, "deadline":1,"title":1})
+    		a_quiz = yield db.quizs.find_one({"quiz_id": int(quiz_id)}, {"content":1,"status":1, "quiz_id":1, "releaseTime":1, "deadline":1,"title":1})
     		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1})
-    		quizs = yield quiz_cursor.to_list(None)
+    		quizs_index = yield quiz_cursor.to_list(None)
     		if not a_quiz or a_quiz["status"] == QuizStatus["UNPUBLISH"]:
     			nt_cursor = db.notices.find()
     			notices = yield nt_cursor.to_list(None)
@@ -359,7 +367,6 @@ class ReviewHandler(BaseHandler):
     			return
     		# can't be reviewd because it's before the deadline, so just list the questions.
     		elif datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
-    			a_quiz = yield db.quizs.find_one({"quiz_id": int(quiz_id)}, {"content":1,"status":1, "quiz_id":1, "releaseTime":1, "deadline":1,"title":1})
     			self.render("./quiz_view.template", a_quiz=a_quiz,quizs=quizs)
     			return
     		# it has been reviewd 
@@ -370,14 +377,24 @@ class ReviewHandler(BaseHandler):
     		# 选择查看已经批阅的用户，还是未批阅的用户。默认是未批阅的用户
     		reviewed = int(self.get_argument("reviewed", 0))
     		page = int(self.get_argument("page", 1))
+		# 筛选出问答题
+    		a_quiz["content"] = filter(lambda x:x["type"]==QuizType["ESSAYQUES"], a_quiz["content"])
     		if reviewed == 0:
     			users_solutions=[]
-    			solutions_cursor = db.solutions.find({"quiz_id":a_quiz["quiz_id"], "status":QuizStatus["SUBMIT"]}, {"solutions" : {"$elemMatch":{"type":QuizType["ESSAYQUES"]}} , "all_score":1, "userId":1} ).sort("userId", pymongo.ASCENDING).skip((page-1) * 30)
+    			# 分页为30个一页
+    			solutions_cursor = db.solutions.find({"quiz_id":a_quiz["quiz_id"], "status":QuizStatus["SUBMIT"]}, {"solutions" : 1 , "all_score":1, "userId":1} ).sort("userId", pymongo.ASCENDING).skip((page-1) * 30)
+    			cnt = yield solutions_cursor.count()
+    			page_num = (cnt-1)/30 + 1
     			solutions = yield solutions_cursor.to_list(length=30)
+    			# 也是只筛选出问答题的solution
     			for a_user_solu in solutions:
+    				solu_tmp= filter(lambda x: x["type"] == QuizType["ESSAYQUES"],a_user_solu["solutions"])
     				user = yield db.users.find_one({"userId":a_user_solu["userId"]}, {"name":1, "_id":0,"userId":1})
-    				users_solutions.append({"userId":user["userId"], "solutions":a_user_solu["solutions"],"all_score":a_user_solu["all_score"], "name":user["name"]})
-	    		self.render("./quiz_review.template", a_quiz=a_quiz, quizs=quizs, users_solutions=users_solutions)
+    				users_solutions.append({"userId":user["userId"], "solutions":solu_tmp,"all_score":a_user_solu["all_score"], "name":user["name"]})
+	    		self.render("./quiz_review.template", a_quiz=a_quiz,quizs_index=quizs_index, users_solutions=users_solutions, current_page=page, page_num=page_num, url="/review/%d"%a_quiz["quiz_id"])
+	    	else:
+	    		# to do
+	    		return
 	 	
 
 class AdminHandler(BaseHandler):
@@ -388,9 +405,9 @@ class AdminHandler(BaseHandler):
     		nt_cursor = db.notices.find()
     		notices = yield nt_cursor.to_list(None)
     		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1})
-    		quizs = yield quiz_cursor.to_list(None)
+    		quizs_index = yield quiz_cursor.to_list(None)
 	 	#self.render("./main" ,info = self.online_data[self.get_current_user()], notices = notices)
-	 	self.render("./admin.template", notices = notices, quizs=quizs)
+	 	self.render("./admin.template", notices = notices, quizs_index=quizs_index)
 
 class LoginHandler(BaseHandler):
 	def get(self):
