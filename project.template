@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+{% from datetime import datetime %}
+{% from HwWebUtil import ProjectFlag %}
+
+
+<head>
+    <title>大实验报告提交</title>
+    <link href="/static/css/mystyle.css" rel="stylesheet" type="text/css" media="all" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <meta name="keywords" content="计算机导论,作业题,国科大,本科生,计算所" />
+    <meta name="Description" content="国科大本科生计算机导论作业" />
+    <script type="text/javascript" src="/static/js/jquery.min.js"></script>
+     <script>
+        $(document).ready(function(c) {
+            {% if flag==ProjectFlag['END'] %}
+            	$("span#warn").text("报告上交的截止日期已过。您不能再提交报告了。")
+            	$("input").attr("disabled","disabled")
+            {% elif flag==ProjectFlag['SUBMIT'] %}
+            	$("div#history").html('<p>最近一次修改时间：{{up_record['uploadTime']}}</p><p><a href="/project/{{a_pro['pro_id']}}/download">{{up_record['userId']}}.{{up_record['file_suffix']}}</a><p><p>可以重新上传以覆盖</p>')
+            {% elif flag==ProjectFlag['DEAD'] %}
+            	$("div#history").html('<p>最近一次修改时间：{{up_record['uploadTime']}}</p><p><a href="/project/{{a_pro['pro_id']}}/download">{{up_record['userId']}}.{{up_record['file_suffix']}}</a><p><p>可以重新上传以覆盖</p>')
+            	$("input").attr("disabled","disabled")
+            {% else %}
+            {% end %}
+        });
+        </script>
+</head>
+<body>
+{% include "./project_navigator.template" %}
+{% include "./person_status.template" %}
+
+{% if main != 1 %}
+<div id="content">
+	<span id="warn"></span>
+<table border=1>
+	<tr><td>标题</td><td>{{a_pro["title"]}}</td></tr>
+	<tr><td>开始日期</td><td>{{a_pro["releaseTime"]}}</td></tr>
+	<tr><td>截止日期</td><td>{{a_pro["deadline"]}}</td></tr>
+</table>
+<div>
+	<span>报告提交</span>
+	<div>
+	<form action="/project/{{a_pro['pro_id']}}/upload" method="post" enctype="multipart/form-data">
+		<div id="history"></div>
+		<input type="file" name="uploadfile" />
+		<input type="submit" value="上传"/>
+	</form>
+	</div>
+</div>
+</div>
+{% end %}
+</body>
+</html>

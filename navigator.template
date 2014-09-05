@@ -24,4 +24,9 @@
             </li>
         {% end %}
         </ul>
+        <ul>
+        <li><a href="/project">提交大实验报告入口</a></li>
+        <li><a href="/admin">后台系统</a></li>
+
+        </ul>
     </div>

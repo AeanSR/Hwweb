@@ -14,6 +14,8 @@ import tornado.web
 # note: solution的REVIEW条件：admin对其非客观题打分
 QuizStatus = {"UNPUBLISH":0, "PUBLISH":1, "SAVE":2, "SUBMIT":3, "REVIEW":4}
 QuesStatus = {"UNDONE":0, "DONE":1}
+ProjectStatus = {"UNPUBLISH":0, "PUBLISH":1}
+ProjectFlag = {"END":-1, "UNDONE":0, "SUBMIT":1, "DEAD":2}
 
 # END: the user only save when passing the deadline
 # UNDONE: the user hasn't done anything about the quiz before deadline

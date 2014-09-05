@@ -60,7 +60,8 @@
 
 <body>
 {% include "./review_navigator.template" %}
-<div>
+
+<div id="content">
 	<table border=1>
 		<tr>
 			<td>学号</td>

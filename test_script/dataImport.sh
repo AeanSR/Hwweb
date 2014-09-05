@@ -12,5 +12,12 @@
 #mongoimport -h localhost --port 27017 -d test -c quizs --jsonArray --file quizs.mongo
 
 #导入solutions到test数据库
-mongoimport -h localhost --port 27017 -d test -c solutions --jsonArray --file solutions.mongo
-mongoimport -h localhost --port 27017 -d test -c solutions --jsonArray --file quiz_3_solutions.mongo
+#mongoimport -h localhost --port 27017 -d test -c solutions --jsonArray --file solutions.mongo
+#mongoimport -h localhost --port 27017 -d test -c solutions --jsonArray --file quiz_3_solutions.mongo
+#mongoimport -h localhost --port 27017 -d test -c solutions --jsonArray --file quiz_4_solutions.mongo
+
+#导入projects到test数据库
+mongoimport -h localhost --port 27017 -d test -c projects --jsonArray --file projects.mongo
+
+#导入user_uploads到test数据库
+#mongoimport -h localhost --port 27017 -d test -c user_uploads--jsonArray --file user_uploads.mongo
