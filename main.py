@@ -20,7 +20,7 @@ from HwWebUtil import ProjectStatus
 from HwWebUtil import ProjectFlag
 
 # to do, filter the text input
-
+# to do, 多选题
 
 db = motor.MotorClient('localhost', 27017).test
 
@@ -99,10 +99,16 @@ class QuizSaveHandler(BaseHandler):
 			ques_status = QuesStatus["UNDONE"]
 			answer = []
 			count +=1
-
-			if self.get_argument("quiz_"+quiz_id+"_"+str(count), None) :
+			tmp = self.get_argument("quiz_"+quiz_id+"_"+str(count), None)
+			# 检测选择题输入，要求必须在选项之内
+			if  tmp:
+				if a_content['type'] == QuizType['SINCHOICE']:
+					if not tmp in map(lambda x:x['value'],a_content['choices']):
+						self.write('<script>alert("答案不符合规定, 请重新提交");window.history.back()</script>')
+						self.finish()
+						return
 				ques_status = QuesStatus["DONE"]
-				answer.append(self.get_argument("quiz_"+quiz_id+"_"+str(count)))
+				answer.append(tmp)
 			solutions.append({"type":a_content["type"], "solution":answer, "score":0, "status":ques_status})
 		doc["lastTime"] = op_now.strftime("%Y-%m-%d %H:%M:%S")
 		doc["solutions"] = solutions
@@ -140,17 +146,23 @@ class QuizSubmitHandler(BaseHandler):
 			solution = []
 			score = 0
 			count +=1
+			tmp = self.get_argument("quiz_"+quiz_id+"_"+str(count), None)
+			# 检测选择题输入，要求必须在选项之内
+			if  tmp:
+				if a_content['type'] == QuizType['SINCHOICE']:
+					if not tmp in map(lambda x:x['value'],a_content['choices']):
+						self.write('<script>alert("答案不符合规定, 请重新提交");window.history.back()</script>')
+						self.finish()
+						return
 			# to do
 			# if submit , i will test whether the student had done all the questions
-			if self.get_argument("quiz_"+quiz_id+"_"+str(count), None) :
 				ques_status = QuesStatus["DONE"]
-				solution.append(self.get_argument("quiz_"+quiz_id+"_"+str(count)))
+				solution.append(tmp)
 			solutions.append({"type":a_content["type"], "solution":solution, "score":score, "status":ques_status})
 		doc["lastTime"] = op_now.strftime("%Y-%m-%d %H:%M:%S")
 		doc["solutions"] = solutions
 		doc["all_score"] = -1
 		doc["status"] = QuizStatus["SUBMIT"]
-		print "doc=", doc
 		yield db.solutions.save(doc)
 		self.redirect("/quiz/"+quiz_id)
 		return
@@ -172,9 +184,9 @@ class QuizHandler(BaseHandler):
 	    		quizs = yield quiz_cursor.to_list(length=20) #???
 			user_quiz = yield db.solutions.find_one({"quiz_id":int (quiz_id), "userId":self.current_user})
 			flag = 0 #it mark the quiz_flag out of the QuizFlag map
-			if not user_quiz:
+			if not user_quiz and datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
 				flag = QuizFlag["UNDONE"]
-			elif user_quiz["status"] == QuizStatus["SAVE"] and not datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):#a_quiz["status"] >= QuizStatus["END"]:
+			elif (not user_quiz or user_quiz["status"] == QuizStatus["SAVE"]) and not datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):#a_quiz["status"] >= QuizStatus["END"]:
 				flag = QuizFlag["END"]
 			elif user_quiz["status"] == QuizStatus["SAVE"]:
 				flag = QuizFlag["SAVE"]

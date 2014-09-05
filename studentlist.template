@@ -36,7 +36,7 @@
                 {% elif quiz['status'] == QuizStatus['PUBLISH'] %}
                     $("td#{{quiz['quiz_id']}}").text("Quiz{{quiz['quiz_id']}}(已截止，等待批改)")
                     {% for stu in users_list %}
-                        {% if stu['quiz_info'][i]["flag"] == QuizFlag["UNDONE"] %}
+                        {% if stu['quiz_info'][i]["flag"] == QuizFlag["UNDONE"] or stu['quiz_info'][i]["flag"] == QuizFlag["END"] %}
                             $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").text("0分，无记录")
                             $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").css("color","red")
                         {% elif stu['quiz_info'][i]["flag"] == QuizFlag["SEMI_SCORED"] %}
