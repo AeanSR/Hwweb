@@ -3,6 +3,7 @@
 
 <div id="navigator">
         <ul id="menu">
+        <li><a href="/project">下载大实验报告</a></li>
         <li><a href="/studentlist">查看学生作业情况</a></li>
         {% for quizIndex in quizs_index %}
         	{% set clickEvent = "" %}
