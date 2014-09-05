@@ -10,11 +10,13 @@
 </head>
 
 <body>
+<div id="container">
+{% include "./admin_status.template" %}
 
 {% include "./review_navigator.template" %}
 
 {% include "./notices.template" %}
-    
+</div>
 </body>
 
 </html>

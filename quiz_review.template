@@ -11,6 +11,7 @@
 
 <body>
 <div id="container">
+{% include "./admin_status.template" %}
 {% include "./review_navigator.template" %}
    <div id="content">
    <div>
