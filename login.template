@@ -60,7 +60,6 @@
                     </h4>
                     <div class="clear"></div>
                 </div>
-
             </form>
         </div>
     </div>
@@ -70,6 +69,7 @@
     <!--- footer --->
     <div class="footer">
         <p>Copyright &copy; 2014.</p>
+        <p><a href="/admin">后台系统</a></p>
     </div>
 </body>
 

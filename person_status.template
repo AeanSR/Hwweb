@@ -1,3 +1,3 @@
     <div id="person_status">
-        <span >{{info['name']}} &nbsp;&nbsp;{{info['userId']}}&nbsp;&nbsp;{{info['grade']}}&nbsp;&nbsp;&nbsp;&nbsp;<a href="./exit">退出登录</a></span>
+        <span >{{info['name']}} &nbsp;&nbsp;{{info['userId']}}&nbsp;&nbsp;{{info['grade']}}&nbsp;&nbsp;&nbsp;&nbsp;<a href="/exit">退出登录</a></span>
     </div>

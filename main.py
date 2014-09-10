@@ -19,22 +19,46 @@ from HwWebUtil import ProjectStatus
 from HwWebUtil import ProjectFlag
 
 # to do, filter the text input
-
+# to do, 多选题
 
 db = motor.MotorClient('localhost', 27017).test
 
 
 class BaseHandler(tornado.web.RequestHandler):
 	online_data = {}
+
+	# admin 登录
+	def get_current_admin(self):
+		adminId = self.get_secure_cookie("adminId")
+		if adminId and self.online_data and self.online_data[adminId]:
+			return adminId
+		else:
+			return None
+
+	# admin 注销
+	def clear_current_admin(self):
+		adminId = self.get_secure_cookie("adminId")
+		if not adminId:
+			return
+		elif self.online_data and self.online_data[adminId]:
+			del self.online_data[adminId]
+		self.clear_cookie(adminId)
+
+	# 普通学生登录
 	def get_current_user(self):
 		userId = self.get_secure_cookie("userId")
-		if self.online_data and self.online_data[userId]:
+		if userId and self.online_data and self.online_data[userId]:
 			return userId
 		else:
 			return None
+
+	# 普通学生注销
 	def clear_current_user(self):
+
 		userId = self.get_secure_cookie("userId")
-		if userId and self.online_data and self.online_data[userId]:
+		if not userId:
+			return
+		elif self.online_data and self.online_data[userId]:
 			del self.online_data[userId]
 		self.clear_cookie(userId)
 
@@ -42,6 +66,11 @@ class BaseHandler(tornado.web.RequestHandler):
 	def test_user(self):
 		self.set_secure_cookie("userId", "201428013229018",domain=".ucas.com")
 		self.online_data["201428013229018"] = {'name': "李春典", 'grade':"大一",'userId':"201428013229018"}
+
+	#for test, release version needs to delete it
+	def test_admin(self):
+		self.set_secure_cookie("adminId", "lichundian")
+		self.online_data["lichundian"] = {'name': "李春典",'adminId':"lichundian"}
 
 class MainHandler(BaseHandler):
 	@tornado.web.authenticated
@@ -98,10 +127,16 @@ class QuizSaveHandler(BaseHandler):
 			ques_status = QuesStatus["UNDONE"]
 			answer = []
 			count +=1
-
-			if self.get_argument("quiz_"+quiz_id+"_"+str(count), None) :
+			tmp = self.get_argument("quiz_"+quiz_id+"_"+str(count), None)
+			# 检测选择题输入，要求必须在选项之内
+			if  tmp:
+				if a_content['type'] == QuizType['SINCHOICE']:
+					if not tmp in map(lambda x:x['value'],a_content['choices']):
+						self.write('<script>alert("答案不符合规定, 请重新提交");window.history.back()</script>')
+						self.finish()
+						return
 				ques_status = QuesStatus["DONE"]
-				answer.append(self.get_argument("quiz_"+quiz_id+"_"+str(count)))
+				answer.append(tmp)
 			solutions.append({"type":a_content["type"], "solution":answer, "score":0, "status":ques_status})
 		doc["lastTime"] = op_now.strftime("%Y-%m-%d %H:%M:%S")
 		doc["solutions"] = solutions
@@ -139,17 +174,23 @@ class QuizSubmitHandler(BaseHandler):
 			solution = []
 			score = 0
 			count +=1
+			tmp = self.get_argument("quiz_"+quiz_id+"_"+str(count), None)
+			# 检测选择题输入，要求必须在选项之内
+			if  tmp:
+				if a_content['type'] == QuizType['SINCHOICE']:
+					if not tmp in map(lambda x:x['value'],a_content['choices']):
+						self.write('<script>alert("答案不符合规定, 请重新提交");window.history.back()</script>')
+						self.finish()
+						return
 			# to do
 			# if submit , i will test whether the student had done all the questions
-			if self.get_argument("quiz_"+quiz_id+"_"+str(count), None) :
 				ques_status = QuesStatus["DONE"]
-				solution.append(self.get_argument("quiz_"+quiz_id+"_"+str(count)))
+				solution.append(tmp)
 			solutions.append({"type":a_content["type"], "solution":solution, "score":score, "status":ques_status})
 		doc["lastTime"] = op_now.strftime("%Y-%m-%d %H:%M:%S")
 		doc["solutions"] = solutions
 		doc["all_score"] = -1
 		doc["status"] = QuizStatus["SUBMIT"]
-		print "doc=", doc
 		yield db.solutions.save(doc)
 		self.redirect("/quiz/"+quiz_id)
 		return
@@ -171,9 +212,9 @@ class QuizHandler(BaseHandler):
 	    		quizs = yield quiz_cursor.to_list(length=20) #???
 			user_quiz = yield db.solutions.find_one({"quiz_id":int (quiz_id), "userId":self.current_user})
 			flag = 0 #it mark the quiz_flag out of the QuizFlag map
-			if not user_quiz:
+			if not user_quiz and datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
 				flag = QuizFlag["UNDONE"]
-			elif user_quiz["status"] == QuizStatus["SAVE"] and not datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):#a_quiz["status"] >= QuizStatus["END"]:
+			elif (not user_quiz or user_quiz["status"] == QuizStatus["SAVE"]) and not datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):#a_quiz["status"] >= QuizStatus["END"]:
 				flag = QuizFlag["END"]
 			elif user_quiz["status"] == QuizStatus["SAVE"]:
 				flag = QuizFlag["SAVE"]
@@ -208,6 +249,178 @@ class QuizHandler(BaseHandler):
 			self.render("./quiz.template", a_quiz = a_quiz, info = self.online_data[self.get_current_user()],  quizs=quizs, user_quiz=user_quiz, flag=flag)
 		return
 
+
+
+
+class UnfoundHandler(BaseHandler):
+    	def get(self):
+	 	self.render("./404.template")
+	 	return
+	def post(self):
+	 	self.render("./404.template")
+	 	return
+
+class ProjectMainHandler(BaseHandler):
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+    	def get(self):
+    		pro_cursor = db.projects.find().sort("pro_id", pymongo.ASCENDING)
+    		projects = yield pro_cursor.to_list(None)
+	 	self.render("./project.template", projects = projects, info = self.online_data[self.get_current_user()], main=1, flag=0)
+
+class ProjectHandler(BaseHandler):
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+    	def get(self, pro_id):
+    		try:
+    			pro_id = int(pro_id)
+    		except ValueError, e:
+    			print "The argument does not contain numbers\n", e
+    			self.render("./404.template")
+    			return
+    		pro_cursor = db.projects.find().sort("pro_id", pymongo.ASCENDING)
+    		projects = yield pro_cursor.to_list(None)
+    		a_pro = yield db.projects.find_one({"pro_id":pro_id, "status":ProjectStatus["PUBLISH"]})
+    		if not a_pro:
+    			self.redirect("/project")
+    			return
+    		userId = self.get_current_user()
+    		up_record = yield db.user_uploads.find_one({"pro_id": pro_id, "userId": userId})
+    		flag = 0
+    		if not up_record and not  datetime.now() < datetime.strptime(a_pro['deadline'], '%Y-%m-%d %H:%M:%S')  :
+    			flag = ProjectFlag["END"]
+    		elif not up_record:
+    			flag = ProjectFlag["UNDONE"]
+    		elif datetime.now() < datetime.strptime(a_pro['deadline'], '%Y-%m-%d %H:%M:%S') :
+    			flag = ProjectFlag["SUBMIT"]
+    		else :
+    			flag = ProjectFlag["DEAD"]
+	 	self.render("./project.template", projects = projects,a_pro=a_pro, info = self.online_data[self.get_current_user()], flag=flag, main=0, up_record=up_record)
+	 	return
+
+class ProjectUploadHandler(BaseHandler):
+
+	support_type=["application/pdf"]
+
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def post(self, pro_id):
+		try:
+    			pro_id = int(pro_id)
+    		except ValueError, e:
+    			print "The argument does not contain numbers\n", e
+    			self.render("./404.template")
+    			return
+
+    		a_pro = yield db.projects.find_one({"pro_id":pro_id,"status":ProjectStatus["PUBLISH"]})
+
+    		# 不存在此project或project已经截止
+    		if not a_pro or not datetime.now() < datetime.strptime(a_pro['deadline'], '%Y-%m-%d %H:%M:%S')  :
+    			self.redirect("/project")
+    			return
+
+    		userId = self.get_current_user()
+    		up_record = yield db.user_uploads.find_one({"pro_id":pro_id, "userId": userId})
+
+		upload_path=os.path.join(os.path.dirname(__file__),'report_files',str(pro_id))
+		# 创建目录
+		if not os.path.exists(upload_path):
+			os.makedirs(upload_path)
+
+		
+		if self.request.files.get('uploadfile', None):
+			uploadFile = self.request.files['uploadfile'][0]
+			file_size = len(uploadFile['body'])
+
+			# 检测MIME类型
+			if not uploadFile["content_type"] in self.support_type or not re.match(r'^.*\.pdf$',uploadFile['filename'] ):
+				self.write('<script>alert("仅支持pdf格式,doc/ppt需要转化为pdf格式才能上传");window.location="/project/'+ str(pro_id)+'"</script>')
+				self.finish()
+				return
+			# 检测文件大小
+			if  file_size > 10 * 1024 * 1024:
+				self.write('<script>alert("请上传10M以下");window.location="/project/'+ str(pro_id)+'"</script>')
+				self.finish()
+				return
+			else :
+				filename = userId + ".pdf"
+				filepath=os.path.join(upload_path,filename)
+				if up_record and os.path.exists(filepath):
+					os.remove(filepath)
+				else:
+					up_record = {}
+					up_record["userId"]=userId
+					up_record["pro_id"]=pro_id
+					up_record["file_suffix"]="pdf"
+				up_record["uploadTime"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+				up_record["size"] = file_size
+				with open(filepath,'wb') as up:      #有些文件需要已二进制的形式存储，实际中可以更改
+					up.write(uploadFile['body'])
+				yield db.user_uploads.save(up_record)
+		else:
+			self.write('<script>alert("请选择文件");window.history.back()</script>')
+			self.finish()
+			return
+		self.redirect('/project/'+ str(pro_id))
+		return
+
+
+# 学生可以通过指定pro_id下载其对应的报告
+class ProjectDownloadHandler(BaseHandler):
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+    	def get(self, pro_id):
+    		try:
+    			pro_id = int(pro_id)
+    		except ValueError, e:
+    			print "The argument does not contain numbers\n", e
+    			self.render("./404.template")
+    			return
+    		userId = self.get_current_user()
+    		up_record = yield db.user_uploads.find_one({"pro_id":pro_id, "userId": userId})
+    		if not up_record:
+    			self.render("./404.template")
+    			return
+    		else:
+    			upload_path=os.path.join(os.path.dirname(__file__),'report_files',str(pro_id))
+    			filename = userId + "." + up_record["file_suffix"]
+    			filepath=os.path.join(upload_path,filename)
+    			with open(filepath, "rb") as f:
+    				self.set_header('Content-Disposition', 'attachment;filename='+filename)
+    				self.set_header('Content-Type','application/pdf')
+      				self.write(f.read())
+      			self.finish()
+      			return
+
+
+
+class AdminHandler(BaseHandler):
+	
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+    	def get(self):
+    		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+    		nt_cursor = db.notices.find()
+    		notices = yield nt_cursor.to_list(None)
+    		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1, "content":1}).sort("quiz_id", pymongo.ASCENDING)
+    		quizs_index = yield quiz_cursor.to_list(None)
+
+    		# 如果存在全是客观题，状态为publish，且已过deadline的quiz，置其状态为review
+    		for a_quiz in quizs_index:
+    			if a_quiz["status"] == QuizStatus["PUBLISH"] and not datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
+    				tmp = filter(lambda x:x['type']==QuizType['ESSAYQUES'],a_quiz['content'])
+    				if not tmp:
+    					a_quiz['status'] = QuizStatus["REVIEW"]
+    					yield db.quizs.update({"quiz_id":a_quiz['quiz_id']}, {"$set":{"status":QuizStatus['REVIEW']}})
+
+	 	#self.render("./main" ,info = self.online_data[self.get_current_user()], notices = notices)
+	 	self.render("./admin.template", info = self.online_data[self.get_current_admin()],notices = notices, quizs_index=quizs_index)
 
 # admin opearation
 class QuizCreateHandler(BaseHandler):
@@ -244,12 +457,16 @@ class QuizCreateHandler(BaseHandler):
 			user_quiz["all_score"] = all_score
 			yield db.solutions.save(user_quiz)
 		self.finish()
+		return
 
 class StudentListHandler(BaseHandler):
 
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def get(self):
+		if not self.get_current_admin():
+			self.redirect("/login")
+			return
 		page = int(self.get_argument("page", 1))
 		quiz_id = int(self.get_argument("quiz_id", 0))
 		quiz_cursor = None
@@ -317,7 +534,7 @@ class StudentListHandler(BaseHandler):
 					flag = QuizFlag["FULL_SCORED"]
 				quiz_info.append({"quiz_id":a_quiz["quiz_id"], "all_score":user_quiz["all_score"], "flag":flag})
 			users_list.append({"userId":user["userId"],"name":user["name"], "quiz_info":quiz_info})
-		self.render("./studentlist.template", users_list=users_list, quizs_index=quizs_index, quizs=quizs, current_page=page,page_num=page_num,url=url)
+		self.render("./studentlist.template", info = self.online_data[self.get_current_admin()], users_list=users_list, quizs_index=quizs_index, quizs=quizs, current_page=page,page_num=page_num,url=url)
 
 
 class ReviewHandler(BaseHandler):
@@ -325,17 +542,20 @@ class ReviewHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
     	def get(self, quiz_id):
+    		if not self.get_current_admin():
+			self.redirect("/login")
+			return
     		a_quiz = yield db.quizs.find_one({"quiz_id": int(quiz_id)})
     		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1}).sort("quiz_id", pymongo.ASCENDING)
     		quizs_index = yield quiz_cursor.to_list(None)
     		if not a_quiz or a_quiz["status"] == QuizStatus["UNPUBLISH"]:
     			nt_cursor = db.notices.find()
     			notices = yield nt_cursor.to_list(None)
-    			self.render("./admin.template", notices = notices, quizs_index=quizs_index)
+    			self.render("./admin.template", info = self.online_data[self.get_current_admin()], notices = notices, quizs_index=quizs_index)
     			return
     		# can't be reviewd because it's before the deadline, so just list the questions.
     		elif datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
-    			self.render("./quiz_view.template", a_quiz=a_quiz,quizs_index=quizs_index)
+    			self.render("./quiz_view.template", info = self.online_data[self.get_current_admin()], a_quiz=a_quiz,quizs_index=quizs_index)
     			return
     		# it has been reviewd
     		elif a_quiz["status"] == QuizStatus["REVIEW"]:
@@ -366,7 +586,7 @@ class ReviewHandler(BaseHandler):
     				solu_tmp= filter(lambda x: x["type"] == QuizType["ESSAYQUES"],a_user_solu["solutions"])
     				user = yield db.users.find_one({"userId":a_user_solu["userId"]}, {"name":1, "_id":0,"userId":1})
     				users_solutions.append({"userId":user["userId"], "solutions":solu_tmp,"all_score":a_user_solu["all_score"], "name":user["name"]})
-	    		self.render("./quiz_review.template", a_quiz=a_quiz,quizs_index=quizs_index, users_solutions=users_solutions, current_page=page, page_num=page_num, url=url)
+	    		self.render("./quiz_review.template", info = self.online_data[self.get_current_admin()], a_quiz=a_quiz,quizs_index=quizs_index, users_solutions=users_solutions, current_page=page, page_num=page_num, url=url)
 	    	else:
 	    		# to do
 	    		# url = "/review/%d?reviewed=1"%a_quiz["quiz_id"]
@@ -387,6 +607,9 @@ class ReviewHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
     	def post(self, quiz_id):
+    		if not self.get_current_admin():
+			self.redirect("/login")
+			return
     		# 找出quiz_id/问答题的id/问答题分数的区域，这些都是为了检验提交分数是否对应
     		a_quiz = None
     		try:
@@ -450,7 +673,6 @@ class ReviewHandler(BaseHandler):
     		#	db.quizs.update({"quiz_id":a_quiz["quiz_id"]}, {"$set":{"status":QuizStatus["REVIEW"]}})
     		self.redirect("/review/"+quiz_id)
     		return
-
 
 
 class UnfoundHandler(BaseHandler):
@@ -703,8 +925,9 @@ class AdminHandler(BaseHandler):
 
 class LoginHandler(BaseHandler):
 	def get(self):
-		# test
+		# test 
 		self.test_user()
+		self.test_admin()
 		self.redirect("/main")
 		return
 		# delete when releasing
@@ -725,10 +948,16 @@ class LoginHandler(BaseHandler):
 		userId = self.get_argument("userId")
 		password = self.get_argument("password")
 		a_user = yield db.users.find_one({"userId":userId, "password":password})
+		a_admin = yield db.admin.find_one({"userId":userId, "password":password})
 		if a_user:
-			self.set_secure_cookie("userId", a_user['userId'])
+			self.set_secure_cookie("userId", a_user['userId'],domain=".ucas.com")
 			self.online_data[userId] = {'name': a_user['name'], 'grade':a_user['grade'],'userId':a_user['userId']}
-			self.redirect("./main")
+			self.redirect("/main")
+			return
+		elif a_admin:
+			self.set_secure_cookie("adminId", a_admin['userId'])
+			self.online_data[userId] = {'name': a_admin['name'],'adminId':a_admin['userId']}
+			self.redirect("/admin")
 			return
 		else:
 			self.render("login.template", error="用户名密码错误")
@@ -738,6 +967,7 @@ class LoginHandler(BaseHandler):
 class ExitHandler(BaseHandler):
 	def get(self):
 		self.clear_current_user()
+		self.clear_current_admin()
 		self.redirect("./login")
 		return
 
