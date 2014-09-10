@@ -9,7 +9,6 @@ import json
 import pymongo
 
 from datetime import datetime
-from apscheduler.schedulers.tornado import TornadoScheduler
 
 from HwWebUtil import HwWebUtil
 from HwWebUtil import QuizStatus
@@ -41,7 +40,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
 	#for test, release version needs to delete it
 	def test_user(self):
-		self.set_secure_cookie("userId", "201428013229018")
+		self.set_secure_cookie("userId", "201428013229018",domain=".ucas.com")
 		self.online_data["201428013229018"] = {'name': "李春典", 'grade':"大一",'userId':"201428013229018"}
 
 class MainHandler(BaseHandler):
@@ -73,7 +72,7 @@ class QuizSaveHandler(BaseHandler):
 	@tornado.web.authenticated
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
-	
+
 	def post(self, quiz_id):
 		a_quiz = yield db.quizs.find_one({"quiz_id": int(quiz_id)})
 		user_quiz = yield db.solutions.find_one({"quiz_id":int (quiz_id), "userId":self.current_user})
@@ -182,9 +181,9 @@ class QuizHandler(BaseHandler):
 				flag = QuizFlag["SUB_NOTSCORED"]
 			# note: solution在SUBMIT后，若quiz已经截止，则可以查看到客观题分数
 			elif user_quiz["status"] == QuizStatus["SUBMIT"]:
-				#initial value of all_score is -1, all_score == -1 means it hasn't ever been calculated 
+				#initial value of all_score is -1, all_score == -1 means it hasn't ever been calculated
 				if user_quiz["all_score"] == -1 :
-					all_score = 0 
+					all_score = 0
 					cnt = 0
 					for a_content in a_quiz["content"]:
 						score = 0
@@ -196,13 +195,13 @@ class QuizHandler(BaseHandler):
 					user_quiz["all_score"] = all_score
 					# 如果全部为选择题，不仅进行自动打分操作，而且设置solu为REVIEW，flag为QuizFlag["FULL_SCORED"]
 					if not essayQueses:
-						user_quiz['status'] = QuizStatus["REVIEW"] 
+						user_quiz['status'] = QuizStatus["REVIEW"]
 					yield db.solutions.save(user_quiz)
 				if not essayQueses:
-					flag = QuizFlag["FULL_SCORED"]	
+					flag = QuizFlag["FULL_SCORED"]
 				else:
 					flag = QuizFlag["SEMI_SCORED"]
-			# user_quiz["status"] == QuizStatus["REVIEW"] 
+			# user_quiz["status"] == QuizStatus["REVIEW"]
 			else:
 				flag = QuizFlag["FULL_SCORED"]
 
@@ -212,7 +211,7 @@ class QuizHandler(BaseHandler):
 
 # admin opearation
 class QuizCreateHandler(BaseHandler):
-	
+
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self, quiz_id):
@@ -233,7 +232,7 @@ class QuizCreateHandler(BaseHandler):
 		cursor = yield db.solutions.find({"quiz_id":doc["quiz_id"], "status":QuizStatus["SUBMIT"]})
 		user_quizs = cursor.to_list("length=1000")
 		for user_quiz in user_quizs:
-			all_score = 0 
+			all_score = 0
 			cnt = 0
 			for a_content in doc["content"]:
 				score = 0
@@ -247,7 +246,7 @@ class QuizCreateHandler(BaseHandler):
 		self.finish()
 
 class StudentListHandler(BaseHandler):
-	
+
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def get(self):
@@ -293,9 +292,9 @@ class StudentListHandler(BaseHandler):
 				elif user_quiz["status"] == QuizStatus["SUBMIT"] and datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
 					flag = QuizFlag["SUB_NOTSCORED"]
 				elif user_quiz["status"] == QuizStatus["SUBMIT"]:
-					# all_score == -1 means it hasn't ever been calculated 
+					# all_score == -1 means it hasn't ever been calculated
 					if user_quiz["all_score"] == -1 :
-						all_score = 0 
+						all_score = 0
 						cnt = 0
 						for a_content in a_quiz["content"]:
 							score = 0
@@ -306,11 +305,11 @@ class StudentListHandler(BaseHandler):
 							cnt += 1
 						# 如果全部为选择题，不仅进行自动打分操作，而且设置solu为REVIEW，flag为QuizFlag["FULL_SCORED"]
 						if not essayQueses:
-							user_quiz['status'] = QuizStatus["REVIEW"] 
+							user_quiz['status'] = QuizStatus["REVIEW"]
 						user_quiz["all_score"] = all_score
 						yield db.solutions.save(user_quiz)
 					if not essayQueses:
-						flag = QuizFlag["FULL_SCORED"]	
+						flag = QuizFlag["FULL_SCORED"]
 					else:
 						flag = QuizFlag["SEMI_SCORED"]
 				# user_quiz["status"] == QuizStatus["REVIEW"] 即可
@@ -322,7 +321,7 @@ class StudentListHandler(BaseHandler):
 
 
 class ReviewHandler(BaseHandler):
-	
+
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
     	def get(self, quiz_id):
@@ -338,7 +337,7 @@ class ReviewHandler(BaseHandler):
     		elif datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
     			self.render("./quiz_view.template", a_quiz=a_quiz,quizs_index=quizs_index)
     			return
-    		# it has been reviewd 
+    		# it has been reviewd
     		elif a_quiz["status"] == QuizStatus["REVIEW"]:
     			self.redirect("/studentlist?quiz_id=" + quiz_id)
     			return
@@ -384,7 +383,7 @@ class ReviewHandler(BaseHandler):
     			#	users_solutions.append({"userId":user["userId"], "solutions":solu_tmp,"all_score":a_user_solu["all_score"], "name":user["name"]})
 	    		#	self.render("./quiz_review.template", a_quiz=a_quiz,quizs_index=quizs_index, users_solutions=users_solutions, current_page=page, page_num=page_num, url="/review/%d?"%a_quiz["quiz_id"])
 	    		return
-	 	
+
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
     	def post(self, quiz_id):
@@ -451,7 +450,7 @@ class ReviewHandler(BaseHandler):
     		#	db.quizs.update({"quiz_id":a_quiz["quiz_id"]}, {"$set":{"status":QuizStatus["REVIEW"]}})
     		self.redirect("/review/"+quiz_id)
     		return
-    		
+
 
 
 class UnfoundHandler(BaseHandler):
@@ -461,24 +460,6 @@ class UnfoundHandler(BaseHandler):
 	def post(self):
 	 	self.render("./404.template")
 	 	return
-
-class LoginHandler(BaseHandler):
-	def get(self):
-		# test 
-		#self.test_user()
-		#self.redirect("/main")
-		#return
-		# delete when releasing
-
-		userId = self.get_secure_cookie("userId")
-		if userId:
-			if self.online_data and self.online_data[userId]:
-				self.redirect("/main")
-				return
-			else:
-				self.clear_cookie("userId")
-		self.render("./login.template", error="")
-		return
 
 
 class ProjectMainHandler(BaseHandler):
@@ -551,7 +532,7 @@ class ProjectUploadHandler(BaseHandler):
 		if not os.path.exists(upload_path):
 			os.makedirs(upload_path)
 
-		
+
 		if self.request.files.get('uploadfile', None):
 			uploadFile = self.request.files['uploadfile'][0]
 			file_size = len(uploadFile['body'])
@@ -617,6 +598,86 @@ class ProjectDownloadHandler(BaseHandler):
       			self.finish()
       			return
 
+class APIGetHandler(BaseHandler):
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def post(self):
+		self.set_header('Access-Control-Allow-Origin','http://project1.ucas.com')
+		self.set_header('Access-Control-Allow-Credentials','true')
+		try:
+			gameId = int(self.get_argument("gameId", 1))
+		except:
+			return
+		userId = self.get_current_user()
+		if gameId not in [1,2,3]:
+			return
+		record = yield db.games.find_one({"gameId":gameId, "userId": userId})
+		if not record:
+			record = {"userId":userId,
+				"gameId":gameId,
+				"curLoop":0,
+				"scores":{},
+				"bestScore":"None",
+				"histories":{}}
+			yield db.games.save(record)
+		self.write(json.dumps({"userId":userId,
+			"curLoop":record["curLoop"],
+			"name":self.online_data[userId]["name"],
+			"bestScore":record["bestScore"]}))
+		self.finish()
+		return
+
+class APIPutHandler(BaseHandler):
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def post(self):
+		self.set_header('Access-Control-Allow-Origin','http://project1.ucas.com')
+		self.set_header('Access-Control-Allow-Credentials','true')
+		try:
+			gameId = int(self.get_argument("gameId", 1))
+			gameLoop = int(self.get_argument("gameLoop", 1))
+			gameScore = int(self.get_argument("gameScore", 1))
+			gameHist = json.loads(self.get_argument("gameHist", 1))
+		except:
+			return
+		print gameId,gameLoop,gameScore,gameHist
+		userId = self.get_current_user()
+		record = yield db.games.find_one({"gameId":gameId, 
+			"userId": userId})
+		if gameId not in [1,2,3]:
+			return
+		#if gameId is 1:
+		if True:
+			if not record:
+				record = {"userId":userId,
+					"gameId":gameId,
+					"curLoop":0,
+					"scores":{},
+					"bestScore":"None",
+					"histories":{}}
+			if gameLoop!=record["curLoop"] or gameLoop>2:
+				return
+			if record["bestScore"] == "None":
+				if gameScore>0:
+					record["bestScore"] = gameScore
+			else:
+				if gameScore>0 and gameScore < record["bestScore"]:
+					record["bestScore"] = gameScore
+			if gameScore>0:
+				gameScore != len(gameHist['results'])
+				return
+			record["scores"][str(gameLoop)] = gameScore
+			record["histories"][str(gameLoop)] = gameHist
+			record["curLoop"] = gameLoop + 1
+
+		else:
+			return
+		yield db.games.save(record)
+		self.write('true')
+		self.finish()
+		return
 
 
 class AdminHandler(BaseHandler):
@@ -642,10 +703,10 @@ class AdminHandler(BaseHandler):
 
 class LoginHandler(BaseHandler):
 	def get(self):
-		# test 
-		#self.test_user()
-		#self.redirect("/main")
-		#return
+		# test
+		self.test_user()
+		self.redirect("/main")
+		return
 		# delete when releasing
 
 		userId = self.get_secure_cookie("userId")
@@ -657,7 +718,7 @@ class LoginHandler(BaseHandler):
 				self.clear_cookie("userId")
 		self.render("./login.template", error="")
 		return
-	
+
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
@@ -700,7 +761,9 @@ application = tornado.web.Application([
     (r"/project", ProjectMainHandler),
     (r"/project/([0-9]+)/upload", ProjectUploadHandler),
     (r"/project/([0-9]+)/download", ProjectDownloadHandler),
-    (r"/project/([0-9]+)", ProjectHandler)
+    (r"/project/([0-9]+)", ProjectHandler),
+    (r"/api/getinfo",APIGetHandler),
+    (r"/api/putinfo",APIPutHandler)
     #(r"/*", UnfoundHandler)
     ],**settings )
 #scheduler = TornadoScheduler()
