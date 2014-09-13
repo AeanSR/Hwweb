@@ -47,9 +47,9 @@
                         $("span#all_score").text("(客观题得分: {{user_quiz['all_score']}})")
                         {% for i in range(len(user_quiz["solutions"])) %}
                             {% if user_quiz['solutions'][i]["type"] != QuizType["ESSAYQUES"] %}
-                                $("td#answer_{{i+1}}").text("标准答案：{% raw ",".join(a_quiz['content'][i]['answer']) %}，得分：{{user_quiz['solutions'][i]['score']}}");
+                                $("td#answer_{{i+1}}").text("标准答案：{% raw ",".join(a_quiz['content'][i]['answer']) %}(得分：{{user_quiz['solutions'][i]['score']}})");
                             {% else %}
-                                $("td#answer_{{i+1}}").text("标准答案：{% raw ",".join(a_quiz['content'][i]['answer']) %}，得分：还未批改");
+                                $("td#answer_{{i+1}}").text("标准答案：{% raw ",".join(a_quiz['content'][i]['answer']) %}(得分：还未批改)");
                             {% end %}
                         {% end %}
                     {% end %}
@@ -81,7 +81,7 @@
             <table  border="0" cellpadding="0" cellspacing="5">
                 <tr>
                     <td height="15">
-                        <div id="quiz_title">{{a_quiz["title"]}}</div>
+                        <div id="quiz_title">Quiz{{a_quiz["quiz_id"]}}:{{a_quiz["title"]}}</div>
                         <div id="quiz_time">发布日期：{{  a_quiz['releaseTime'] }} &nbsp;&nbsp;截止日期：{{  a_quiz['deadline']  }}</div>
                         <div id="warn" color="red"></div>
                     </td>

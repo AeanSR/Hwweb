@@ -33,13 +33,3 @@ class HwWebUtil:
 			return False
 		else:
 			return True
-
-	@staticmethod
-	def quartz(db, scheduler, a_quiz):
-    		print('Tick! The time is: %s' % datetime.now())
-
-	@staticmethod
-	@tornado.web.asynchronous
-	@tornado.gen.coroutine
-	def review():
-    		pass

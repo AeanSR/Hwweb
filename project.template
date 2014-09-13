@@ -34,7 +34,7 @@
 <div id="content">
 	<span id="warn"></span>
 <table border=1>
-	<tr><td>标题</td><td>{{a_pro["title"]}}</td></tr>
+	<tr><td>标题</td><td>实验{{a_pro["pro_id"]}}:{{a_pro["title"]}}</td></tr>
 	<tr><td>开始日期</td><td>{{a_pro["releaseTime"]}}</td></tr>
 	<tr><td>截止日期</td><td>{{a_pro["deadline"]}}</td></tr>
 </table>

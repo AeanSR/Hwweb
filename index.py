@@ -20,6 +20,8 @@ from HwWebUtil import ProjectFlag
 
 # to do, filter the text input
 # to do, 多选题
+# to do, admin打包下载报告
+# to do, admin上传题目
 
 db = motor.MotorClient('localhost', 27017).test
 
@@ -30,7 +32,7 @@ class BaseHandler(tornado.web.RequestHandler):
 	# admin 登录
 	def get_current_admin(self):
 		adminId = self.get_secure_cookie("adminId")
-		if adminId and self.online_data and self.online_data[adminId]:
+		if adminId and self.online_data and adminId in self.online_data.keys():
 			return adminId
 		else:
 			return None
@@ -40,14 +42,14 @@ class BaseHandler(tornado.web.RequestHandler):
 		adminId = self.get_secure_cookie("adminId")
 		if not adminId:
 			return
-		elif self.online_data and self.online_data[adminId]:
+		elif self.online_data and adminId in self.online_data.keys():
 			del self.online_data[adminId]
 		self.clear_cookie(adminId)
 
 	# 普通学生登录
 	def get_current_user(self):
 		userId = self.get_secure_cookie("userId")
-		if userId and self.online_data and self.online_data[userId]:
+		if userId and self.online_data and userId in self.online_data.keys():
 			return userId
 		else:
 			return None
@@ -58,13 +60,14 @@ class BaseHandler(tornado.web.RequestHandler):
 		userId = self.get_secure_cookie("userId")
 		if not userId:
 			return
-		elif self.online_data and self.online_data[userId]:
+		elif self.online_data and userId in self.online_data.keys():
 			del self.online_data[userId]
 		self.clear_cookie(userId)
 
 	#for test, release version needs to delete it
 	def test_user(self):
-		self.set_secure_cookie("userId", "201428013229018",domain=".ucas.com")
+		self.set_secure_cookie("userId", "201428013229018", domain=".ucas-2014.tk")
+		#self.set_secure_cookie("userId", "201428013229018")
 		self.online_data["201428013229018"] = {'name': "李春典", 'grade':"大一",'userId':"201428013229018"}
 
 	#for test, release version needs to delete it
@@ -428,6 +431,9 @@ class QuizCreateHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self, quiz_id):
+		if not self.get_current_admin():
+			self.redirect("/login")
+			return
 		## except quiz_id, releaseTime, status, all other parameters are needed
 		doc = self.get_argument("quiz_json")
 		cursor = yield db.quizs.find({},{"_id":0, "quiz_id":1}).sort("quiz_id", pymongo.ASCENDING)
@@ -901,44 +907,29 @@ class APIPutHandler(BaseHandler):
 		self.finish()
 		return
 
-
-class AdminHandler(BaseHandler):
-	@tornado.web.authenticated
-	@tornado.web.asynchronous
-	@tornado.gen.coroutine
-    	def get(self):
-    		nt_cursor = db.notices.find()
-    		notices = yield nt_cursor.to_list(None)
-    		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1, "content":1}).sort("quiz_id", pymongo.ASCENDING)
-    		quizs_index = yield quiz_cursor.to_list(None)
-
-    		# 如果存在全是客观题，状态为publish，且已过deadline的quiz，置其状态为review
-    		for a_quiz in quizs_index:
-    			if a_quiz["status"] == QuizStatus["PUBLISH"] and not datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
-    				tmp = filter(lambda x:x['type']==QuizType['ESSAYQUES'],a_quiz['content'])
-    				if not tmp:
-    					a_quiz['status'] = QuizStatus["REVIEW"]
-    					yield db.quizs.update({"quiz_id":a_quiz['quiz_id']}, {"$set":{"status":QuizStatus['REVIEW']}})
-
-	 	#self.render("./main" ,info = self.online_data[self.get_current_user()], notices = notices)
-	 	self.render("./admin.template", notices = notices, quizs_index=quizs_index)
-
 class LoginHandler(BaseHandler):
 	def get(self):
 		# test 
-		self.test_user()
-		self.test_admin()
-		self.redirect("/main")
-		return
+		#self.test_user()
+		#self.test_admin()
+		#self.redirect("/main")
+		#return
 		# delete when releasing
 
 		userId = self.get_secure_cookie("userId")
 		if userId:
-			if self.online_data and self.online_data[userId]:
+			if self.online_data and userId in self.online_data.keys():
 				self.redirect("/main")
 				return
 			else:
 				self.clear_cookie("userId")
+		adminId = self.get_secure_cookie("adminId")
+		if adminId:
+			if self.online_data and adminId in self.online_data.keys():
+				self.redirect("/admin")
+				return
+			else:
+				self.clear_cookie("adminId")
 		self.render("./login.template", error="")
 		return
 
@@ -950,7 +941,8 @@ class LoginHandler(BaseHandler):
 		a_user = yield db.users.find_one({"userId":userId, "password":password})
 		a_admin = yield db.admin.find_one({"userId":userId, "password":password})
 		if a_user:
-			self.set_secure_cookie("userId", a_user['userId'],domain=".ucas.com")
+			self.set_secure_cookie("userId", a_user['userId'],domain=".ucas-2014.tk")
+			#self.set_secure_cookie("userId", a_user['userId'])
 			self.online_data[userId] = {'name': a_user['name'], 'grade':a_user['grade'],'userId':a_user['userId']}
 			self.redirect("/main")
 			return
@@ -996,8 +988,8 @@ application = tornado.web.Application([
     (r"/api/putinfo",APIPutHandler)
     #(r"/*", UnfoundHandler)
     ],**settings )
-#scheduler = TornadoScheduler()
-#scheduler.add_jobstore('mongodb', collection='quiz_semi_review')
+
+
 
 if __name__ == "__main__":
 	application.listen(8888)

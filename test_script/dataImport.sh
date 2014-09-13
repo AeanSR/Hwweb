@@ -20,6 +20,3 @@
 
 #导入projects到test数据库
 #mongoimport -h localhost --port 27017 -d test -c projects --jsonArray --file projects.mongo
-
-#导入user_uploads到test数据库
-#mongoimport -h localhost --port 27017 -d test -c user_uploads--jsonArray --file user_uploads.mongo
