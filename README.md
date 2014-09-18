@@ -1,5 +1,5 @@
-#How to deploy and run the project !
-===================================================
+##How to deploy and run the project !
+==============================
 ###### Author: Andrew Lee
 ###### Contact: [lichundian@gmail.com](mailto:lichundian@gmail.com)
 ==========================
@@ -15,10 +15,15 @@ dbpath=/var/data/mongodb
 fork=true
 
  - start the mongo server
->$mongod -f mongodb.conf
+> $sudo mongod -f mongodb.conf
+
+ - add the mongod service into the system
+> $sudo vim /etc/rc.d/rc.local
+add $MONGO_HOME/bin/mongod -f $MONGO_HOME/mongod.conf
+
 2. pip (pip is python package manager, you should install python 2.7 firstly)
  - install pip through the command below
-> curl -O https://bootstrap.pypa.io/get-pip.py
+> curl -O [https://bootstrap.pypa.io/get-pip.py](https://bootstrap.pypa.io/get-pip.py)
 python get-pip.py
 3. tornado, motor
  - install the 3-party python requirements

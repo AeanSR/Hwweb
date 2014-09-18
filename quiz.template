@@ -7,11 +7,7 @@
 {% from HwWebUtil import QuizType %}
 <head>
     <title>{{a_quiz["title"]}}</title>
-    <link href="/static/css/mystyle.css" rel="stylesheet" type="text/css" media="all" />
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-    <meta name="keywords" content="计算机导论,作业题,国科大,本科生,计算所" />
-    <meta name="Description" content="国科大本科生计算机导论作业" />
-    <script type="text/javascript" src="/static/js/jquery.min.js"></script>
+{% include "./htmlhead.template" %}
     <script>
         $(document).ready(function(c) {
             $("input#save").click(function(e){
@@ -24,7 +20,7 @@
                     {% set count = count + 1 %}
                     {% if a_solution['solution'] %}  
                         {% if a_solution["type"] == 1 %}
-                            $("input#{{count}}_{{a_solution['solution'][0]}}").attr("checked", "checked");
+                        $("input#{{count}}_{{a_solution['solution'][0]}}").attr("checked", "checked");
                         {% elif a_solution["type"] == 2 %}
                             {% for a_ans in a_solution["solution"] %}
                                 $("input#{{count}}_{{a_ans}}").attr("checked", "checked");
@@ -36,27 +32,27 @@
                 {% end %}
                 {% if flag != QuizFlag["SAVE"]
                  %}
-                    $("input").attr("disabled","disabled");
-                    $("textarea").attr("disabled", "disabled");
+                    $("form#quiz_form input").button({ disabled: true });
+                    $("form#quiz_form textarea").attr("disabled", "disabled");
                     {% if flag == QuizFlag["FULL_SCORED"] %}
                         $("span#all_score").text("(总得分: {{user_quiz['all_score']}})")
                         {% for i in range(len(user_quiz["solutions"])) %}
-                            $("td#answer_{{i}}").text("标准答案：{% raw ",".join(a_quiz['content'][i]['answer']) %}，得分：{{user_quiz['solutions'][i]['score']}}");
+                            $("#answer_{{i+1}}").text("标准答案：{% raw ",".join(a_quiz['content'][i]['answer']) %}(得分：{{user_quiz['solutions'][i]['score']}})");
                         {% end %}
                     {%elif flag == QuizFlag["SEMI_SCORED"] %}
                         $("span#all_score").text("(客观题得分: {{user_quiz['all_score']}})")
                         {% for i in range(len(user_quiz["solutions"])) %}
                             {% if user_quiz['solutions'][i]["type"] != QuizType["ESSAYQUES"] %}
-                                $("td#answer_{{i+1}}").text("标准答案：{% raw ",".join(a_quiz['content'][i]['answer']) %}(得分：{{user_quiz['solutions'][i]['score']}})");
+                                $("#answer_{{i+1}}").text("标准答案：{% raw ",".join(a_quiz['content'][i]['answer']) %}(得分：{{user_quiz['solutions'][i]['score']}})");
                             {% else %}
-                                $("td#answer_{{i+1}}").text("标准答案：{% raw ",".join(a_quiz['content'][i]['answer']) %}(得分：还未批改)");
+                                $("#answer_{{i+1}}").text("标准答案：{% raw ",".join(a_quiz['content'][i]['answer']) %}(得分：还未批改)");
                             {% end %}
                         {% end %}
                     {% end %}
                 {% end %}
             {% elif flag == QuizFlag["END"] %}
-                $("input").attr("disabled","disabled");
-                $("textarea").attr("disabled", "disabled");
+                $("form#quiz_form input").button({ disabled: true });
+                $("form#quiz_form textarea").attr("disabled", "disabled");
                 $("span#all_score").text("截至日期前没有提交作业(总得分: 0),无法查看标准答案")
                 $("span#all_score").css({"color":"red"})
             {% else %}
@@ -76,83 +72,47 @@
 {% include "./navigator.template" %}
 
 <div id="content">
-        <form method="post" action="/quiz/{{ a_quiz['quiz_id'] }}/submit">
-            <input name="ques_count" value="{{len(a_quiz['content'])}}" hidden/>
-            <table  border="0" cellpadding="0" cellspacing="5">
-                <tr>
-                    <td height="15">
-                        <div id="quiz_title">Quiz{{a_quiz["quiz_id"]}}:{{a_quiz["title"]}}</div>
-                        <div id="quiz_time">发布日期：{{  a_quiz['releaseTime'] }} &nbsp;&nbsp;截止日期：{{  a_quiz['deadline']  }}</div>
-                        <div id="warn" color="red"></div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <div  style="font-size: 13px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 作业题分为单选题和问答题，选择题每一题2分，问答题每一题10分，总分100分。<span id="all_score"></span>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-            <div style="width:100%;">
+        <form id="quiz_form" method="post" action="/quiz/{{ a_quiz['quiz_id'] }}/submit">
+            <div id="quiz_info">
+                <div id="quiz_title"><h4>Quiz{{a_quiz["quiz_id"]}}&nbsp;&nbsp;{{a_quiz["title"]}}</h4></div>
+                <div id="release_time" class="time">发布日期：{{  a_quiz['releaseTime'] }}</div>
+                <div id="deadline" style="color:green" class="time">截止日期：{{  a_quiz['deadline']  }}</div>
+                <div id="warn"  style="color:red" class="warn"></div>
+
+                <div  id="quiz_description">作业概述：{{a_quiz["description"]}}<span id="all_score"></span></div>
+            </div>
+            <div id="quiz_content">
                 {% set count = 0 %}
                 {% for a_ques in a_quiz["content"] %} 
                 {% set count = count+1 %}
                     {% if a_ques["type"]  != QuizType["ESSAYQUES"] %}
-                <table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
-                    <tbody>
-                        <tr align="left">
-                            <td height="25" class="hot">{{count}}.&nbsp;{{ escape(a_ques["head"]) }}</td>
-                        </tr>
-                        <tr align="left">
-                            <td height="25">
-                                <div align="left">
-                                    <table cellspacing="0" cellpadding="0">
-                                        {% for a_choice in a_ques["choices"] %} 
-                                        <tr valign="top">
-                                            <td align="left" height="22">
-                                                <input id="{{count}}_{{ escape(a_choice['value']) }}" name="quiz_{{a_quiz['quiz_id']}}_{{count}}" type="radio" value="{{ escape(a_choice['value']) }}" onclick="" />
-                                                <span style="cursor: pointer;" onclick=""> {{ escape(a_choice["value"]) }}.&nbsp;{{ escape(a_choice["text"]) }}</span>
-                                            </td>
-                                        </tr>
-                                        {% end %}
-                                    </table>
-                                </div>
-                                <div align="left"></div>
-                            </td>
-                        </tr>
-                        <tr align="left">
-                            <td height="15" id="answer_{{count}}"></td>
-                        </tr>
-                    </tbody>
-                </table>
+                        <div class="quiz_choices"><p>{{count}}.&nbsp;{{ escape(a_ques["head"]) }}</p>
+                            {% for a_choice in a_ques["choices"] %} 
+                                    <input id="{{count}}_{{ escape(a_choice['value']) }}" name="quiz_{{a_quiz['quiz_id']}}_{{count}}" type="radio" value="{{ escape(a_choice['value']) }}" />
+                                    <label for="{{count}}_{{ escape(a_choice['value']) }}"> {{ escape(a_choice["value"]) }}.&nbsp;{{ escape(a_choice["text"]) }}</label>
+                            {% end %}
+                            <p height="15" id="answer_{{count}}"></p>
+                        </div>
                     {% else %}
-                <table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
-                    <tbody>
-                        <tr align="left">
-                            <td height="25" class="hot">{{count}}.&nbsp;{{ escape(a_ques["head"]) }}</td>
-                        </tr>
-                        <tr align="left">
-                            <td height="25">
-                                <div align="left">
-                                    <textarea id="{{count}}_Text" name="quiz_{{a_quiz['quiz_id']}}_{{count}}"></textarea>
-                                </div>
-                                <div align="left"></div>
-                            </td>
-                        </tr>
-                        <tr align="left">
-                            <td height="15" id="answer_{{count}}"></td>
-                        </tr>
-                    </tbody>
-                </table>
+                        <div class="quiz_essay"><p>{{count}}.&nbsp;{{ escape(a_ques["head"]) }}</p>
+                            <textarea id="{{count}}_Text" name="quiz_{{a_quiz['quiz_id']}}_{{count}}"></textarea>
+                            <p height="15" id="answer_{{count}}"></p>
+                        </div>
                     {% end %}
                 {% end %}
-                <input id="save" type="submit" name="save" value="save"  />
-                <input id="submit" type="submit" name="submit" value="submit" />
+                <input id="save" type="submit" name="save" value="暂存作业"  />
+                <input id="submit" type="submit" name="submit" value="提交作业" />
             </div>
         </form>
     </div>
     
 </body>
-
+<script>
+  $(function() {
+    $( "#save").button()
+    $( "#submit").button()
+    $( ".quiz_choices").buttonset();
+  });
+  </script>
 </html>
 

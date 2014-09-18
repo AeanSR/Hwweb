@@ -1,5 +1,5 @@
-[{name:"李春典", grade:"大一", username:"lichundian",password:"123456", userId:"201428013229018"},
-{name:"朝鲁", grade:"大一", username:"chaolu", password:"123456", userId:"201428013229011"},
-{name:"梁帆", grade:"大一", username:"liangfan", password:"123456", userId:"201428013229014"},
-{name:"冯琛", grade:"大一", username:"fengchen", password:"123456", userId:"201428013229013"},
+[{name:"李春典", grade:"大一", username:"lichundian",password:"e10adc3949ba59abbe56e057f20f883e", userId:"201428013229018", "group":1},
+{name:"朝鲁", grade:"大一", username:"chaolu", password:"e10adc3949ba59abbe56e057f20f883e", userId:"201428013229011","group":1},
+{name:"梁帆", grade:"大一", username:"liangfan", password:"e10adc3949ba59abbe56e057f20f883e", userId:"201428013229014","group":2},
+{name:"冯琛", grade:"大一", username:"fengchen", password:"e10adc3949ba59abbe56e057f20f883e", userId:"201428013229013", "group":2},
 ]

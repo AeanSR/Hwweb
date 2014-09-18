@@ -1,9 +1,12 @@
+body {
+	background-color: rgb(174, 174, 180);
+}
 html, body,#container {
 	margin: 0;
 	padding: 0;
 	height: 100%;
 }
-# container {
+#container {
 	height: auto;
 	min-height:100%;
 }
@@ -11,34 +14,32 @@ html, body,#container {
 #person_status {
 	position:absolute;
 	top:10px;
+	left: 220px;
 	right: 10px;
 	height: 40px;
-	width: 400px;
 	margin: 0;
-	padding: 0;
-	border: solid 1px #0e0;
+	padding-right: 20px;
 	text-align: right;
 }
 
-#navigator{
+
+.navigator{
 	position:absolute;
 	left:10px;
-	border: solid 1px #0e0;
 	margin: 0;
 	padding: 0;
 	width: 200px;
 	height: 100%;
 	background: transparent;
 }
+
  #content {
  	position:relative;
  	min-height:70%;
  	left:220px;
  	top: 70px;
  	margin: 0;
- 	padding: 0;
-	padding-bottom: -5em; 
-	border: solid 1px #0e0;
+ 	padding: 0 0 0 20px;
 	width: 1000px;
 	background: transparent;
  }
@@ -54,4 +55,34 @@ html, body,#container {
 	margin-top: 5em;
 	background: transparent;
 	clear:both;
+}
+
+.time {
+	font-size: 15px;
+	font-style: italic;
+	margin:0.5em 0 0.5em 0;
+}
+
+.warn {
+	font-size: 20px;
+	font-weight:bold;
+	margin:0.5em 0 0.5em 0;
+}
+
+#quiz_description{
+	font-size: 18px;
+}
+
+.notice_content, .brief, .detail {
+	margin-top: 30px;
+}
+
+.brief {
+	margin-top: 10px;
+	font-style: italic;
+}
+
+.detail {
+	margin-top: 10px;
+	padding-left: 10px;
 }

@@ -1,5 +1,5 @@
-[{"creator": "李春典", "description":"请按时提交作业","time":"2013-08-22 11:13:05", "content":"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX请小明及时提交作业", "importance":"high"},
-{"creator": "梁帆", "description":"请按时查看文档", "time" :"2013-08-22 11:13:05", "content":"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX请小明及时提交作业", "importance":"medium"},
-{"creator": "冯琛", "description":"请按时提交作业", "time" : "2013-08-22 11:13:05", "content":"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX请小明及时提交作业", "importance":"low"},
-{"creator": "朝鲁", "description":"请按时提交作业", "time" : "2013-08-22 11:13:05", "content":"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX请小明及时提交作业", "importance":"high"},
+[{"id":1, "creator": "李春典", "description":"第一次作业已发布","time":"2013-08-22 11:13:05", "content":"第一次作业以发布，请同学们在截至期内按时提交作业", "importance":"red"},
+{"id":2, "creator": "梁帆", "description":"图灵机的报告开始提交", "time" :"2013-08-24 11:13:05", "content":"第一次大实验的报告请及时提交", "importance":"black"},
+{"id":3, "creator": "冯琛", "description":"提交作业的重要提醒", "time" : "2013-08-26 11:13:05", "content":"在截止日可以保存作业并修改，但只有提交作业后才会进行修改，截止期前若未提交，作业作废。所以请同学们在截止日前准时提交作业", "importance":"blue"},
+{"id":4, "creator": "朝鲁", "description":"第二次作业已发布", "time" : "2013-09-17 18:00:00", "content":"第二次作业以发布，请同学们在截至期内按时提交作业", "importance":"red"},
 ]

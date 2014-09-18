@@ -6,23 +6,20 @@
 
 <head>
     <title>大实验报告提交</title>
-    <link href="/static/css/mystyle.css" rel="stylesheet" type="text/css" media="all" />
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-    <meta name="keywords" content="计算机导论,作业题,国科大,本科生,计算所" />
-    <meta name="Description" content="国科大本科生计算机导论作业" />
-    <script type="text/javascript" src="/static/js/jquery.min.js"></script>
+{% include "./htmlhead.template" %}
      <script>
         $(document).ready(function(c) {
             {% if flag==ProjectFlag['END'] %}
-            	$("span#warn").text("报告上交的截止日期已过。您不能再提交报告了。")
-            	$("input").attr("disabled","disabled")
+            	$("span#warn").text("截止日期已过，您没有按时提交报告。")
+            	$("form#upload_form input").attr("disabled","disabled")
             {% elif flag==ProjectFlag['SUBMIT'] %}
-            	$("div#history").html('<p>最近一次修改时间：{{up_record['uploadTime']}}</p><p><a href="/project/{{a_pro['pro_id']}}/download">{{up_record['userId']}}.{{up_record['file_suffix']}}</a><p><p>可以重新上传以覆盖</p>')
+            	$("div#history").html('<p>最近一次修改时间：{{up_record['uploadTime']}}</p><p><a href="/project/{{a_pro['pro_id']}}/download">{{up_record['userId']}}.{{up_record['file_suffix']}}</a></p><p>可以重新上传以覆盖</p>')
             {% elif flag==ProjectFlag['DEAD'] %}
-            	$("div#history").html('<p>最近一次修改时间：{{up_record['uploadTime']}}</p><p><a href="/project/{{a_pro['pro_id']}}/download">{{up_record['userId']}}.{{up_record['file_suffix']}}</a><p><p>可以重新上传以覆盖</p>')
-            	$("input").attr("disabled","disabled")
+            	$("div#history").html('<p>最近一次修改时间：{{up_record['uploadTime']}}</p><p><a href="/project/{{a_pro['pro_id']}}/download">{{up_record['userId']}}.{{up_record['file_suffix']}}</a></p><p>截止日期已过，无法重新上传</p>')
+            	$("form#upload_form input").attr("disabled","disabled")
             {% else %}
             {% end %}
+            $("form#upload_form input").button()
         });
         </script>
 </head>
@@ -39,9 +36,9 @@
 	<tr><td>截止日期</td><td>{{a_pro["deadline"]}}</td></tr>
 </table>
 <div>
-	<span>报告提交</span>
+	<span>提交报告&nbsp; 备注：上传后文件名将会以学号命名</span>
 	<div>
-	<form action="/project/{{a_pro['pro_id']}}/upload" method="post" enctype="multipart/form-data">
+	<form id="upload_form" action="/project/{{a_pro['pro_id']}}/upload" method="post" enctype="multipart/form-data">
 		<div id="history"></div>
 		<input type="file" name="uploadfile" />
 		<input type="submit" value="上传"/>

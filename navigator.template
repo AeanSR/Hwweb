@@ -1,8 +1,15 @@
 {% from datetime import datetime %}
 {% from HwWebUtil import QuizStatus %}
+<script>
+  $(function() {
+    $( "#quiz_menu" ).menu();
+    $( "#project_menu" ).menu();
+  });
+  </script>
 
-<div id="navigator">
-        <ul id="menu">
+<div id="navigator" class="navigator">
+<h3>作业列表</h3>
+        <ul id="quiz_menu" class="ui-menu">
         {% for quizIndex in quizs %}
         	{% set clickEvent = "" %}
        	{% if quizIndex['status']  == QuizStatus["UNPUBLISH"] %} 
@@ -23,8 +30,9 @@
             	&nbsp; </a>
             </li>
         {% end %}
-        </ul>
-        <ul>
+        </ul >
+
+        <ul id="project_menu" class="ui-menu">
         <li><a href="/project">提交大实验报告入口</a></li>
 
         </ul>

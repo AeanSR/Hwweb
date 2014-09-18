@@ -19,7 +19,7 @@ solutionsCreate(){
 
 usersCreate(){
     file=$1_users.mongo
-    strLeft='{name:"李春典", grade:"大一", username:"lichundian",password:"123456", userId:"'
+    strLeft='{name:"李春典", grade:"大一", username:"lichundian",password:"e10adc3949ba59abbe56e057f20f883e", "group":3, userId:"'
     strRight='"}'
     echo "[" | tee $file
     for i in `seq $2 $3`; do

@@ -1,7 +1,13 @@
 {% from datetime import datetime %}
 {% from HwWebUtil import QuizStatus %}
 
-<div id="navigator">
+<script>
+  $(function() {
+    $( "#menu" ).menu();
+  });
+  </script>
+
+<div id="navigator" class="navigator">
 <h3>后台管理</h3>
         <ul id="menu">
         <li><a href="/project">下载大实验报告</a></li>

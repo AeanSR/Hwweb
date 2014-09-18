@@ -7,6 +7,7 @@ import tornado.web
 import motor
 import json
 import pymongo
+import md5
 
 from datetime import datetime
 
@@ -64,6 +65,46 @@ class BaseHandler(tornado.web.RequestHandler):
 			del self.online_data[userId]
 		self.clear_cookie(userId)
 
+	def write_error(self, status_code, **kwargs):  
+		self.write("You caused a %d error." % status_code)
+		if "exc_info" in kwargs.keys():
+			print kwargs["exc_info"]
+		self.flush()
+
+	# 如果存在全是客观题，状态为publish，且已过deadline的quiz，置其状态为review
+	# 所有有Quiz状态信息的都要首先调用这个函数
+	# 针对Quiz状态
+	@tornado.gen.coroutine
+	def checkQuizAndUpdateStatus(self):
+		quiz_cursor = db.quizs.find()
+		quizs = yield quiz_cursor.to_list(None)
+    		for a_quiz in quizs:
+    			if a_quiz["status"] == QuizStatus["PUBLISH"] and not datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
+    				tmp = filter(lambda x:x['type']==QuizType['ESSAYQUES'],a_quiz['content'])
+    				if not tmp:
+    					a_quiz['status'] = QuizStatus["REVIEW"]
+    					yield db.quizs.update({"quiz_id":a_quiz['quiz_id']}, {"$set":{"status":QuizStatus['REVIEW']}})
+
+    	# 将每道客观题的分数和客观提总分保存到数据库
+    	# 针对solution的选择题分数和客观题总分
+    	@tornado.gen.coroutine
+    	def reviewSelectionQues(self, user_quiz, a_quiz, essayQueses):
+    		if user_quiz["all_score"] == -1 :
+					all_score = 0
+					cnt = 0
+					for a_content in a_quiz["content"]:
+						score = 0
+						if a_content["type"] != QuizType["ESSAYQUES"] and set(a_content["answer"])  == set(user_quiz["solutions"][cnt]["solution"]) :
+							score = a_content["score"]
+							all_score += a_content["score"]
+						user_quiz["solutions"][cnt]["score"] = score
+						cnt += 1
+					user_quiz["all_score"] = all_score
+					# 如果全部为选择题，不仅进行自动打分操作，而且设置solu为REVIEW，flag为QuizFlag["FULL_SCORED"]
+					if not essayQueses:
+						user_quiz['status'] = QuizStatus["REVIEW"]
+					yield db.solutions.save(user_quiz)
+
 	#for test, release version needs to delete it
 	def test_user(self):
 		self.set_secure_cookie("userId", "201428013229018", domain=".ucas-2014.tk")
@@ -80,25 +121,13 @@ class MainHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
     	def get(self):
-    		nt_cursor = db.notices.find()
-    		# to_list (length ?)
+    		self.checkQuizAndUpdateStatus()
+
+    		nt_cursor = db.notices.find().sort("id", pymongo.DESCENDING)
     		notices = yield nt_cursor.to_list(None)
     		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1, "content":1}).sort("quiz_id", pymongo.ASCENDING)
     		quizs = yield quiz_cursor.to_list(None)
-
-    		# 如果存在全是客观题，状态为publish，且已过deadline的quiz，置其状态为review
-    		for a_quiz in quizs:
-    			if a_quiz["status"] == QuizStatus["PUBLISH"] and not datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
-    				tmp = filter(lambda x:x['type']==QuizType['ESSAYQUES'],a_quiz['content'])
-    				if not tmp:
-    					a_quiz['status'] = QuizStatus["REVIEW"]
-    					yield db.quizs.update({"quiz_id":a_quiz['quiz_id']}, {"$set":{"status":QuizStatus['REVIEW']}})
-
-	 	#self.render("./main" ,info = self.online_data[self.get_current_user()], notices = notices)
 	 	self.render("./main.template" ,info = self.online_data[self.get_current_user()], notices = notices, quizs=quizs)
-
-
-
 
 class QuizSaveHandler(BaseHandler):
 	@tornado.web.authenticated
@@ -106,6 +135,7 @@ class QuizSaveHandler(BaseHandler):
 	@tornado.gen.coroutine
 
 	def post(self, quiz_id):
+
 		a_quiz = yield db.quizs.find_one({"quiz_id": int(quiz_id)})
 		user_quiz = yield db.solutions.find_one({"quiz_id":int (quiz_id), "userId":self.current_user})
 		op_now = datetime.now()
@@ -140,12 +170,11 @@ class QuizSaveHandler(BaseHandler):
 						return
 				ques_status = QuesStatus["DONE"]
 				answer.append(tmp)
-			solutions.append({"type":a_content["type"], "solution":answer, "score":0, "status":ques_status})
+			solutions.append({"type":a_content["type"], "solution":answer, "score":0, "status":ques_status, "id":a_content["id"]})
 		doc["lastTime"] = op_now.strftime("%Y-%m-%d %H:%M:%S")
 		doc["solutions"] = solutions
 		doc["all_score"] = -1
 		doc["status"] = QuizStatus["SAVE"]
-		print "doc=", doc
 		yield db.solutions.save(doc)
 		self.redirect("/quiz/"+quiz_id)
 
@@ -154,6 +183,7 @@ class QuizSubmitHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self, quiz_id):
+
 		a_quiz = yield db.quizs.find_one({"quiz_id": int(quiz_id)})
 		user_quiz = yield db.solutions.find_one({"quiz_id":int (quiz_id), "userId":self.current_user})
 		op_now = datetime.now()
@@ -189,7 +219,7 @@ class QuizSubmitHandler(BaseHandler):
 			# if submit , i will test whether the student had done all the questions
 				ques_status = QuesStatus["DONE"]
 				solution.append(tmp)
-			solutions.append({"type":a_content["type"], "solution":solution, "score":score, "status":ques_status})
+			solutions.append({"type":a_content["type"], "solution":solution, "score":score, "status":ques_status, "id":a_content["id"]})
 		doc["lastTime"] = op_now.strftime("%Y-%m-%d %H:%M:%S")
 		doc["solutions"] = solutions
 		doc["all_score"] = -1
@@ -203,6 +233,8 @@ class QuizHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def get(self, quiz_id):
+		self.checkQuizAndUpdateStatus()
+
 		a_quiz = yield db.quizs.find_one({"quiz_id": int(quiz_id)})
 		if not a_quiz  or a_quiz["status"] == QuizStatus["UNPUBLISH"]:
 			self.redirect("/main")
@@ -226,21 +258,7 @@ class QuizHandler(BaseHandler):
 			# note: solution在SUBMIT后，若quiz已经截止，则可以查看到客观题分数
 			elif user_quiz["status"] == QuizStatus["SUBMIT"]:
 				#initial value of all_score is -1, all_score == -1 means it hasn't ever been calculated
-				if user_quiz["all_score"] == -1 :
-					all_score = 0
-					cnt = 0
-					for a_content in a_quiz["content"]:
-						score = 0
-						if a_content["type"] != QuizType["ESSAYQUES"] and set(a_content["answer"])  == set(user_quiz["solutions"][cnt]["solution"]) :
-							score = a_content["score"]
-							all_score += a_content["score"]
-						user_quiz["solutions"][cnt]["score"] = score
-						cnt += 1
-					user_quiz["all_score"] = all_score
-					# 如果全部为选择题，不仅进行自动打分操作，而且设置solu为REVIEW，flag为QuizFlag["FULL_SCORED"]
-					if not essayQueses:
-						user_quiz['status'] = QuizStatus["REVIEW"]
-					yield db.solutions.save(user_quiz)
+				self.reviewSelectionQues(user_quiz=user_quiz, a_quiz=a_quiz, essayQueses=essayQueses)
 				if not essayQueses:
 					flag = QuizFlag["FULL_SCORED"]
 				else:
@@ -251,17 +269,6 @@ class QuizHandler(BaseHandler):
 
 			self.render("./quiz.template", a_quiz = a_quiz, info = self.online_data[self.get_current_user()],  quizs=quizs, user_quiz=user_quiz, flag=flag)
 		return
-
-
-
-
-class UnfoundHandler(BaseHandler):
-    	def get(self):
-	 	self.render("./404.template")
-	 	return
-	def post(self):
-	 	self.render("./404.template")
-	 	return
 
 class ProjectMainHandler(BaseHandler):
 	@tornado.web.authenticated
@@ -409,18 +416,13 @@ class AdminHandler(BaseHandler):
     		if not self.get_current_admin():
 			self.redirect("/login")
 			return
-    		nt_cursor = db.notices.find()
+
+		self.checkQuizAndUpdateStatus()
+    		nt_cursor = db.notices.find().sort("id", pymongo.DESCENDING)
     		notices = yield nt_cursor.to_list(None)
     		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1, "content":1}).sort("quiz_id", pymongo.ASCENDING)
     		quizs_index = yield quiz_cursor.to_list(None)
 
-    		# 如果存在全是客观题，状态为publish，且已过deadline的quiz，置其状态为review
-    		for a_quiz in quizs_index:
-    			if a_quiz["status"] == QuizStatus["PUBLISH"] and not datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
-    				tmp = filter(lambda x:x['type']==QuizType['ESSAYQUES'],a_quiz['content'])
-    				if not tmp:
-    					a_quiz['status'] = QuizStatus["REVIEW"]
-    					yield db.quizs.update({"quiz_id":a_quiz['quiz_id']}, {"$set":{"status":QuizStatus['REVIEW']}})
 
 	 	#self.render("./main" ,info = self.online_data[self.get_current_user()], notices = notices)
 	 	self.render("./admin.template", info = self.online_data[self.get_current_admin()],notices = notices, quizs_index=quizs_index)
@@ -473,6 +475,7 @@ class StudentListHandler(BaseHandler):
 		if not self.get_current_admin():
 			self.redirect("/login")
 			return
+		self.checkQuizAndUpdateStatus()
 		page = int(self.get_argument("page", 1))
 		quiz_id = int(self.get_argument("quiz_id", 0))
 		quiz_cursor = None
@@ -516,21 +519,9 @@ class StudentListHandler(BaseHandler):
 					flag = QuizFlag["SUB_NOTSCORED"]
 				elif user_quiz["status"] == QuizStatus["SUBMIT"]:
 					# all_score == -1 means it hasn't ever been calculated
-					if user_quiz["all_score"] == -1 :
-						all_score = 0
-						cnt = 0
-						for a_content in a_quiz["content"]:
-							score = 0
-							if a_content["type"] != QuizType["ESSAYQUES"] and set(a_content["answer"])  == set(user_quiz["solutions"][cnt]["solution"]) :
-								score = a_content["score"]
-								all_score += a_content["score"]
-							user_quiz["solutions"][cnt]["score"] = score
-							cnt += 1
-						# 如果全部为选择题，不仅进行自动打分操作，而且设置solu为REVIEW，flag为QuizFlag["FULL_SCORED"]
-						if not essayQueses:
-							user_quiz['status'] = QuizStatus["REVIEW"]
-						user_quiz["all_score"] = all_score
-						yield db.solutions.save(user_quiz)
+
+					self.reviewSelectionQues(user_quiz=user_quiz, a_quiz=a_quiz, essayQueses=essayQueses)
+					
 					if not essayQueses:
 						flag = QuizFlag["FULL_SCORED"]
 					else:
@@ -551,11 +542,12 @@ class ReviewHandler(BaseHandler):
     		if not self.get_current_admin():
 			self.redirect("/login")
 			return
+		self.checkQuizAndUpdateStatus()
     		a_quiz = yield db.quizs.find_one({"quiz_id": int(quiz_id)})
     		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1}).sort("quiz_id", pymongo.ASCENDING)
     		quizs_index = yield quiz_cursor.to_list(None)
     		if not a_quiz or a_quiz["status"] == QuizStatus["UNPUBLISH"]:
-    			nt_cursor = db.notices.find()
+    			nt_cursor = db.notices.find().sort("id", pymongo.DESCENDING)
     			notices = yield nt_cursor.to_list(None)
     			self.render("./admin.template", info = self.online_data[self.get_current_admin()], notices = notices, quizs_index=quizs_index)
     			return
@@ -572,26 +564,32 @@ class ReviewHandler(BaseHandler):
     		reviewed = int(self.get_argument("reviewed", 0))
     		page = int(self.get_argument("page", 1))
 		# 筛选出问答题
-    		a_quiz["content"] = filter(lambda x:x["type"]==QuizType["ESSAYQUES"], a_quiz["content"])
-    		# 如果没有问答题，则显示没有问答题，不用评分
+    		essayQueses = filter(lambda x:x["type"]==QuizType["ESSAYQUES"], a_quiz["content"])
+    		
+    		
 
     		if reviewed == 0:
-    			if not a_quiz["content"]:
+    			# 如果没有问答题，则显示没有问答题，不用评分
+    			if not essayQueses:
     				self.write('<script>alert("没有问答题，不用评分");window.location="/studentlist?quiz_id='+str(a_quiz["quiz_id"])+'"</script>')
     				self.finish()
     				return
     			url = "/review/%d?"%a_quiz["quiz_id"]
     			users_solutions=[]
     			# 从数据库中选出没有review的solution，分页为30个一页
-    			solutions_cursor = db.solutions.find({"quiz_id":a_quiz["quiz_id"], "status":QuizStatus["SUBMIT"]}, {"solutions" : 1 , "all_score":1, "userId":1} ).sort("userId", pymongo.ASCENDING).skip((page-1) * 30)
+    			solutions_cursor = db.solutions.find({"quiz_id":a_quiz["quiz_id"], "status":QuizStatus["SUBMIT"]}).sort("userId", pymongo.ASCENDING).skip((page-1) * 30)
     			cnt = yield solutions_cursor.count()
     			page_num = (cnt-1)/30 + 1
     			solutions = yield solutions_cursor.to_list(length=30)
     			# 也是只筛选出问答题的solution
     			for a_user_solu in solutions:
     				solu_tmp= filter(lambda x: x["type"] == QuizType["ESSAYQUES"],a_user_solu["solutions"])
+
+    				self.reviewSelectionQues(user_quiz=a_user_solu, a_quiz=a_quiz, essayQueses=essayQueses)
     				user = yield db.users.find_one({"userId":a_user_solu["userId"]}, {"name":1, "_id":0,"userId":1})
     				users_solutions.append({"userId":user["userId"], "solutions":solu_tmp,"all_score":a_user_solu["all_score"], "name":user["name"]})
+    			# 将content只保存问答题
+    			a_quiz["content"] = essayQueses
 	    		self.render("./quiz_review.template", info = self.online_data[self.get_current_admin()], a_quiz=a_quiz,quizs_index=quizs_index, users_solutions=users_solutions, current_page=page, page_num=page_num, url=url)
 	    	else:
 	    		# to do
@@ -670,7 +668,7 @@ class ReviewHandler(BaseHandler):
     					# 更新每一个问答题的分数
     					yield db.solutions.update({"userId":item[0],"quiz_id":a_quiz["quiz_id"],"status":QuizStatus["SUBMIT"]}, {"$set":{"solutions."+str(id-1)+".score":item[1][id] }})
     				# 更新solution的状态和总分
-    				yield db.solutions.update({"userId":item[0],"quiz_id":a_quiz["quiz_id"],"status":QuizStatus["SUBMIT"]},{"$set":{"status":QuizStatus["REVIEW"] }, "$inc":{"all_socre": sum} } )
+    				yield db.solutions.update({"userId":item[0],"quiz_id":a_quiz["quiz_id"],"status":QuizStatus["SUBMIT"]},{"$set":{"status":QuizStatus["REVIEW"] }, "$inc":{"all_score": sum} } )
 
     		# to do 如果将所有solution都REVIEW了，置quiz的status为REVIEW状态
     		# solutions_cursor = db.solutions.find({"quiz_id":a_quiz["quiz_id"], "status":QuizStatus["SUBMIT"]})
@@ -938,8 +936,8 @@ class LoginHandler(BaseHandler):
 	def post(self):
 		userId = self.get_argument("userId")
 		password = self.get_argument("password")
-		a_user = yield db.users.find_one({"userId":userId, "password":password})
-		a_admin = yield db.admin.find_one({"userId":userId, "password":password})
+		a_user = yield db.users.find_one({"userId":userId, "password":md5.new(password).hexdigest()})
+		a_admin = yield db.admin.find_one({"userId":userId, "password":md5.new(password).hexdigest()})
 		if a_user:
 			self.set_secure_cookie("userId", a_user['userId'],domain=".ucas-2014.tk")
 			#self.set_secure_cookie("userId", a_user['userId'])
@@ -955,6 +953,32 @@ class LoginHandler(BaseHandler):
 			self.render("login.template", error="用户名密码错误")
 		return
 
+class PasswordHandler(BaseHandler):
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def post(self):
+		regEx = r'^([0-9a-zA-Z]){6,15}$'
+		userId = self.get_current_user()
+		origin_pass = self.get_argument("origin_pass")
+		new_pass = self.get_argument("new_pass")
+		new_pass_again = self.get_argument("new_pass_again")
+		if userId:
+			a_user = yield db.users.find_one({"userId":userId, "password":md5.new(origin_pass).hexdigest()})
+			if a_user and new_pass==new_pass_again and re.match(regEx, new_pass):
+				a_user["password"] = md5.new(new_pass).hexdigest()
+				yield db.users.save(a_user)
+		self.redirect("/main")
+		return
+
+class UnfoundHandler(BaseHandler):
+    	def get(self):
+	 	self.render("./404.template")
+	 	return
+	def post(self):
+	 	self.render("./404.template")
+	 	return
+
 
 class ExitHandler(BaseHandler):
 	def get(self):
@@ -964,6 +988,8 @@ class ExitHandler(BaseHandler):
 		return
 
 settings = {
+	#"debug": True,
+	"default_handler_class": UnfoundHandler,
 	"static_path": os.path.join(os.path.dirname(__file__), "static"),
 	"cookie_secret": "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
  	"login_url": "/login",
@@ -974,6 +1000,7 @@ application = tornado.web.Application([
     (r"/login", LoginHandler),
     (r"/main", MainHandler),
     (r"/exit", ExitHandler),
+    (r"/password", PasswordHandler),
     (r"/quiz/([0-9]+)/submit", QuizSubmitHandler),
     (r"/quiz/([0-9]+)/save", QuizSaveHandler),
     (r"/quiz/([0-9]+)", QuizHandler),
@@ -986,13 +1013,11 @@ application = tornado.web.Application([
     (r"/project/([0-9]+)", ProjectHandler),
     (r"/api/getinfo",APIGetHandler),
     (r"/api/putinfo",APIPutHandler)
-    #(r"/*", UnfoundHandler)
     ],**settings )
 
 
 
 if __name__ == "__main__":
 	application.listen(8888)
-	#scheduler.start()
 	print "The http server has been started!"
 	tornado.ioloop.IOLoop.instance().start()

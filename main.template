@@ -3,10 +3,7 @@
 
 <head>
     <title>计算机导论 作业系统</title>
-    <link href="/static/css/mystyle.css" rel="stylesheet" type="text/css" media="all" />
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-    <meta name="keywords" content="计算机导论,作业题,国科大,本科生,计算所" />
-    <meta name="Description" content="国科大本科生计算机导论作业" />
+{% include "./htmlhead.template" %}
 </head>
 
 <body>

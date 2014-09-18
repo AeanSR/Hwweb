@@ -1,9 +1,15 @@
 <div id="content">
 
-<ul>
+<h3>最新通知</h3>
 {% for notice in notices %}
-<li> {{ escape(notice['description']) }} </li>
+<div class="notice_content">
+	<div class="brief">
+	<span style="color:{{notice['importance']}}"> [{{ escape(notice['description']) }}] </span><span>通知时间&nbsp;{{notice['time']}}&nbsp;通知人&nbsp{{ escape(notice['creator']) }}</span>
+	</div>
+	<div class="detail">{{ escape(notice['content']) }}</div>
+
+</div>
 {% end %}
-</ul>
+
 
 </div>

@@ -7,12 +7,7 @@
 {% from HwWebUtil import QuizType %}
 <head>
     <title>学生作业情况列表</title>
-    <link href="/static/css/mystyle.css" rel="stylesheet" type="text/css" media="all" />
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-    <meta name="keywords" content="计算机导论,作业题,国科大,本科生,计算所" />
-    <meta name="Description" content="国科大本科生计算机导论作业" />
-
-    <script type="text/javascript" src="/static/js/jquery.min.js"></script>
+{% include "./htmlhead.template" %}
     <script>
         $(document).ready(function(c) {
             {% set i = 0 %}
