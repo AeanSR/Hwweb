@@ -968,6 +968,10 @@ class PasswordHandler(BaseHandler):
 			if a_user and new_pass==new_pass_again and re.match(regEx, new_pass):
 				a_user["password"] = hashlib.md5(new_pass).hexdigest()
 				yield db.users.save(a_user)
+			else:
+				self.write('<script>alert("原密码或新密码错误");;window.history.back()</script>')
+				self.finish()
+				return
 		self.redirect("/main")
 		return
 
