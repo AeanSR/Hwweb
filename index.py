@@ -7,7 +7,7 @@ import tornado.web
 import motor
 import json
 import pymongo
-import md5
+import hashlib
 
 from datetime import datetime
 
@@ -65,7 +65,7 @@ class BaseHandler(tornado.web.RequestHandler):
 			del self.online_data[userId]
 		self.clear_cookie(userId)
 
-	def write_error(self, status_code, **kwargs):  
+	def write_error(self, status_code, **kwargs):
 		self.write("You caused a %d error." % status_code)
 		if "exc_info" in kwargs.keys():
 			print kwargs["exc_info"]
@@ -340,7 +340,7 @@ class ProjectUploadHandler(BaseHandler):
 		if not os.path.exists(upload_path):
 			os.makedirs(upload_path)
 
-		
+
 		if self.request.files.get('uploadfile', None):
 			uploadFile = self.request.files['uploadfile'][0]
 			file_size = len(uploadFile['body'])
@@ -409,7 +409,7 @@ class ProjectDownloadHandler(BaseHandler):
 
 
 class AdminHandler(BaseHandler):
-	
+
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
     	def get(self):
@@ -521,7 +521,7 @@ class StudentListHandler(BaseHandler):
 					# all_score == -1 means it hasn't ever been calculated
 
 					self.reviewSelectionQues(user_quiz=user_quiz, a_quiz=a_quiz, essayQueses=essayQueses)
-					
+
 					if not essayQueses:
 						flag = QuizFlag["FULL_SCORED"]
 					else:
@@ -565,8 +565,8 @@ class ReviewHandler(BaseHandler):
     		page = int(self.get_argument("page", 1))
 		# 筛选出问答题
     		essayQueses = filter(lambda x:x["type"]==QuizType["ESSAYQUES"], a_quiz["content"])
-    		
-    		
+
+
 
     		if reviewed == 0:
     			# 如果没有问答题，则显示没有问答题，不用评分
@@ -829,7 +829,7 @@ class APIGetHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://project1.ucas.com')
+		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		try:
 			gameId = int(self.get_argument("gameId", 1))
@@ -859,7 +859,7 @@ class APIPutHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://project1.ucas.com')
+		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		try:
 			gameId = int(self.get_argument("gameId", 1))
@@ -870,7 +870,7 @@ class APIPutHandler(BaseHandler):
 			return
 		print gameId,gameLoop,gameScore,gameHist
 		userId = self.get_current_user()
-		record = yield db.games.find_one({"gameId":gameId, 
+		record = yield db.games.find_one({"gameId":gameId,
 			"userId": userId})
 		if gameId not in [1,2,3]:
 			return
@@ -907,7 +907,7 @@ class APIPutHandler(BaseHandler):
 
 class LoginHandler(BaseHandler):
 	def get(self):
-		# test 
+		# test
 		#self.test_user()
 		#self.test_admin()
 		#self.redirect("/main")
@@ -936,8 +936,8 @@ class LoginHandler(BaseHandler):
 	def post(self):
 		userId = self.get_argument("userId")
 		password = self.get_argument("password")
-		a_user = yield db.users.find_one({"userId":userId, "password":md5.new(password).hexdigest()})
-		a_admin = yield db.admin.find_one({"userId":userId, "password":md5.new(password).hexdigest()})
+		a_user = yield db.users.find_one({"userId":userId, "password":hashlib.md5(password).hexdigest()})
+		a_admin = yield db.admin.find_one({"userId":userId, "password":hashlib.md5(password).hexdigest()})
 		if a_user:
 			self.set_secure_cookie("userId", a_user['userId'],domain=".ucas-2014.tk")
 			#self.set_secure_cookie("userId", a_user['userId'])
@@ -964,9 +964,9 @@ class PasswordHandler(BaseHandler):
 		new_pass = self.get_argument("new_pass")
 		new_pass_again = self.get_argument("new_pass_again")
 		if userId:
-			a_user = yield db.users.find_one({"userId":userId, "password":md5.new(origin_pass).hexdigest()})
+			a_user = yield db.users.find_one({"userId":userId, "password":hashlib.md5(origin_pass).hexdigest()})
 			if a_user and new_pass==new_pass_again and re.match(regEx, new_pass):
-				a_user["password"] = md5.new(new_pass).hexdigest()
+				a_user["password"] = hashlib.md5(new_pass).hexdigest()
 				yield db.users.save(a_user)
 		self.redirect("/main")
 		return
@@ -1018,6 +1018,6 @@ application = tornado.web.Application([
 
 
 if __name__ == "__main__":
-	application.listen(8888)
+	application.listen(80)
 	print "The http server has been started!"
 	tornado.ioloop.IOLoop.instance().start()
