@@ -6,10 +6,13 @@ import tornado.ioloop
 import tornado.web
 import motor
 import json
-import pymongo
+
 import hashlib
 
+import pymongo
+
 from datetime import datetime
+from datetime import timedelta
 
 from HwWebUtil import HwWebUtil
 from HwWebUtil import QuizStatus
@@ -25,7 +28,8 @@ from HwWebUtil import ProjectFlag
 # to do, admin上传题目
 
 db = motor.MotorClient('localhost', 27017).test
-
+domain = ".ucas-2014.tk"
+expires_days = 7
 
 class BaseHandler(tornado.web.RequestHandler):
 	online_data = {}
@@ -45,7 +49,7 @@ class BaseHandler(tornado.web.RequestHandler):
 			return
 		elif self.online_data and adminId in self.online_data.keys():
 			del self.online_data[adminId]
-		self.clear_cookie(adminId)
+		self.clear_cookie("adminId")
 
 	# 普通学生登录
 	def get_current_user(self):
@@ -63,7 +67,7 @@ class BaseHandler(tornado.web.RequestHandler):
 			return
 		elif self.online_data and userId in self.online_data.keys():
 			del self.online_data[userId]
-		self.clear_cookie(userId)
+		self.clear_cookie("userId", domain=domain)
 
 	def write_error(self, status_code, **kwargs):
 		self.write("You caused a %d error." % status_code)
@@ -107,13 +111,13 @@ class BaseHandler(tornado.web.RequestHandler):
 
 	#for test, release version needs to delete it
 	def test_user(self):
-		self.set_secure_cookie("userId", "201428013229018", domain=".ucas-2014.tk")
+		self.set_secure_cookie("userId", "201428013229018", domain=domain, expires_days=expires_days)
 		#self.set_secure_cookie("userId", "201428013229018")
 		self.online_data["201428013229018"] = {'name': "李春典", 'grade':"大一",'userId':"201428013229018"}
 
 	#for test, release version needs to delete it
 	def test_admin(self):
-		self.set_secure_cookie("adminId", "lichundian")
+		self.set_secure_cookie("adminId", "lichundian", expires_days=expires_days)
 		self.online_data["lichundian"] = {'name': "李春典",'adminId':"lichundian"}
 
 class MainHandler(BaseHandler):
@@ -920,7 +924,7 @@ class LoginHandler(BaseHandler):
 				self.redirect("/main")
 				return
 			else:
-				self.clear_cookie("userId")
+				self.clear_cookie("userId", domain=domain)
 		adminId = self.get_secure_cookie("adminId")
 		if adminId:
 			if self.online_data and adminId in self.online_data.keys():
@@ -939,18 +943,18 @@ class LoginHandler(BaseHandler):
 		a_user = yield db.users.find_one({"userId":userId, "password":hashlib.md5(password).hexdigest()})
 		a_admin = yield db.admin.find_one({"userId":userId, "password":hashlib.md5(password).hexdigest()})
 		if a_user:
-			self.set_secure_cookie("userId", a_user['userId'],domain=".ucas-2014.tk")
+			self.set_secure_cookie("userId", a_user['userId'],domain=domain, expires_days=expires_days)
 			#self.set_secure_cookie("userId", a_user['userId'])
-			self.online_data[userId] = {'name': a_user['name'], 'grade':a_user['grade'],'userId':a_user['userId']}
+			self.online_data[userId] = {'name': a_user['name'], 'grade':a_user['grade'],'userId':a_user['userId'], "loginTime":datetime.now()}
 			self.redirect("/main")
 			return
 		elif a_admin:
-			self.set_secure_cookie("adminId", a_admin['userId'])
-			self.online_data[userId] = {'name': a_admin['name'],'adminId':a_admin['userId']}
+			self.set_secure_cookie("adminId", a_admin['userId'], expires_days=expires_days)
+			self.online_data[userId] = {'name': a_admin['name'],'adminId':a_admin['userId'], "loginTime":datetime.now()}
 			self.redirect("/admin")
 			return
 		else:
-			self.render("login.template", error="用户名密码错误")
+			self.render("login.template", error="用户名或密码错误")
 		return
 
 class PasswordHandler(BaseHandler):
@@ -976,9 +980,12 @@ class PasswordHandler(BaseHandler):
 		return
 
 class UnfoundHandler(BaseHandler):
+	@tornado.web.authenticated
     	def get(self):
 	 	self.render("./404.template")
 	 	return
+
+	@tornado.web.authenticated
 	def post(self):
 	 	self.render("./404.template")
 	 	return
@@ -1020,8 +1027,26 @@ application = tornado.web.Application([
     ],**settings )
 
 
+# 每隔30秒进行在线用户过滤， 过期时间设置为10分钟。由于打作业时间较长，暂不提供这个功能
+def filterOnlineData():
+	od = BaseHandler.online_data
+	now = datetime.now()
+	for key in od.keys():
+		if  (now - od[key]["loginTime"]) > timedelta(minutes=20):
+			del od[key]
+	tornado.ioloop.IOLoop.instance().add_timeout(
+            		timedelta(seconds=30),
+            		lambda: filterOnlineData
+       	)
+
+
 
 if __name__ == "__main__":
-	application.listen(80)
+	#application.listen(80)
+	application.listen(8888)
 	print "The http server has been started!"
+	#tornado.ioloop.IOLoop.instance().add_timeout(
+            	#	timedelta(seconds=5),
+            	#	lambda: filterOnlineData
+       	#)
 	tornado.ioloop.IOLoop.instance().start()

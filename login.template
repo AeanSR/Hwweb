@@ -25,7 +25,7 @@
                 </li>
                 <div class="clear"></div>
                 <li>
-                    <input type="password" name="password"  onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'Password';}">
+                    <input type="password" name="password"  onfocus="this.value = '';" onblur="if (this.value == '') {this.value = '';}">
                     <span href="#" class="icon lock"></span>
                 </li>
                 <div class="clear"></div>
