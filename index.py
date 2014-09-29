@@ -840,7 +840,7 @@ class APIGetHandler(BaseHandler):
 		except:
 			return
 		userId = self.get_current_user()
-		if gameId not in [1,2,3]:
+		if gameId not in [1,2,3,4]:
 			return
 		record = yield db.games.find_one({"gameId":gameId, "userId": userId})
 		if not record:
@@ -876,10 +876,10 @@ class APIPutHandler(BaseHandler):
 		userId = self.get_current_user()
 		record = yield db.games.find_one({"gameId":gameId,
 			"userId": userId})
-		if gameId not in [1,2,3]:
+		if gameId not in [1,2,3,4]:
 			return
 		#if gameId is 1:
-		if True:
+		if gameId in [1,2,3,4]:
 			if not record:
 				record = {"userId":userId,
 					"gameId":gameId,
@@ -893,8 +893,10 @@ class APIPutHandler(BaseHandler):
 				if gameScore>0:
 					record["bestScore"] = gameScore
 			else:
-				if gameScore>0 and gameScore < record["bestScore"]:
+				if gameScore>0 and gameScore < record["bestScore"] and gameId in [1,2,3]:
 					record["bestScore"] = gameScore
+				if gameScore>0 and gameId in [4]:
+					record["bestScore"]  = (record["bestScore"]  + gameScore) / 5
 			if gameScore>0:
 				gameScore != len(gameHist['results'])
 				return
