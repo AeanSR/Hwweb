@@ -26,7 +26,7 @@
                                 $("input#{{count}}_{{a_ans}}").attr("checked", "checked");
                             {% end %}
                         {% else %}
-                            $("textarea#{{count}}_Text").val("{% raw a_solution['solution'][0] %}");
+                            $("textarea#{{count}}_Text").val(unescapeHtml("{{a_solution['solution'][0]}}"));
                         {% end %}
                     {% end %}
                 {% end %}
@@ -37,15 +37,17 @@
                     {% if flag == QuizFlag["FULL_SCORED"] %}
                         $("span#all_score").text("(总得分: {{user_quiz['all_score']}})")
                         {% for i in range(len(user_quiz["solutions"])) %}
-                            $("#answer_{{i+1}}").text("标准答案：{% raw ",".join(a_quiz['content'][i]['answer']) %}(得分：{{user_quiz['solutions'][i]['score']}})");
+                            var tmp = unescapeHtml("{{','.join(a_quiz['content'][i]['answer']) }}")
+                            $("#answer_{{i+1}}").text("标准答案：" + tmp + "(得分：{{user_quiz['solutions'][i]['score']}})");
                         {% end %}
                     {%elif flag == QuizFlag["SEMI_SCORED"] %}
                         $("span#all_score").text("(客观题得分: {{user_quiz['all_score']}})")
                         {% for i in range(len(user_quiz["solutions"])) %}
                             {% if user_quiz['solutions'][i]["type"] != QuizType["ESSAYQUES"] %}
-                                $("#answer_{{i+1}}").text("标准答案：{% raw ",".join(a_quiz['content'][i]['answer']) %}(得分：{{user_quiz['solutions'][i]['score']}})");
+                                $("#answer_{{i+1}}").text("标准答案：{{",".join(a_quiz['content'][i]['answer']) }}(得分：{{user_quiz['solutions'][i]['score']}})");
                             {% else %}
-                                $("#answer_{{i+1}}").text("标准答案：{% raw ",".join(a_quiz['content'][i]['answer']) %}(得分：还未批改)");
+                                var tmp = unescapeHtml("{{','.join(a_quiz['content'][i]['answer']) }}")
+                                $("#answer_{{i+1}}").text("标准答案：" + tmp + "(得分：还未批改)");
                             {% end %}
                         {% end %}
                     {% end %}
@@ -86,15 +88,15 @@
                 {% for a_ques in a_quiz["content"] %} 
                 {% set count = count+1 %}
                     {% if a_ques["type"]  != QuizType["ESSAYQUES"] %}
-                        <div class="quiz_choices"><p>{{count}}.&nbsp;{{ escape(a_ques["head"]) }}</p>
+                        <div class="quiz_choices"><p>{{count}}.&nbsp;{{ a_ques["head"] }}</p>
                             {% for a_choice in a_ques["choices"] %} 
-                                    <input id="{{count}}_{{ escape(a_choice['value']) }}" name="quiz_{{a_quiz['quiz_id']}}_{{count}}" type="radio" value="{{ escape(a_choice['value']) }}" />
-                                    <label for="{{count}}_{{ escape(a_choice['value']) }}"> {{ escape(a_choice["value"]) }}.&nbsp;{{ escape(a_choice["text"]) }}</label>
+                                    <input id="{{count}}_{{ a_choice['value'] }}" name="quiz_{{a_quiz['quiz_id']}}_{{count}}" type="radio" value="{{ a_choice['value'] }}" />
+                                    <label for="{{count}}_{{ a_choice['value'] }}"> {{ a_choice["value"] }}.&nbsp;{{ a_choice["text"] }}</label>
                             {% end %}
                             <p height="15" id="answer_{{count}}"></p>
                         </div>
                     {% else %}
-                        <div class="quiz_essay"><p>{{count}}.&nbsp;{{ escape(a_ques["head"]) }}</p>
+                        <div class="quiz_essay"><p>{{count}}.&nbsp;{{ a_ques["head"] }}</p>
                             <textarea id="{{count}}_Text" name="quiz_{{a_quiz['quiz_id']}}_{{count}}"></textarea>
                             <p height="15" id="answer_{{count}}"></p>
                         </div>

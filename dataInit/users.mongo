@@ -358,4 +358,5 @@
 {"group": "9-3", "name": "龙珂宇", "grade": "大一", "yearOfEntry": 2014, "userId": "2014k8009922007", "classNo": "9", "password": "8347fb6fa35c4f40c9c17f03e414feeb"},
 {"group": "1-1", "name": "龙鸣亚", "grade": "大一", "yearOfEntry": 2014, "userId": "2014k8009906025", "classNo": "1", "password": "8347fb6fa35c4f40c9c17f03e414feeb"},
 {"group": "3-1", "name": "龚梓源", "grade": "大一", "yearOfEntry": 2014, "userId": "2014k8009907002", "classNo": "3", "password": "8347fb6fa35c4f40c9c17f03e414feeb"},
+{"group": "10-10", "name": "李春典", "grade": "大一", "yearOfEntry": 2014, "userId": "test", "classNo": "10", "password": "8347fb6fa35c4f40c9c17f03e414feeb"},
 ]

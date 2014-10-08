@@ -113,9 +113,8 @@ class BaseHandler(tornado.web.RequestHandler):
 
 	#for test, release version needs to delete it
 	def test_user(self):
-		self.set_secure_cookie("userId", "201428013229018", domain=domain, expires_days=expires_days)
-		#self.set_secure_cookie("userId", "201428013229018")
-		self.online_data["201428013229018"] = {'name': "李春典", 'grade':"大一",'userId':"201428013229018"}
+		self.set_secure_cookie("userId", "test", domain=domain, expires_days=expires_days)
+                self.online_data["test"] = {'name': "李春典",'userId':"test", "classNo":10, "group":"10-10", "yearOfEntry":2014}
 
 	#for test, release version needs to delete it
 	def test_admin(self):
