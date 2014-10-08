@@ -975,7 +975,7 @@ class PasswordHandler(BaseHandler):
 				a_user["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
 				yield db.users.save(a_user)
 			else:
-                                self.write('<script>alert("原密码有误或新密码不符合输入规则，修改失败");;window.history.back()</script>')
+				self.write('<script>alert("原密码有误或新密码不符合输入规则，修改失败");;window.history.back()</script>')
 				self.finish()
 				return
 		self.redirect("/main")
