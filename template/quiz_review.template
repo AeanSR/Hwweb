@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <title>计算机导论 管理系统</title>
+{% include "./htmlhead.template" %}
+</head>
+
+<body>
+<div id="container">
+{% include "./admin_status.template" %}
+{% include "./review_navigator.template" %}
+   <div id="content">
+   <div>
+   	<span>{{a_quiz["title"]}}&nbsp;</span>
+      <span>问答题描述如下：</span>
+   	{% for ques in a_quiz["content"] %}	
+              <div>
+   		     {{ques["id"]}}.&nbsp;{{escape(ques["head"]) }}<br/>标准答案为:{% raw ",".join(ques['answer']) %}
+              </div>
+   	{% end %}
+   </div>
+   <div>
+    <form action="/review/{{a_quiz['quiz_id']}}" method="post">
+   	<table border="1">
+              <tr>
+                <td>学号</td>
+                <td>姓名</td>
+                {% for ques in a_quiz["content"] %} 
+                  <td>{{ques["id"]}}.&nbsp;{{escape(ques["head"]) }}</td>
+                {% end %}
+              </tr>
+              
+   		{% for user_solutions in users_solutions %} 
+                
+   		<tr>
+   			<td>{{user_solutions["userId"]}}</td>
+                    <td>{{user_solutions["name"]}}</td>
+                    {% set count = 0 %}
+   			{% for a_solu in user_solutions["solutions"] %}
+   			    <td>
+   				{% raw a_solu['solution'][0] %}&nbsp;打分:
+                            <select name="{{a_quiz['quiz_id']}}_{{user_solutions['userId']}}_{{a_solu['id']}}">
+                              {% for i in range(1, a_quiz['content'][count]['score']) %}
+                                    <option value ="{{i}}">{{i}}</option>
+                              {% end %}
+                               <option value ="{{a_quiz['content'][count]['score']}}" selected="selected">{{a_quiz['content'][count]['score']}}</option>
+                            </select>
+   			</td>
+                        {% set count = count + 1 %}
+   			{% end %}
+   		</tr>
+   		{% end %}
+   	</table>
+    <input type="submit" name="提交分数" />
+   </form>
+   </div>
+ </div>
+
+{% include "./page_navigator.template" %}
+</div>
+</body>
+
+</html>

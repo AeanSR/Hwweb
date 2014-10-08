@@ -1,0 +1,18 @@
+<table border=1>
+	<tr>
+		<td>学号</td>
+		<td>姓名</td>
+		<td>客观题分数</td>
+		<td>非客观题分数</td>
+		<td>总分</td>
+	</tr>
+	{% for stu in users_list %}
+	<tr>
+		<td>{{ stu["userId"] }}</td>
+		<td>{{ stu["name"] }}</td>
+		{% for a_quiz in stu["quiz_info"] %}
+		<td>quiz_id={{a_quiz["quiz_id"]}}&nbsp;all_score={{a_quiz["all_score"]}}&nbsp;flag={{a_quiz["flag"]}}</td>
+		{% end %}
+	</tr>
+	{% end %}
+</table>

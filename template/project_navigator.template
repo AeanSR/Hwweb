@@ -1,0 +1,29 @@
+{% from datetime import datetime %}
+{% from HwWebUtil import ProjectStatus %}
+<script>
+  $(function() {
+    $( "#menu" ).menu();
+  });
+  </script>
+
+<div id="navigator" class="navigator">
+<h3>报告提交</h3>
+        <ul id="menu">
+        <li><a href="/main">&lt;&lt;返回</a></li>
+        {% for pro in projects %}
+        	{% set clickEvent = "" %}
+       	{% if pro['status']  == ProjectStatus["UNPUBLISH"] %} 
+		{% set statusStr = "实验未开始" %}
+		{% set clickEvent = "javascript:alert('未发布');href='/project'" %}
+	{% elif pro['status']  == ProjectStatus["PUBLISH"]  and datetime.now() < datetime.strptime(pro["deadline"],"%Y-%m-%d %H:%M:%S")   %}
+		{% set statusStr = "可提交报告" %}
+	{% else %}
+		{% set statusStr = "已截止，无法提交" %}
+	{% end %}
+            <li><a href="/project/{{pro['pro_id']}}" title="实验{{pro['pro_id']}}" onclick=" {% raw clickEvent %}">实验{{pro['pro_id']}} 
+({{escape(statusStr)}})
+            	&nbsp; </a>
+            </li>
+        {% end %}
+        </ul>
+    </div>
