@@ -27,9 +27,11 @@ from HwWebUtil import ProjectFlag
 # to do, admin打包下载报告
 # to do, admin上传题目
 
-db = motor.MotorClient('localhost', 27017).test
+#db = motor.MotorClient('localhost', 27017).test
+db = motor.MotorClient('localhost', 27017).hwweb
 domain = ".ucas-2014.tk"
 expires_days = 7
+md5Salt='a~n!d@r#e$w%l^e&e'
 
 class BaseHandler(tornado.web.RequestHandler):
 	online_data = {}
@@ -129,9 +131,9 @@ class MainHandler(BaseHandler):
 
     		nt_cursor = db.notices.find().sort("id", pymongo.DESCENDING)
     		notices = yield nt_cursor.to_list(None)
-    		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1, "content":1}).sort("quiz_id", pymongo.ASCENDING)
+    		quiz_cursor = db.quizs.find().sort("quiz_id", pymongo.ASCENDING)
     		quizs = yield quiz_cursor.to_list(None)
-	 	self.render("./main.template" ,info = self.online_data[self.get_current_user()], notices = notices, quizs=quizs)
+	 	self.render("./template/main.template" ,info = self.online_data[self.get_current_user()], notices = notices, quizs=quizs)
 
 class QuizSaveHandler(BaseHandler):
 	@tornado.web.authenticated
@@ -271,7 +273,7 @@ class QuizHandler(BaseHandler):
 			else:
 				flag = QuizFlag["FULL_SCORED"]
 
-			self.render("./quiz.template", a_quiz = a_quiz, info = self.online_data[self.get_current_user()],  quizs=quizs, user_quiz=user_quiz, flag=flag)
+			self.render("./template/quiz.template", a_quiz = a_quiz, info = self.online_data[self.get_current_user()],  quizs=quizs, user_quiz=user_quiz, flag=flag)
 		return
 
 class ProjectMainHandler(BaseHandler):
@@ -281,7 +283,7 @@ class ProjectMainHandler(BaseHandler):
     	def get(self):
     		pro_cursor = db.projects.find().sort("pro_id", pymongo.ASCENDING)
     		projects = yield pro_cursor.to_list(None)
-	 	self.render("./project.template", projects = projects, info = self.online_data[self.get_current_user()], main=1, flag=0)
+	 	self.render("./template/project.template", projects = projects, info = self.online_data[self.get_current_user()], main=1, flag=0)
 
 class ProjectHandler(BaseHandler):
 	@tornado.web.authenticated
@@ -292,7 +294,7 @@ class ProjectHandler(BaseHandler):
     			pro_id = int(pro_id)
     		except ValueError, e:
     			print "The argument does not contain numbers\n", e
-    			self.render("./404.template")
+    			self.render("./template/404.template")
     			return
     		pro_cursor = db.projects.find().sort("pro_id", pymongo.ASCENDING)
     		projects = yield pro_cursor.to_list(None)
@@ -311,7 +313,7 @@ class ProjectHandler(BaseHandler):
     			flag = ProjectFlag["SUBMIT"]
     		else :
     			flag = ProjectFlag["DEAD"]
-	 	self.render("./project.template", projects = projects,a_pro=a_pro, info = self.online_data[self.get_current_user()], flag=flag, main=0, up_record=up_record)
+	 	self.render("./template/project.template", projects = projects,a_pro=a_pro, info = self.online_data[self.get_current_user()], flag=flag, main=0, up_record=up_record)
 	 	return
 
 class ProjectUploadHandler(BaseHandler):
@@ -326,7 +328,7 @@ class ProjectUploadHandler(BaseHandler):
     			pro_id = int(pro_id)
     		except ValueError, e:
     			print "The argument does not contain numbers\n", e
-    			self.render("./404.template")
+    			self.render("./template/404.template")
     			return
 
     		a_pro = yield db.projects.find_one({"pro_id":pro_id,"status":ProjectStatus["PUBLISH"]})
@@ -392,12 +394,12 @@ class ProjectDownloadHandler(BaseHandler):
     			pro_id = int(pro_id)
     		except ValueError, e:
     			print "The argument does not contain numbers\n", e
-    			self.render("./404.template")
+    			self.render("./template/404.template")
     			return
     		userId = self.get_current_user()
     		up_record = yield db.user_uploads.find_one({"pro_id":pro_id, "userId": userId})
     		if not up_record:
-    			self.render("./404.template")
+    			self.render("./template/404.template")
     			return
     		else:
     			upload_path=os.path.join(os.path.dirname(__file__),'report_files',str(pro_id))
@@ -429,7 +431,7 @@ class AdminHandler(BaseHandler):
 
 
 	 	#self.render("./main" ,info = self.online_data[self.get_current_user()], notices = notices)
-	 	self.render("./admin.template", info = self.online_data[self.get_current_admin()],notices = notices, quizs_index=quizs_index)
+	 	self.render("./template/admin.template", info = self.online_data[self.get_current_admin()],notices = notices, quizs_index=quizs_index)
 
 # admin opearation
 class QuizCreateHandler(BaseHandler):
@@ -535,7 +537,7 @@ class StudentListHandler(BaseHandler):
 					flag = QuizFlag["FULL_SCORED"]
 				quiz_info.append({"quiz_id":a_quiz["quiz_id"], "all_score":user_quiz["all_score"], "flag":flag})
 			users_list.append({"userId":user["userId"],"name":user["name"], "quiz_info":quiz_info})
-		self.render("./studentlist.template", info = self.online_data[self.get_current_admin()], users_list=users_list, quizs_index=quizs_index, quizs=quizs, current_page=page,page_num=page_num,url=url)
+		self.render("./template/studentlist.template", info = self.online_data[self.get_current_admin()], users_list=users_list, quizs_index=quizs_index, quizs=quizs, current_page=page,page_num=page_num,url=url)
 
 
 class ReviewHandler(BaseHandler):
@@ -553,11 +555,11 @@ class ReviewHandler(BaseHandler):
     		if not a_quiz or a_quiz["status"] == QuizStatus["UNPUBLISH"]:
     			nt_cursor = db.notices.find().sort("id", pymongo.DESCENDING)
     			notices = yield nt_cursor.to_list(None)
-    			self.render("./admin.template", info = self.online_data[self.get_current_admin()], notices = notices, quizs_index=quizs_index)
+    			self.render("./template/admin.template", info = self.online_data[self.get_current_admin()], notices = notices, quizs_index=quizs_index)
     			return
     		# can't be reviewd because it's before the deadline, so just list the questions.
     		elif datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
-    			self.render("./quiz_view.template", info = self.online_data[self.get_current_admin()], a_quiz=a_quiz,quizs_index=quizs_index)
+    			self.render("./template/quiz_view.template", info = self.online_data[self.get_current_admin()], a_quiz=a_quiz,quizs_index=quizs_index)
     			return
     		# it has been reviewd
     		elif a_quiz["status"] == QuizStatus["REVIEW"]:
@@ -594,7 +596,7 @@ class ReviewHandler(BaseHandler):
     				users_solutions.append({"userId":user["userId"], "solutions":solu_tmp,"all_score":a_user_solu["all_score"], "name":user["name"]})
     			# 将content只保存问答题
     			a_quiz["content"] = essayQueses
-	    		self.render("./quiz_review.template", info = self.online_data[self.get_current_admin()], a_quiz=a_quiz,quizs_index=quizs_index, users_solutions=users_solutions, current_page=page, page_num=page_num, url=url)
+	    		self.render("./template/quiz_review.template", info = self.online_data[self.get_current_admin()], a_quiz=a_quiz,quizs_index=quizs_index, users_solutions=users_solutions, current_page=page, page_num=page_num, url=url)
 	    	else:
 	    		# to do
 	    		# url = "/review/%d?reviewed=1"%a_quiz["quiz_id"]
@@ -609,7 +611,7 @@ class ReviewHandler(BaseHandler):
     			#	solu_tmp= filter(lambda x: x["type"] == QuizType["ESSAYQUES"],a_user_solu["solutions"])
     			#	user = yield db.users.find_one({"userId":a_user_solu["userId"]}, {"name":1, "_id":0,"userId":1})
     			#	users_solutions.append({"userId":user["userId"], "solutions":solu_tmp,"all_score":a_user_solu["all_score"], "name":user["name"]})
-	    		#	self.render("./quiz_review.template", a_quiz=a_quiz,quizs_index=quizs_index, users_solutions=users_solutions, current_page=page, page_num=page_num, url="/review/%d?"%a_quiz["quiz_id"])
+	    		#	self.render("./template/quiz_review.template", a_quiz=a_quiz,quizs_index=quizs_index, users_solutions=users_solutions, current_page=page, page_num=page_num, url="/review/%d?"%a_quiz["quiz_id"])
 	    		return
 
 	@tornado.web.asynchronous
@@ -624,14 +626,14 @@ class ReviewHandler(BaseHandler):
     			a_quiz = yield db.quizs.find_one({"quiz_id": int(quiz_id)})
     		except ValueError, e:
     			print "The argument does not contain numbers\n", e
-    			self.render("./404.template")
+    			self.render("./template/404.template")
     			return
     		if not a_quiz:
-    			self.render("./404.template")
+    			self.render("./template/404.template")
     			return
     		essayQueses = filter(lambda x:x["type"]==QuizType["ESSAYQUES"], a_quiz["content"])
     		if not essayQueses:
-    			self.render("./404.template")
+    			self.render("./template/404.template")
     			return
     		# eg: {4:10, 5:15} 即quiz_id的Quiz只有2个问答题，其中id=4的满分为10分，id=5的满分为15分
     		quesMap = {}
@@ -685,10 +687,10 @@ class ReviewHandler(BaseHandler):
 
 class UnfoundHandler(BaseHandler):
     	def get(self):
-	 	self.render("./404.template")
+	 	self.render("./template/404.template")
 	 	return
 	def post(self):
-	 	self.render("./404.template")
+	 	self.render("./template/404.template")
 	 	return
 
 
@@ -699,7 +701,7 @@ class ProjectMainHandler(BaseHandler):
     	def get(self):
     		pro_cursor = db.projects.find().sort("pro_id", pymongo.ASCENDING)
     		projects = yield pro_cursor.to_list(None)
-	 	self.render("./project.template", projects = projects, info = self.online_data[self.get_current_user()], main=1, flag=0)
+	 	self.render("./template/project.template", projects = projects, info = self.online_data[self.get_current_user()], main=1, flag=0)
 
 class ProjectHandler(BaseHandler):
 	@tornado.web.authenticated
@@ -710,7 +712,7 @@ class ProjectHandler(BaseHandler):
     			pro_id = int(pro_id)
     		except ValueError, e:
     			print "The argument does not contain numbers\n", e
-    			self.render("./404.template")
+    			self.render("./template/404.template")
     			return
     		pro_cursor = db.projects.find().sort("pro_id", pymongo.ASCENDING)
     		projects = yield pro_cursor.to_list(None)
@@ -729,7 +731,7 @@ class ProjectHandler(BaseHandler):
     			flag = ProjectFlag["SUBMIT"]
     		else :
     			flag = ProjectFlag["DEAD"]
-	 	self.render("./project.template", projects = projects,a_pro=a_pro, info = self.online_data[self.get_current_user()], flag=flag, main=0, up_record=up_record)
+	 	self.render("./template/project.template", projects = projects,a_pro=a_pro, info = self.online_data[self.get_current_user()], flag=flag, main=0, up_record=up_record)
 	 	return
 
 class ProjectUploadHandler(BaseHandler):
@@ -744,7 +746,7 @@ class ProjectUploadHandler(BaseHandler):
     			pro_id = int(pro_id)
     		except ValueError, e:
     			print "The argument does not contain numbers\n", e
-    			self.render("./404.template")
+    			self.render("./template/404.template")
     			return
 
     		a_pro = yield db.projects.find_one({"pro_id":pro_id,"status":ProjectStatus["PUBLISH"]})
@@ -810,12 +812,12 @@ class ProjectDownloadHandler(BaseHandler):
     			pro_id = int(pro_id)
     		except ValueError, e:
     			print "The argument does not contain numbers\n", e
-    			self.render("./404.template")
+    			self.render("./template/404.template")
     			return
     		userId = self.get_current_user()
     		up_record = yield db.user_uploads.find_one({"pro_id":pro_id, "userId": userId})
     		if not up_record:
-    			self.render("./404.template")
+    			self.render("./template/404.template")
     			return
     		else:
     			upload_path=os.path.join(os.path.dirname(__file__),'report_files',str(pro_id))
@@ -932,7 +934,7 @@ class LoginHandler(BaseHandler):
 				return
 			else:
 				self.clear_cookie("adminId")
-		self.render("./login.template", error="")
+		self.render("./template/login.template", error="")
 		return
 
 	@tornado.web.asynchronous
@@ -940,8 +942,8 @@ class LoginHandler(BaseHandler):
 	def post(self):
 		userId = self.get_argument("userId")
 		password = self.get_argument("password")
-		a_user = yield db.users.find_one({"userId":userId, "password":hashlib.md5(password).hexdigest()})
-		a_admin = yield db.admin.find_one({"userId":userId, "password":hashlib.md5(password).hexdigest()})
+		a_user = yield db.users.find_one({"userId":userId, "password":hashlib.md5(password + md5Salt).hexdigest()})
+		a_admin = yield db.admin.find_one({"userId":userId, "password":hashlib.md5(password + md5Salt).hexdigest()})
 		if a_user:
 			self.set_secure_cookie("userId", a_user['userId'],domain=domain, expires_days=expires_days)
 			#self.set_secure_cookie("userId", a_user['userId'])
@@ -954,7 +956,7 @@ class LoginHandler(BaseHandler):
 			self.redirect("/admin")
 			return
 		else:
-			self.render("login.template", error="用户名或密码错误")
+			self.render("./template/login.template", error="用户名或密码错误")
 		return
 
 class PasswordHandler(BaseHandler):
@@ -968,12 +970,12 @@ class PasswordHandler(BaseHandler):
 		new_pass = self.get_argument("new_pass")
 		new_pass_again = self.get_argument("new_pass_again")
 		if userId:
-			a_user = yield db.users.find_one({"userId":userId, "password":hashlib.md5(origin_pass).hexdigest()})
+			a_user = yield db.users.find_one({"userId":userId, "password":hashlib.md5(origin_pass + md5Salt).hexdigest()})
 			if a_user and new_pass==new_pass_again and re.match(regEx, new_pass):
-				a_user["password"] = hashlib.md5(new_pass).hexdigest()
+				a_user["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
 				yield db.users.save(a_user)
 			else:
-				self.write('<script>alert("原密码或新密码错误");;window.history.back()</script>')
+                            self.write('<script>alert("原密码有误或新密码不符合输入规则，修改失败");;window.history.back()</script>')
 				self.finish()
 				return
 		self.redirect("/main")
@@ -982,12 +984,12 @@ class PasswordHandler(BaseHandler):
 class UnfoundHandler(BaseHandler):
 	@tornado.web.authenticated
     	def get(self):
-	 	self.render("./404.template")
+	 	self.render("./template/404.template")
 	 	return
 
 	@tornado.web.authenticated
 	def post(self):
-	 	self.render("./404.template")
+	 	self.render("./template/404.template")
 	 	return
 
 

@@ -1,5 +1,5 @@
-[{name:"徐志伟",  username:"xuzhiwei",password:"e10adc3949ba59abbe56e057f20f883e", userId:"xuzhiwei"},
-{name:"孙晓明", username:"chaolu", password:"e10adc3949ba59abbe56e057f20f883e", userId:"sunxiaoming"},
-{name:"李春典",  username:"lichundian", password:"e10adc3949ba59abbe56e057f20f883e", userId:"lichundian"},
-{name:"朝鲁",  username:"chaolu", password:"e10adc3949ba59abbe56e057f20f883e", userId:"chaolu"},
+[{name:"徐志伟", password:"8347fb6fa35c4f40c9c17f03e414feeb", userId:"xuzhiwei"},
+{name:"孙晓明", password:"8347fb6fa35c4f40c9c17f03e414feeb", userId:"sunxiaoming"},
+{name:"李春典", password:"8347fb6fa35c4f40c9c17f03e414feeb", userId:"lichundian"},
+{name:"朝鲁", password:"8347fb6fa35c4f40c9c17f03e414feeb", userId:"chaolu"},
 ]

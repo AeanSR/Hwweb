@@ -1,5 +1,5 @@
-[{name:"李春典", grade:"大一", username:"lichundian",password:"e10adc3949ba59abbe56e057f20f883e", userId:"201428013229018", "group":1},
-{name:"朝鲁", grade:"大一", username:"chaolu", password:"e10adc3949ba59abbe56e057f20f883e", userId:"201428013229011","group":1},
-{name:"梁帆", grade:"大一", username:"liangfan", password:"e10adc3949ba59abbe56e057f20f883e", userId:"201428013229014","group":2},
-{name:"冯琛", grade:"大一", username:"fengchen", password:"e10adc3949ba59abbe56e057f20f883e", userId:"201428013229013", "group":2},
+[{name:"李春典", grade:"大一", password:"8347fb6fa35c4f40c9c17f03e414feeb", userId:"201428013229018", "group":1, "yearOfEntry":2014, classNo:"1", group:"1-2"},
+{name:"朝鲁", grade:"大一", password:"8347fb6fa35c4f40c9c17f03e414feeb", userId:"201428013229011", "yearOfEntry":2014, classNo:"1", group:"1-2"},
+{name:"梁帆", grade:"大一", password:"8347fb6fa35c4f40c9c17f03e414feeb", userId:"201428013229014", "yearOfEntry":2014, classNo:"2", group:"2-2"},
+{name:"冯琛", grade:"大一", password:"8347fb6fa35c4f40c9c17f03e414feeb", userId:"201428013229013", "yearOfEntry":2014, classNo:"3", group:"3-2"},
 ]
