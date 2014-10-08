@@ -13,7 +13,7 @@
             {% set i = 0 %}
             {% for quiz in quizs %}
                 {% if quiz['status'] == QuizStatus['UNPUBLISH'] %}
-                    $("td#{{quiz['quiz_id']}}").text("Quiz{{quiz['quiz_id']}}(暂未发布)")
+                    $("td#{{quiz['quiz_id']}}").text("Quiz{{quiz['quiz_id']}}(未发布)")
                     {% for stu in users_list %}
                         $("td#{{stu['userId']}}_{{quiz['quiz_id']}}").text("无记录")
                     {% end %}

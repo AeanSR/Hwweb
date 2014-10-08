@@ -509,6 +509,10 @@ class StudentListHandler(BaseHandler):
 		for user in users:
 			quiz_info=[]
 			for a_quiz in quizs:
+				if a_quiz['status'] == QuizStatus["UNPUBLISH"]:
+					flag = QuizFlag["UNDONE"]
+					quiz_info.append({"quiz_id":a_quiz["quiz_id"], "all_score":-1, "flag":flag})
+					continue
 				essayQueses = filter(lambda x:x['type']==QuizType['ESSAYQUES'],a_quiz['content'])
 
 				user_quiz = yield db.solutions.find_one({"quiz_id":a_quiz['quiz_id'], "userId":user["userId"]})
@@ -947,7 +951,7 @@ class LoginHandler(BaseHandler):
 		if a_user:
 			self.set_secure_cookie("userId", a_user['userId'],domain=domain, expires_days=expires_days)
 			#self.set_secure_cookie("userId", a_user['userId'])
-			self.online_data[userId] = {'name': a_user['name'], 'grade':a_user['grade'],'userId':a_user['userId'], "loginTime":datetime.now()}
+			self.online_data[userId] = {'name': a_user['name'],'userId':a_user['userId'], "loginTime":datetime.now(), 'classNo':a_user['classNo'], 'group':a_user['group'],'yearOfEntry':a_user['yearOfEntry']}
 			self.redirect("/main")
 			return
 		elif a_admin:
