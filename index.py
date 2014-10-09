@@ -29,6 +29,7 @@ from HwWebUtil import ProjectFlag
 
 #db = motor.MotorClient('localhost', 27017).test
 db = motor.MotorClient('localhost', 27017).hwweb
+testdb = motor.MotorClient('localhost', 27017).test_hwweb
 domain = ".ucas-2014.tk"
 expires_days = 7
 md5Salt='a~n!d@r#e$w%l^e&e'
@@ -110,11 +111,18 @@ class BaseHandler(tornado.web.RequestHandler):
 					if not essayQueses:
 						user_quiz['status'] = QuizStatus["REVIEW"]
 					yield db.solutions.save(user_quiz)
+	
+	def isTestUser(self, userId):
+		regexEx = r'^test'
+		if re.match(regexEx, userId.lower()):
+			return True
+		else:
+			return False
 
 	#for test, release version needs to delete it
 	def test_user(self):
 		self.set_secure_cookie("userId", "test", domain=domain, expires_days=expires_days)
-                self.online_data["test"] = {'name': "李春典",'userId':"test", "classNo":10, "group":"10-10", "yearOfEntry":2014}
+               	self.online_data["test"] = {'name': "李春典",'userId':"test", "classNo":10, "group":"10-10", "yearOfEntry":2014}
 
 	#for test, release version needs to delete it
 	def test_admin(self):
@@ -133,6 +141,7 @@ class MainHandler(BaseHandler):
     		quiz_cursor = db.quizs.find().sort("quiz_id", pymongo.ASCENDING)
     		quizs = yield quiz_cursor.to_list(None)
 	 	self.render("./template/main.template" ,info = self.online_data[self.get_current_user()], notices = notices, quizs=quizs)
+	 	return
 
 class QuizSaveHandler(BaseHandler):
 	@tornado.web.authenticated
@@ -283,6 +292,7 @@ class ProjectMainHandler(BaseHandler):
     		pro_cursor = db.projects.find().sort("pro_id", pymongo.ASCENDING)
     		projects = yield pro_cursor.to_list(None)
 	 	self.render("./template/project.template", projects = projects, info = self.online_data[self.get_current_user()], main=1, flag=0)
+	 	return
 
 class ProjectHandler(BaseHandler):
 	@tornado.web.authenticated
@@ -351,7 +361,7 @@ class ProjectUploadHandler(BaseHandler):
 			file_size = len(uploadFile['body'])
 
 			# 检测MIME类型
-			if not uploadFile["content_type"] in self.support_type or not re.match(r'^.*\.pdf$',uploadFile['filename'] ):
+			if not uploadFile["content_type"] in self.support_type or not re.match(r'^.*\.pdf$',uploadFile['filename'].lower() ):
 				self.write('<script>alert("仅支持pdf格式,doc/ppt需要转化为pdf格式才能上传");window.location="/project/'+ str(pro_id)+'"</script>')
 				self.finish()
 				return
@@ -427,10 +437,8 @@ class AdminHandler(BaseHandler):
     		notices = yield nt_cursor.to_list(None)
     		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1, "content":1}).sort("quiz_id", pymongo.ASCENDING)
     		quizs_index = yield quiz_cursor.to_list(None)
-
-
-	 	#self.render("./main" ,info = self.online_data[self.get_current_user()], notices = notices)
 	 	self.render("./template/admin.template", info = self.online_data[self.get_current_admin()],notices = notices, quizs_index=quizs_index)
+	 	return
 
 # admin opearation
 class QuizCreateHandler(BaseHandler):
@@ -541,6 +549,7 @@ class StudentListHandler(BaseHandler):
 				quiz_info.append({"quiz_id":a_quiz["quiz_id"], "all_score":user_quiz["all_score"], "flag":flag})
 			users_list.append({"userId":user["userId"],"name":user["name"], "quiz_info":quiz_info})
 		self.render("./template/studentlist.template", info = self.online_data[self.get_current_admin()], users_list=users_list, quizs_index=quizs_index, quizs=quizs, current_page=page,page_num=page_num,url=url)
+		return
 
 
 class ReviewHandler(BaseHandler):
@@ -600,6 +609,7 @@ class ReviewHandler(BaseHandler):
     			# 将content只保存问答题
     			a_quiz["content"] = essayQueses
 	    		self.render("./template/quiz_review.template", info = self.online_data[self.get_current_admin()], a_quiz=a_quiz,quizs_index=quizs_index, users_solutions=users_solutions, current_page=page, page_num=page_num, url=url)
+	    		return
 	    	else:
 	    		# to do
 	    		# url = "/review/%d?reviewed=1"%a_quiz["quiz_id"]
@@ -705,6 +715,7 @@ class ProjectMainHandler(BaseHandler):
     		pro_cursor = db.projects.find().sort("pro_id", pymongo.ASCENDING)
     		projects = yield pro_cursor.to_list(None)
 	 	self.render("./template/project.template", projects = projects, info = self.online_data[self.get_current_user()], main=1, flag=0)
+	 	return
 
 class ProjectHandler(BaseHandler):
 	@tornado.web.authenticated
@@ -973,19 +984,31 @@ class LoginHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
+		db_ptr = db
+		# admin暂不支持test模式
+		testMode = False
 		userId = self.get_argument("userId")
 		password = self.get_argument("password")
-		a_user = yield db.users.find_one({"userId":userId, "password":hashlib.md5(password + md5Salt).hexdigest()})
-		a_admin = yield db.admin.find_one({"userId":userId, "password":hashlib.md5(password + md5Salt).hexdigest()})
+		regexStr = "^%s$" %userId
+		if self.isTestUser(userId):
+			db_ptr = testdb
+			testMode = True
+		a_user = yield db_ptr.users.find_one({"userId":{"$regex":regexStr, "$options":"i"}, "password":hashlib.md5(password + md5Salt).hexdigest()})
+		a_admin = yield db_ptr.admin.find_one({"userId":{"$regex":regexStr, "$options":"i"}, "password":hashlib.md5(password + md5Salt).hexdigest()})
 		if a_user:
 			self.set_secure_cookie("userId", a_user['userId'],domain=domain, expires_days=expires_days)
-			#self.set_secure_cookie("userId", a_user['userId'])
-			self.online_data[userId] = {'name': a_user['name'],'userId':a_user['userId'], "loginTime":datetime.now(), 'classNo':a_user['classNo'], 'group':a_user['group'],'yearOfEntry':a_user['yearOfEntry']}
-			self.redirect("/main")
-			return
+			self.online_data[a_user['userId']] = {'name': a_user['name'],'userId':a_user['userId'], "loginTime":datetime.now(), 'classNo':a_user['classNo'], 'group':a_user['group'],'yearOfEntry':a_user['yearOfEntry']}
+			# testMode 下只能做支持实验测试，其他测试无法支持
+			if testMode:
+				self.redirect("http://project.ucas-2014.tk")
+				#self.render("./template/test_entrance.template")
+				return
+			else:
+				self.redirect("/main")
+				return
 		elif a_admin:
 			self.set_secure_cookie("adminId", a_admin['userId'], expires_days=expires_days)
-			self.online_data[userId] = {'name': a_admin['name'],'adminId':a_admin['userId'], "loginTime":datetime.now()}
+			self.online_data[a_admin['userId']] = {'name': a_admin['name'],'adminId':a_admin['userId'], "loginTime":datetime.now()}
 			self.redirect("/admin")
 			return
 		else:

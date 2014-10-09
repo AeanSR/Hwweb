@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+#===同学使用的数据库(hwweb)=============================================
+
 #导入admin到hwweb数据库
 mongoimport -h localhost --port 27017 -d hwweb -c admin --jsonArray --file admin.mongo
 
@@ -14,3 +16,4 @@ mongoimport -h localhost --port 27017 -d hwweb -c quizs --jsonArray --file quizs
 
 #导入projects到hwweb数据库
 mongoimport -h localhost --port 27017 -d hwweb -c projects --jsonArray --file projects.mongo
+
