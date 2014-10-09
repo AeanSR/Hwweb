@@ -933,7 +933,7 @@ class APIPutHandler(BaseHandler):
 			if gameScore>0 and gameId in [4]:
 				record["bestScore"]  = (record["bestScore"]  + gameScore) / 5
 		if gameScore>0:
-			if gameScore != len(gameHist['results'])
+			if gameScore != len(gameHist['results']):
 				return
 		record["scores"][str(gameLoop)] = gameScore
 		record["histories"][str(gameLoop)] = gameHist
