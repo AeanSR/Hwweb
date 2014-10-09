@@ -845,20 +845,37 @@ class APIGetHandler(BaseHandler):
 		except:
 			return
 		userId = self.get_current_user()
+		group = self.online_data[userId]["group"]
 		if gameId not in [1,2,3,4]:
 			return
-		record = yield db.games.find_one({"gameId":gameId, "userId": userId})
-		if not record:
-			record = {"userId":userId,
-				"gameId":gameId,
-				"curLoop":0,
-				"scores":{},
-				"bestScore":"None",
-				"histories":{}}
-			yield db.games.save(record)
+		# 无分组游戏情况
+		if gameId not in [1,2,3]:
+			record = yield db.games.find_one({"gameId":gameId, "userId": userId})
+			if not record:
+				record = {"userId":userId,
+					"gameId":gameId,
+					"curLoop":0,
+					"scores":{},
+					"bestScore":"None",
+					"histories":{}}
+				yield db.games.save(record)
+		# 分组情况
+		elif gameId not in [4]:
+			record = yield db.games.find_one({"gameId":gameId, "group": group})
+			if not record:
+				record = {"group":group,
+					"gameId":gameId,
+					"curLoop":0,
+					"scores":{},
+					"bestScore":"None",
+					"histories":{}}
+				yield db.games.save(record)
+		else:
+			None		
 		self.write(json.dumps({"userId":userId,
 			"curLoop":record["curLoop"],
 			"name":self.online_data[userId]["name"],
+			"group":self.online_data[userId]["group"],
 			"bestScore":record["bestScore"]}))
 		self.finish()
 		return
@@ -879,12 +896,13 @@ class APIPutHandler(BaseHandler):
 			return
 		print gameId,gameLoop,gameScore,gameHist
 		userId = self.get_current_user()
-		record = yield db.games.find_one({"gameId":gameId,
-			"userId": userId})
+		group = self.online_data[userId]["group"]
 		if gameId not in [1,2,3,4]:
 			return
-		#if gameId is 1:
-		if gameId in [1,2,3,4]:
+		# 无分组游戏情况
+		if gameId in [1,2,3]:
+			record = yield db.games.find_one({"gameId":gameId,
+				"userId": userId})
 			if not record:
 				record = {"userId":userId,
 					"gameId":gameId,
@@ -892,25 +910,35 @@ class APIPutHandler(BaseHandler):
 					"scores":{},
 					"bestScore":"None",
 					"histories":{}}
-			if gameLoop!=record["curLoop"] or gameLoop>2:
-				return
-			if record["bestScore"] == "None":
-				if gameScore>0:
-					record["bestScore"] = gameScore
-			else:
-				if gameScore>0 and gameScore < record["bestScore"] and gameId in [1,2,3]:
-					record["bestScore"] = gameScore
-				if gameScore>0 and gameId in [4]:
-					record["bestScore"]  = (record["bestScore"]  + gameScore) / 5
-			if gameScore>0:
-				gameScore != len(gameHist['results'])
-				return
-			record["scores"][str(gameLoop)] = gameScore
-			record["histories"][str(gameLoop)] = gameHist
-			record["curLoop"] = gameLoop + 1
-
+		elif gameId in [4]:
+			record = yield db.games.find_one({"gameId":gameId,
+				"group": group})
+			if not record:
+				record = {"group":group,
+					"gameId":gameId,
+					"curLoop":0,
+					"scores":{},
+					"bestScore":"None",
+					"histories":{}}
 		else:
+			None	
+		if gameLoop!=record["curLoop"] or gameLoop>2:
 			return
+		if record["bestScore"] == "None":
+			if gameScore>0:
+				record["bestScore"] = gameScore
+		else:
+			if gameScore>0 and gameScore < record["bestScore"] and gameId in [1,2,3]:
+				record["bestScore"] = gameScore
+			if gameScore>0 and gameId in [4]:
+				record["bestScore"]  = (record["bestScore"]  + gameScore) / 5
+		if gameScore>0:
+			gameScore != len(gameHist['results'])
+			return
+		record["scores"][str(gameLoop)] = gameScore
+		record["histories"][str(gameLoop)] = gameHist
+		record["curLoop"] = gameLoop + 1
+
 		yield db.games.save(record)
 		self.write('true')
 		self.finish()
