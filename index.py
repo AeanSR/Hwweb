@@ -849,7 +849,7 @@ class APIGetHandler(BaseHandler):
 		if gameId not in [1,2,3,4]:
 			return
 		# 无分组游戏情况
-		if gameId not in [1,2,3]:
+		if gameId in [1,2,3]:
 			record = yield db.games.find_one({"gameId":gameId, "userId": userId})
 			if not record:
 				record = {"userId":userId,
@@ -860,7 +860,7 @@ class APIGetHandler(BaseHandler):
 					"histories":{}}
 				yield db.games.save(record)
 		# 分组情况
-		elif gameId not in [4]:
+		elif gameId in [4]:
 			record = yield db.games.find_one({"gameId":gameId, "group": group})
 			if not record:
 				record = {"group":group,
@@ -894,7 +894,7 @@ class APIPutHandler(BaseHandler):
 			gameHist = json.loads(self.get_argument("gameHist", 1))
 		except:
 			return
-		print gameId,gameLoop,gameScore,gameHist
+		#print gameId,gameLoop,gameScore,gameHist
 		userId = self.get_current_user()
 		group = self.online_data[userId]["group"]
 		if gameId not in [1,2,3,4]:
