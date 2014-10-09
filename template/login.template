@@ -20,12 +20,12 @@
             <form method="post" action="./login">
             	<li><span>{{error}}</span></li>
                 <li>
-                    <input type="text" name="userId" class="text" value="请输入帐号" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = '请输入帐号';}">
+                    <input type="text" name="userId" class="text">
                     <span href="#" class=" icon user"></span>
                 </li>
                 <div class="clear"></div>
                 <li>
-                    <input type="password" name="password"  onfocus="this.value = '';" onblur="if (this.value == '') {this.value = '';}">
+                    <input type="password" name="password">
                     <span href="#" class="icon lock"></span>
                 </li>
                 <div class="clear"></div>
