@@ -8,7 +8,7 @@
 <body>
 <div id="container">
 	<ul class="ui-menu">
-		<li><a href="http://project.ucas-2014.tk">老鼠实验</a></li>
+		<li><a href="">老鼠实验</a></li>
 		<li><a href="">路由实验</a></li>
 		<li><a href="">拜占庭将军实验</a></li>
 	</ul>

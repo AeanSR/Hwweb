@@ -16,11 +16,11 @@ fork=true
 
  - start the mongo server
 > $mkdir -p /var/data/mongodb
-$sudo mongod -f mongodb.conf
+$sudo mongod -f mongod.conf
 
  - add the mongod service into the system
 > $sudo vim /etc/rc.d/rc.local
-add $MONGO_HOME/bin/mongodb -f $MONGO_HOME/mongod.conf
+add $MONGO_HOME/bin/mongod -f $MONGO_HOME/mongod.conf
 
 2. pip (pip is python package manager, you should install python 2.7 firstly)
  - install pip through the command below

@@ -8,11 +8,12 @@ import motor
 import json
 
 import hashlib
-
+import random
 import pymongo
 
 from datetime import datetime
 from datetime import timedelta
+
 
 from HwWebUtil import HwWebUtil
 from HwWebUtil import QuizStatus
@@ -121,8 +122,8 @@ class BaseHandler(tornado.web.RequestHandler):
 
 	#for test, release version needs to delete it
 	def test_user(self):
-		self.set_secure_cookie("userId", "test", domain=domain, expires_days=expires_days)
-               	self.online_data["test"] = {'name': "李春典",'userId':"test", "classNo":10, "group":"10-10", "yearOfEntry":2014}
+		self.set_secure_cookie("userId", "2014k8009907064", domain=domain, expires_days=expires_days)
+               	self.online_data["2014k8009907064"] = {'name': "丁宇",'userId':"2014k8009907064", "classNo":2, "group":"2-1", "yearOfEntry":2014}
 
 	#for test, release version needs to delete it
 	def test_admin(self):
@@ -254,7 +255,11 @@ class QuizHandler(BaseHandler):
 			self.redirect("/main")
 			return
 		else:
-			essayQueses = filter(lambda x:x['type']==QuizType['ESSAYQUES'],a_quiz['content'])
+			if 'content' in a_quiz:
+				essayQueses = filter(lambda x:x['type']==QuizType['ESSAYQUES'],a_quiz['content'])
+			else:
+				a_quiz['content'] = {}
+				essayQueses = {}
 
 			# quizs for indexing
 			quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1}).sort("quiz_id", pymongo.ASCENDING)
@@ -955,13 +960,65 @@ class APIPutHandler(BaseHandler):
 		self.finish()
 		return
 
+
+class RouteAPIGetInfoHandler(BaseHandler):
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def get(self):
+		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		self.set_header('Access-Control-Allow-Credentials','true')
+		group = self.online_data[self.get_current_user()]["group"]
+		group_users_cursor = db.users.find({"group":group}, {"name": 1, "_id" :0})
+		group_users_name = yield group_users_cursor.to_list(None)
+		record = {"info":self.online_data[self.get_current_user()],
+			"group_users_name" : group_users_name}
+		self.write(json.dumps(record))
+		self.finish()
+		return
+
+class RouteAPIGetTopoHandler(BaseHandler):
+	#topo:{"scale":30, "link":["1-2","3-4","5-29"], "group":"10-2", "year":2014, "type":0}
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def get(self):
+		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		self.set_header('Access-Control-Allow-Credentials','true')
+		gameTimes = int(self.get_argument("times", 1))
+		scale = int(self.get_argument("scale", 30))
+		group = self.online_data[self.get_current_user()]["group"]
+		group_header = yield db.users.find_one({"group":group}, {"name": 1, "_id" :0, "userId":1})
+		topo = yield db.routeTopo.find_one({"group":group, "gameTimes":gameTimes, "year":self.online_data[self.get_current_user()]["yearOfEntry"]},{"_id": 0})
+		if not topo:
+			topo ={}
+			topo["scale"] = scale
+			topo["gameTimes"] = gameTimes
+			topo["group"] = group
+			topo["year"] = self.online_data[self.get_current_user()]["yearOfEntry"]
+			topo["type"] = 0
+			# randomize
+			link =[]
+			for i in range(0, scale) :
+				for j in range(0, i):
+					if random.random() < 0.1:
+						link.append("%d-%d" %(i,j))
+			topo["link"] = link
+			print topo
+			yield db.routeTopo.save(topo)
+		if "_id" in topo:
+			del topo["_id"]
+		self.write(json.dumps(topo))
+		self.finish()
+		return
+
 class LoginHandler(BaseHandler):
 	def get(self):
 		# test
-		#self.test_user()
-		#self.test_admin()
-		#self.redirect("/main")
-		#return
+		self.test_user()
+		self.test_admin()
+		self.redirect("/main")
+		return
 		# delete when releasing
 
 		userId = self.get_secure_cookie("userId")
@@ -1057,7 +1114,7 @@ class ExitHandler(BaseHandler):
 		return
 
 settings = {
-	#"debug": True,
+	"debug": True,
 	"default_handler_class": UnfoundHandler,
 	"static_path": os.path.join(os.path.dirname(__file__), "static"),
 	"cookie_secret": "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
@@ -1081,7 +1138,9 @@ application = tornado.web.Application([
     (r"/project/([0-9]+)/download", ProjectDownloadHandler),
     (r"/project/([0-9]+)", ProjectHandler),
     (r"/api/getinfo",APIGetHandler),
-    (r"/api/putinfo",APIPutHandler)
+    (r"/api/putinfo",APIPutHandler),
+    (r"/api/route/getinfo",RouteAPIGetInfoHandler),
+    (r"/api/route/getTopo",RouteAPIGetTopoHandler)
     ],**settings )
 
 
