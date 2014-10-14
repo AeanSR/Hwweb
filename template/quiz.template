@@ -93,7 +93,7 @@
                                 <legend>{{count}}.&nbsp;{% raw a_ques["head"] %}</legend> -->
                             {% for a_choice in a_ques["choices"] %} 
                                     <input id="{{count}}_{{ a_choice['value'] }}" name="quiz_{{a_quiz['quiz_id']}}_{{count}}" type="radio" value="{{ a_choice['value'] }}" />
-                                    <label for="{{count}}_{{ a_choice['value'] }}"> {{ a_choice["value"] }}.&nbsp;{{ a_choice["text"] }}</label>
+                                    <label for="{{count}}_{{ a_choice['value'] }}"> {{ a_choice["value"] }}.&nbsp;{% raw a_choice["text"] %}</label>
                             {% end %}
                             <!-- </fieldset> -->
                             <p height="15" id="answer_{{count}}"></p>
