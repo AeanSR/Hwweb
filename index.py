@@ -112,7 +112,7 @@ class BaseHandler(tornado.web.RequestHandler):
 					if not essayQueses:
 						user_quiz['status'] = QuizStatus["REVIEW"]
 					yield db.solutions.save(user_quiz)
-	
+
 	def isTestUser(self, userId):
 		regexEx = r'^test'
 		if re.match(regexEx, userId.lower()):
@@ -887,7 +887,7 @@ class APIGetHandler(BaseHandler):
 					"histories":{}}
 				yield db.games.save(record)
 		else:
-			None		
+			None
 		self.write(json.dumps({"userId":userId,
 			"curLoop":record["curLoop"],
 			"name":self.online_data[userId]["name"],
@@ -937,7 +937,7 @@ class APIPutHandler(BaseHandler):
 					"bestScore":"None",
 					"histories":{}}
 		else:
-			None	
+			None
 		if gameLoop!=record["curLoop"] or gameLoop>2:
 			return
 		if record["bestScore"] == "None":
@@ -1015,10 +1015,10 @@ class RouteAPIGetTopoHandler(BaseHandler):
 class LoginHandler(BaseHandler):
 	def get(self):
 		# test
-		self.test_user()
-		self.test_admin()
-		self.redirect("/main")
-		return
+		#self.test_user()
+		#self.test_admin()
+		#self.redirect("/main")
+		#return
 		# delete when releasing
 
 		userId = self.get_secure_cookie("userId")
@@ -1159,8 +1159,8 @@ def filterOnlineData():
 
 
 if __name__ == "__main__":
-	#application.listen(80)
-	application.listen(8888)
+	application.listen(80)
+	#application.listen(8888)
 	print "The http server has been started!"
 	#tornado.ioloop.IOLoop.instance().add_timeout(
             	#	timedelta(seconds=5),

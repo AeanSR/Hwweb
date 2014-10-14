@@ -76,7 +76,7 @@
 <div id="content">
         <form id="quiz_form" method="post" action="/quiz/{{ a_quiz['quiz_id'] }}/submit">
             <div id="quiz_info">
-                <div id="quiz_title"><h4>Quiz{{a_quiz["quiz_id"]}}&nbsp;&nbsp;{{a_quiz["title"]}}</h4></div>
+                <div id="quiz_title"><h4>Homework{{a_quiz["quiz_id"]}}&nbsp;&nbsp;{{a_quiz["title"]}}</h4></div>
                 <div id="release_time" class="time">发布日期：{{  a_quiz['releaseTime'] }}</div>
                 <div id="deadline" style="color:green" class="time">截止日期：{{  a_quiz['deadline']  }}</div>
                 <div id="warn"  style="color:red" class="warn"></div>
