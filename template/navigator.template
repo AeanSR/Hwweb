@@ -18,16 +18,23 @@
 	{% elif quizIndex['status']  == QuizStatus["PUBLISH"]  and datetime.now() < datetime.strptime(quizIndex["deadline"],"%Y-%m-%d %H:%M:%S")   %}
 		{# set clickEvent = "javascript:alert('已发布')" #}
 		{% set statusStr = "已发布" %}
+                <li><a href="/quiz/{{quizIndex['quiz_id']}}" title="quiz{{quizIndex['quiz_id']}}" onclick=" {% raw clickEvent %}">Homework{{quizIndex['quiz_id']}}
+({{escape(statusStr)}})
+              &nbsp; </a>
 	{% elif  quizIndex['status'] != QuizStatus["REVIEW"] and not (datetime.now() < datetime.strptime(quizIndex["deadline"],"%Y-%m-%d %H:%M:%S") ) %}
 		{# set clickEvent = "javascript:alert('已截止')" #}
 		{% set statusStr = "已截止" %}
+                <li><a href="/quiz/{{quizIndex['quiz_id']}}" title="quiz{{quizIndex['quiz_id']}}" onclick=" {% raw clickEvent %}">Homework{{quizIndex['quiz_id']}}
+({{escape(statusStr)}})
+              &nbsp; </a>
 	{% elif quizIndex['status'] == QuizStatus["REVIEW"] %}
 		{# set clickEvent = "javascript:alert('已评分')" #}
 		{% set statusStr = "已评分" %}
-	{% end %}
-            <li><a href="/quiz/{{quizIndex['quiz_id']}}" title="quiz{{quizIndex['quiz_id']}}" onclick=" {% raw clickEvent %}">Homework{{quizIndex['quiz_id']}} 
+                <li><a href="/quiz/{{quizIndex['quiz_id']}}" title="quiz{{quizIndex['quiz_id']}}" onclick=" {% raw clickEvent %}">Homework{{quizIndex['quiz_id']}}
 ({{escape(statusStr)}})
-            	&nbsp; </a>
+              &nbsp; </a>
+	{% end %}
+            
             </li>
         {% end %}
         </ul >

@@ -35,13 +35,15 @@
                     $("form#quiz_form input").button({ disabled: true });
                     $("form#quiz_form textarea").attr("disabled", "disabled");
                     {% if flag == QuizFlag["FULL_SCORED"] %}
-                        $("span#all_score").text("(总得分: {{user_quiz['all_score']}})")
+                        $("#all_score").text("(总得分: {{user_quiz['all_score']}})")
+                        $("#all_score").css({"color":"red"})
                         {% for i in range(len(user_quiz["solutions"])) %}
                             var tmp = unescapeHtml("{{','.join(a_quiz['content'][i]['answer']) }}")
                             $("#answer_{{i+1}}").text("标准答案：" + tmp + "(得分：{{user_quiz['solutions'][i]['score']}})");
                         {% end %}
                     {%elif flag == QuizFlag["SEMI_SCORED"] %}
-                        $("span#all_score").text("(客观题得分: {{user_quiz['all_score']}})")
+                        $("#all_score").text("(客观题得分: {{user_quiz['all_score']}})")
+                        $("#all_score").css({"color":"red"})
                         {% for i in range(len(user_quiz["solutions"])) %}
                             {% if user_quiz['solutions'][i]["type"] != QuizType["ESSAYQUES"] %}
                                 $("#answer_{{i+1}}").text("标准答案：{{",".join(a_quiz['content'][i]['answer']) }}(得分：{{user_quiz['solutions'][i]['score']}})");
@@ -55,12 +57,12 @@
             {% elif flag == QuizFlag["END"] %}
                 $("form#quiz_form input").button({ disabled: true });
                 $("form#quiz_form textarea").attr("disabled", "disabled");
-                $("span#all_score").text("截至日期前没有提交作业(总得分: 0),无法查看标准答案")
-                $("span#all_score").css({"color":"red"})
+                $("#all_score").text("截至日期前没有提交作业(总得分: 0),无法查看标准答案")
+                $("#all_score").css({"color":"red"})
             {% else %}
             {% end %}
             {% if flag == QuizFlag["UNDONE"] or flag == QuizFlag["SAVE"] %}
-                $("div#warn").text("请务必在截止日期前提交作业！保存功能仅供下次继续做，但并不能替代提交。")   
+                $("div#warn").text("请务必在截止日期前提交作业！暂存功能仅供下次继续做，并不能替代提交。")   
             {% elif flag == QuizFlag["SUB_NOTSCORED"]%}
                 $("div#warn").text("作业已提交，还未修改")      
             {% end %}
@@ -81,7 +83,8 @@
                 <div id="deadline" style="color:green" class="time">截止日期：{{  a_quiz['deadline']  }}</div>
                 <div id="warn"  style="color:red" class="warn"></div>
 
-                <div  id="quiz_description">作业概述：{% raw a_quiz["description"] %}<span id="all_score"></span></div>
+                <div  id="quiz_description">作业概述：{% raw a_quiz["description"] %}</div>
+                <div id="all_score"></div>
             </div>
             <div id="quiz_content">
                 {% set count = 0 %}
