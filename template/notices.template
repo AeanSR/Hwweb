@@ -4,9 +4,9 @@
 {% for notice in notices %}
 <div class="notice_content">
 	<div class="brief">
-	<span style="color:{{notice['importance']}}"> [{{ escape(notice['description']) }}] </span><span>通知人&nbsp{{ escape(notice['creator']) }}</span>
+	<span style="color:{{notice['importance']}}"> [{% raw notice['description'] %}] </span><span>通知人&nbsp{% rawnotice['creator'] %}</span>
 	</div>
-	<div class="detail">{{ escape(notice['content']) }}</div>
+	<div class="detail">{% raw notice['content'] %}</div>
 
 </div>
 {% end %}
