@@ -10,6 +10,8 @@ import json
 import hashlib
 import random
 import pymongo
+import logging
+import logging.config
 
 from datetime import datetime
 from datetime import timedelta
@@ -34,6 +36,19 @@ testdb = motor.MotorClient('localhost', 27017).test_hwweb
 domain = ".ucas-2014.tk"
 expires_days = 7
 md5Salt='a~n!d@r#e$w%l^e&e'
+
+logpath = os.path.join(os.path.dirname(__file__),'log')
+if not os.path.exists(logpath):
+	os.makedirs(logpath)
+logging.config.fileConfig('conf/logging.conf')
+logger = logging.getLogger("index")
+
+
+def strSolution(solu):
+	strSolu = ""
+	for s in solu["solutions"]:
+		strSolu += str(s['solution'])
+	return strSolu
 
 class BaseHandler(tornado.web.RequestHandler):
 	online_data = {}
@@ -180,6 +195,7 @@ class QuizSaveHandler(BaseHandler):
 			if  tmp:
 				if a_content['type'] == QuizType['SINCHOICE']:
 					if not tmp in map(lambda x:x['value'],a_content['choices']):
+						logger.info("student: %s failed to save an answer for homework-%d: %s " %(doc['userId'], int(quiz_id), str(tmp)))
 						self.write('<script>alert("答案不符合规定, 请重新提交");window.history.back()</script>')
 						self.finish()
 						return
@@ -190,6 +206,7 @@ class QuizSaveHandler(BaseHandler):
 		doc["solutions"] = solutions
 		doc["all_score"] = -1
 		doc["status"] = QuizStatus["SAVE"]
+		logger.info("student: %s is saving an answer for homework-%d: %s " %(doc['userId'], int(quiz_id), strSolution(doc)))
 		yield db.solutions.save(doc)
 		self.redirect("/quiz/"+quiz_id)
 
@@ -227,6 +244,7 @@ class QuizSubmitHandler(BaseHandler):
 			if  tmp:
 				if a_content['type'] == QuizType['SINCHOICE']:
 					if not tmp in map(lambda x:x['value'],a_content['choices']):
+						logger.info("student: %s failed to submit an answer for homework-%d: %s " %(doc['userId'], int(quiz_id), str(tmp)))
 						self.write('<script>alert("答案不符合规定, 请重新提交");window.history.back()</script>')
 						self.finish()
 						return
@@ -239,6 +257,7 @@ class QuizSubmitHandler(BaseHandler):
 		doc["solutions"] = solutions
 		doc["all_score"] = -1
 		doc["status"] = QuizStatus["SUBMIT"]
+		logger.info("student: %s is submitting an answer for homework-%d: %s " %(doc['userId'], int(quiz_id), strSolution(doc)))
 		yield db.solutions.save(doc)
 		self.redirect("/quiz/"+quiz_id)
 		return
@@ -286,8 +305,9 @@ class QuizHandler(BaseHandler):
 			else:
 				flag = QuizFlag["FULL_SCORED"]
 
+			logger.info("student: %s is viewing the homework-%d(status: %s)" %(self.get_current_user(), int(quiz_id), flag))
 			self.render("./template/quiz.template", a_quiz = a_quiz, info = self.online_data[self.get_current_user()],  quizs=quizs, user_quiz=user_quiz, flag=flag)
-		return
+			return
 
 class ProjectMainHandler(BaseHandler):
 	@tornado.web.authenticated
@@ -1057,18 +1077,22 @@ class LoginHandler(BaseHandler):
 			self.online_data[a_user['userId']] = {'name': a_user['name'],'userId':a_user['userId'], "loginTime":datetime.now(), 'classNo':a_user['classNo'], 'group':a_user['group'],'yearOfEntry':a_user['yearOfEntry']}
 			# testMode 下只能做支持实验测试，其他测试无法支持
 			if testMode:
+				logger.debug("test user: %s is logging in" %userId)
 				self.redirect("http://project.ucas-2014.tk")
 				#self.render("./template/test_entrance.template")
 				return
 			else:
+				logger.info("student: %s is logging in" %userId)
 				self.redirect("/main")
 				return
 		elif a_admin:
+			logger.info("administrator: %s is logging in" %userId)
 			self.set_secure_cookie("adminId", a_admin['userId'], expires_days=expires_days)
 			self.online_data[a_admin['userId']] = {'name': a_admin['name'],'adminId':a_admin['userId'], "loginTime":datetime.now()}
 			self.redirect("/admin")
 			return
 		else:
+			logger.warn("user: %s failed to log in" %userId)
 			self.render("./template/login.template", error="用户名或密码错误")
 		return
 
@@ -1085,9 +1109,11 @@ class PasswordHandler(BaseHandler):
 		if userId:
 			a_user = yield db.users.find_one({"userId":userId, "password":hashlib.md5(origin_pass + md5Salt).hexdigest()})
 			if a_user and new_pass==new_pass_again and re.match(regEx, new_pass):
+				logger.info("student: %s is modifying password to %s" %(userId, new_pass))
 				a_user["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
 				yield db.users.save(a_user)
 			else:
+				logger.info("student: %s failed to modify password to %s" %(userId, new_pass))
 				self.write('<script>alert("原密码有误或新密码不符合输入规则，修改失败");;window.history.back()</script>')
 				self.finish()
 				return
@@ -1108,6 +1134,7 @@ class UnfoundHandler(BaseHandler):
 
 class ExitHandler(BaseHandler):
 	def get(self):
+		logger.info("user: %s is exiting" %self.get_current_user())
 		self.clear_current_user()
 		self.clear_current_admin()
 		self.redirect("./login")
