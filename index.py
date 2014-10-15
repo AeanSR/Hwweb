@@ -1134,7 +1134,8 @@ class UnfoundHandler(BaseHandler):
 
 class ExitHandler(BaseHandler):
 	def get(self):
-		logger.info("user: %s is exiting" %self.get_current_user())
+		userId = self.get_current_user()
+		logger.info("user: %s is exiting" %userId)
 		self.clear_current_user()
 		self.clear_current_admin()
 		self.redirect("./login")
