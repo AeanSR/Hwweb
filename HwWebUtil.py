@@ -26,6 +26,8 @@ QuizFlag = {"END": -1,"UNDONE":0,"SAVE":1,"SUB_NOTSCORED":2,"SEMI_SCORED":3 ,"FU
 
 QuizType = {"SINCHOICE":1, "MULTICHOICE":2, "ESSAYQUES":3}
 
+TopoStatus = {"NEW" : 0, "ING":1, "DONE":2}
+
 class HwWebUtil:
 	@staticmethod
 	def canSaveOrSubmit(a_quiz, user_quiz, op_now):

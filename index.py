@@ -24,6 +24,7 @@ from HwWebUtil import QuizFlag
 from HwWebUtil import QuizType
 from HwWebUtil import ProjectStatus
 from HwWebUtil import ProjectFlag
+from HwWebUtil import TopoStatus
 
 # to do, filter the text input
 # to do, 多选题
@@ -137,8 +138,8 @@ class BaseHandler(tornado.web.RequestHandler):
 
 	#for test, release version needs to delete it
 	def test_user(self):
-		self.set_secure_cookie("userId", "2014k8009907064", domain=domain, expires_days=expires_days)
-               	self.online_data["2014k8009907064"] = {'name': "丁宇",'userId':"2014k8009907064", "classNo":2, "group":"2-1", "yearOfEntry":2014}
+		self.set_secure_cookie("userId", "ucas10", domain=domain, expires_days=expires_days)
+               	self.online_data["ucas10"] = {'name': "Sai",'userId':"ucas10", "classNo":10, "group":"0-0", "yearOfEntry":2014}
 
 	#for test, release version needs to delete it
 	def test_admin(self):
@@ -989,26 +990,58 @@ class RouteAPIGetInfoHandler(BaseHandler):
 		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		group = self.online_data[self.get_current_user()]["group"]
-		group_users_cursor = db.users.find({"group":group}, {"name": 1, "_id" :0})
-		group_users_name = yield group_users_cursor.to_list(None)
-		record = {"info":self.online_data[self.get_current_user()],
-			"group_users_name" : group_users_name}
+		group_users_cursor = db.users.find({"group":group}, {"name": 1, "_id" :0, "userId" : 1})
+		group_users = yield group_users_cursor.to_list(None)
+		info = self.online_data[self.get_current_user()].copy()
+		del info['loginTime']
+		record = {"info":info,
+			"group_users" : group_users}
 		self.write(json.dumps(record))
 		self.finish()
 		return
 
-class RouteAPIGetTopoHandler(BaseHandler):
-	#topo:{"scale":30, "link":["1-2","3-4","5-29"], "group":"10-2", "year":2014, "type":0}
+class RouteAPISubmitResultHandler(BaseHandler):
+
 	@tornado.web.authenticated
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
-	def get(self):
+	def post(self):
+		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		self.set_header('Access-Control-Allow-Credentials','true')
+		gameTimes = int(self.get_argument("times", 1))
+		resultJson = self.get_argument("result", None)
+		topo = yield db.routeTopo.find_one({"group":self.online_data[self.get_current_user()]["group"], "gameTimes":gameTimes, "year":self.online_data[self.get_current_user()]["yearOfEntry"]})
+		if not resultJson or not topo or topo["status"] == TopoStatus["DONE"] or self.get_current_user() in topo["submitUser"]:
+			# 返回错误消息给客户端处理
+			self.finish()
+			return
+			pass
+		result = json.loads(resultJson);
+		print result
+		topo["submitUser"].append(self.get_current_user())
+		if set(topo["submitUser"]) == set(topo["distributeNodes"].keys()):
+			topo["status"] = TopoStatus["DONE"];
+		else:
+			topo["status"] = TopoStatus["ING"]
+		topo["result"]= dict(topo["result"].items() + result.items())
+		db.routeTopo.save(topo)
+		self.write(json.dumps({"gameTimes":gameTimes, "result":result}))
+		self.finish()
+		return
+
+class RouteAPIGetTopoHandler(BaseHandler):
+	#topo:{"scale":30, "link":["1-2","3-4","5-29"], "group":"10-2", "year":2014, "type":0, "distributeNodes":{"2011":[0,3], "2012":[1,2,4]}}
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def post(self):
 		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		gameTimes = int(self.get_argument("times", 1))
 		scale = int(self.get_argument("scale", 30))
 		group = self.online_data[self.get_current_user()]["group"]
-		group_header = yield db.users.find_one({"group":group}, {"name": 1, "_id" :0, "userId":1})
+		group_users_cursor = db.users.find({"group":group}, {"name": 1, "_id" :0, "userId":1})
+		group_users = yield group_users_cursor.to_list(None)
 		topo = yield db.routeTopo.find_one({"group":group, "gameTimes":gameTimes, "year":self.online_data[self.get_current_user()]["yearOfEntry"]},{"_id": 0})
 		if not topo:
 			topo ={}
@@ -1016,13 +1049,36 @@ class RouteAPIGetTopoHandler(BaseHandler):
 			topo["gameTimes"] = gameTimes
 			topo["group"] = group
 			topo["year"] = self.online_data[self.get_current_user()]["yearOfEntry"]
+			topo["status"] = TopoStatus["NEW"]
+			topo["submitUser"] = []
+			topo["result"] = {}
 			topo["type"] = 0
-			# randomize
+
+			# 将结点随机分配给该组成员
+			x = (scale - 1) / len(group_users) + 1
+			user_hash = {}
 			link =[]
 			for i in range(0, scale) :
+				y = int(random.random()*len(group_users))
+				while True:
+					a_userId = group_users[y]['userId']
+					if a_userId not in user_hash:
+						user_hash[a_userId] = []
+						user_hash[a_userId].append(i)
+						break
+					elif len(user_hash[a_userId]) == x:
+						y+=1
+						y%=len(group_users)
+						continue
+					else:
+						user_hash[a_userId].append(i)
+						break
+				# randomize
 				for j in range(0, i):
-					if random.random() < 0.1:
+					if random.random() < 0.07:
 						link.append("%d-%d" %(i,j))
+			print user_hash
+			topo["distributeNodes"] = user_hash
 			topo["link"] = link
 			print topo
 			yield db.routeTopo.save(topo)
@@ -1168,7 +1224,8 @@ application = tornado.web.Application([
     (r"/api/getinfo",APIGetHandler),
     (r"/api/putinfo",APIPutHandler),
     (r"/api/route/getinfo",RouteAPIGetInfoHandler),
-    (r"/api/route/getTopo",RouteAPIGetTopoHandler)
+    (r"/api/route/getTopo",RouteAPIGetTopoHandler),
+    (r"/api/route/submitResult",RouteAPISubmitResultHandler)
     ],**settings )
 
 
