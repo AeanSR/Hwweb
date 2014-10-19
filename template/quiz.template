@@ -10,9 +10,14 @@
 {% include "./htmlhead.template" %}
     <script>
         $(document).ready(function(c) {
-            $("input#save").click(function(e){
-                $("form").attr("action","/quiz/{{ a_quiz['quiz_id'] }}/save");
-                $("form").submit();
+            $("input#submitButton").click(function(event){
+                var r=confirm("提交后无法修改，确认提交？")
+                if (r==false){
+                    event.preventDefault();
+                }
+            });
+            $("input#saveButton").click(function(e){
+                $("form#quiz_form").attr("action","/quiz/{{ a_quiz['quiz_id'] }}/save");
             });
             {% if flag > QuizFlag["UNDONE"] %}
                 {% set count = 0 %}
@@ -71,8 +76,9 @@
 </head>
 
 <body>
-{% include "./person_status.template" %}
 
+{% include "./person_status.template" %}
+<div id="container">
 {% include "./navigator.template" %}
 
 <div id="content">
@@ -108,17 +114,20 @@
                         </div>
                     {% end %}
                 {% end %}
-                <input id="save" type="submit" name="save" value="暂存作业"  />
-                <input id="submit" type="submit" name="submit" value="提交作业" />
+                <input id="saveButton" type="submit" name="saveButton" value="暂存作业"  />
+                <input id="submitButton" type="submit" name="submitButton" value="提交作业" />
             </div>
         </form>
     </div>
-    
+</div>
+<div class="footer">
+        <p>中国科学院大学 版权所有 &copy;  2005-2014 地址: 北京市石景山区玉泉路19号(甲) 邮编: 100049</p>
+</div>
 </body>
 <script>
   $(function() {
-    $( "#save").button()
-    $( "#submit").button()
+    $( "#saveButton").button()
+    $( "#submitButton").button()
     $( ".quiz_choices").buttonset();
   });
   </script>

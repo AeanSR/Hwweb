@@ -723,16 +723,6 @@ class ReviewHandler(BaseHandler):
     		self.redirect("/review/"+quiz_id)
     		return
 
-
-class UnfoundHandler(BaseHandler):
-    	def get(self):
-	 	self.render("./template/404.template")
-	 	return
-	def post(self):
-	 	self.render("./template/404.template")
-	 	return
-
-
 class ProjectMainHandler(BaseHandler):
 	@tornado.web.authenticated
 	@tornado.web.asynchronous
@@ -994,38 +984,100 @@ class RouteAPIGetInfoHandler(BaseHandler):
 		group_users = yield group_users_cursor.to_list(None)
 		info = self.online_data[self.get_current_user()].copy()
 		del info['loginTime']
+
+		gameTimes = 1
+		step = 0 #客户端此时应该在第几步后
+		topo_cursor = db.routeTopo.find({"group":group, "year":self.online_data[self.get_current_user()]["yearOfEntry"]},{"gameTimes":1, "status":1, "submitUser":1}).sort("gameTimes", pymongo.DESCENDING)
+		topos = yield topo_cursor.to_list(None)
+		if not topos or len(topos) == 0:
+			pass
+		elif topos[0]["status"] == TopoStatus["NEW"]:
+			gameTimes = topos[0]["gameTimes"]
+		elif topos[0]["status"] == TopoStatus["ING"] and self.get_current_user() in topos[0]["submitUser"]:
+			gameTimes = topos[0]["gameTimes"]
+			step = 2
+		elif topos[0]["status"] == TopoStatus["ING"] and self.get_current_user() not in topos[0]["submitUser"]:
+			gameTimes = topos[0]["gameTimes"]
+			step = 1
+		else:
+			gameTimes = topos[0]["gameTimes"]+1
+			step = 0
 		record = {"info":info,
-			"group_users" : group_users}
+			"group_users" : group_users, "gameTimes":gameTimes, "step":step}
+		if gameTimes > 10:
+			record["status"] = "ERROR"
+		else:
+			record["status"] = "NORMAL" #正常
 		self.write(json.dumps(record))
 		self.finish()
 		return
 
 class RouteAPISubmitResultHandler(BaseHandler):
+	# 检测是否能进入下一步
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def get(self):
+		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		self.set_header('Access-Control-Allow-Credentials','true')
+		gameTimes = int(self.get_argument("times", None))
+		if not gameTimes:
+			self.finish()
+			return
+		topo = yield db.routeTopo.find_one({"group":self.online_data[self.get_current_user()]["group"], "gameTimes":gameTimes, "year":self.online_data[self.get_current_user()]["yearOfEntry"]})
+		status = None
+		if not topo:
+			status = "ERROR"
+		elif set(topo["submitUser"]) == set(topo["distributeNodes"].keys()) and topo["status"] == TopoStatus["DONE"]:
+			status = "DONE"
+		else:
+			status = "ING"
+		self.write(json.dumps({"status":status}))
+		self.finish()
+		return
 
+	# 提交路由表
 	@tornado.web.authenticated
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
 		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
 		self.set_header('Access-Control-Allow-Credentials','true')
-		gameTimes = int(self.get_argument("times", 1))
+		gameTimes = int(self.get_argument("times", None))
+		if not gameTimes:
+			self.finishi()
+			return
 		resultJson = self.get_argument("result", None)
 		topo = yield db.routeTopo.find_one({"group":self.online_data[self.get_current_user()]["group"], "gameTimes":gameTimes, "year":self.online_data[self.get_current_user()]["yearOfEntry"]})
-		if not resultJson or not topo or topo["status"] == TopoStatus["DONE"] or self.get_current_user() in topo["submitUser"]:
-			# 返回错误消息给客户端处理
+		result = None
+		returnStatus = None
+		if not resultJson or not topo or resultJson == "null":
+			returnStatus = "ERROR"
+			self.write(json.dumps({"status": returnStatus}))
 			self.finish()
 			return
-			pass
-		result = json.loads(resultJson);
-		print result
+		if topo["status"] == TopoStatus["DONE"] or self.get_current_user() in topo["submitUser"]:
+			returnStatus = "REJECT"
+			self.write(json.dumps({"status": returnStatus}))
+			return
+		try:
+			result = json.loads(resultJson);
+		except ValueError, e:
+			returnStatus = "ERROR"
+			self.write(json.dumps({"status": returnStatus}))
+			self.finish()
+			return
+
 		topo["submitUser"].append(self.get_current_user())
 		if set(topo["submitUser"]) == set(topo["distributeNodes"].keys()):
 			topo["status"] = TopoStatus["DONE"];
+			returnStatus = "DONE"
 		else:
 			topo["status"] = TopoStatus["ING"]
+			returnStatus = "ING"
 		topo["result"]= dict(topo["result"].items() + result.items())
-		db.routeTopo.save(topo)
-		self.write(json.dumps({"gameTimes":gameTimes, "result":result}))
+		yield db.routeTopo.save(topo)
+		self.write(json.dumps({"status": returnStatus, "gameTimes":gameTimes, "result":result}))
 		self.finish()
 		return
 
@@ -1037,7 +1089,11 @@ class RouteAPIGetTopoHandler(BaseHandler):
 	def post(self):
 		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
 		self.set_header('Access-Control-Allow-Credentials','true')
-		gameTimes = int(self.get_argument("times", 1))
+		gameTimes = int(self.get_argument("times", None))
+		if not gameTimes:
+			self.finish()
+			return
+		print "gameTimes:%d" %gameTimes
 		scale = int(self.get_argument("scale", 30))
 		group = self.online_data[self.get_current_user()]["group"]
 		group_users_cursor = db.users.find({"group":group}, {"name": 1, "_id" :0, "userId":1})
@@ -1176,14 +1232,17 @@ class PasswordHandler(BaseHandler):
 		self.redirect("/main")
 		return
 
+
 class UnfoundHandler(BaseHandler):
 	@tornado.web.authenticated
     	def get(self):
+    		logger.warn("user: %s is try to visit %s"  %(self.get_current_user(), self.request.uri))
 	 	self.render("./template/404.template")
 	 	return
 
 	@tornado.web.authenticated
 	def post(self):
+		logger.warn("user: %s is try to visit %s" %(self.get_current_user(), self.request.uri))
 	 	self.render("./template/404.template")
 	 	return
 

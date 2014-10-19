@@ -128,7 +128,7 @@ function checkOriginNewPass( origin_pass, new_pass, n ) {
         allFields.removeClass( "ui-state-error" );
       }
     });
-    form = dialog.find( "form" )
+    form = dialog.find( "form#form_modify_pass" )
  
     $( "#modify_password" ).on( "click", function() {
       event.preventDefault();
