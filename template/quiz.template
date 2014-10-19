@@ -69,7 +69,7 @@
             {% if flag == QuizFlag["UNDONE"] or flag == QuizFlag["SAVE"] %}
                 $("div#warn").text("请务必在截止日期前提交作业！暂存功能仅供下次继续做，并不能替代提交。提交后无法修改！")   
             {% elif flag == QuizFlag["SUB_NOTSCORED"]%}
-                $("div#warn").text("作业已提交，还未修改")      
+                $("div#warn").text("作业已提交，还未批改")      
             {% end %}
         });
         </script>

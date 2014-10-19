@@ -34,7 +34,7 @@ html, body {
 
  #content {
  	position:static;
-	width:78%;
+	width:70%;
 	padding-left: 5px;
 	display:inline-block;
 	text-align: left;
@@ -43,15 +43,11 @@ html, body {
  }
 
  #page_navigator{
-	position:relative;
-	z-index: 10;
-	left:220px;
-	padding: 0;
+	padding: 1em 0 1em 0;
+	text-align: left;
 	width: 100%;
 	height: 60px;
-	margin-top: 5em;
 	background: transparent;
-	clear:both;
 }
 
 .footer {

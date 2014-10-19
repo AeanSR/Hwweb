@@ -13,12 +13,12 @@
 <body>
     <!-- contact-form -->
     <div class="message warning">
-        <div class="inset">
+        <div class="inset"  style="width:450px; height: 400px">
             <div class="login-head">
                 <h1>用户登录</h1>
             </div>
             <form method="post" action="./login">
-            	<li><span>{{error}}</span></li>
+            	<li style="border-width: 0"><span>{{error}}</span></li>
                 <li>
                     <input type="text" name="userId" class="text">
                     <span href="#" class=" icon user"></span>

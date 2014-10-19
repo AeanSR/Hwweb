@@ -12,7 +12,7 @@
 	  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
 	});
 </script>
-<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/javascript" src="/static/js/MathJax-2.4-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="keywords" content="计算机导论,作业题,国科大,本科生,计算所" />
 <meta name="Description" content="国科大本科生计算机导论作业" />

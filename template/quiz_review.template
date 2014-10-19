@@ -7,8 +7,9 @@
 </head>
 
 <body>
-<div id="container">
+
 {% include "./admin_status.template" %}
+<div id="container">
 {% include "./review_navigator.template" %}
    <div id="content">
    <div>
@@ -55,9 +56,13 @@
     <input type="submit" name="提交分数" />
    </form>
    </div>
+   {% include "./page_navigator.template" %}
  </div>
 
-{% include "./page_navigator.template" %}
+
+</div>
+<div class="footer">
+        <p>中国科学院大学 版权所有 &copy;  2005-2014 地址: 北京市石景山区玉泉路19号(甲) 邮编: 100049</p>
 </div>
 </body>
 
