@@ -1113,7 +1113,6 @@ class RouteAPIGetTopoHandler(BaseHandler):
 			# 将结点随机分配给该组成员
 			x = (scale - 1) / len(group_users) + 1
 			user_hash = {}
-			link =[]
 			for i in range(0, scale) :
 				y = int(random.random()*len(group_users))
 				while True:
@@ -1129,11 +1128,8 @@ class RouteAPIGetTopoHandler(BaseHandler):
 					else:
 						user_hash[a_userId].append(i)
 						break
-				# randomize
-				for j in range(0, i):
-					if random.random() < 0.07:
-						link.append("%d-%d" %(i,j))
-			print user_hash
+			link = self.initialLink(scale)
+			print link
 			topo["distributeNodes"] = user_hash
 			topo["link"] = link
 			print topo
@@ -1143,6 +1139,83 @@ class RouteAPIGetTopoHandler(BaseHandler):
 		self.write(json.dumps(topo))
 		self.finish()
 		return
+
+	def initialLink(self, scale):
+		link = []
+		# 3个同心的正多边形
+		edgeNum = scale / 3
+		outerEdgeNum = scale - edgeNum * 2
+		randomThreshold = 0.4
+		while True:
+			link = []
+			for i in range(0, edgeNum) :
+				# 最里面/中间的正多边形的各自顶点相连
+				if random.random() < randomThreshold:
+					link.append("%d-%d" %(i, (i + 1) %edgeNum ))
+				middleFirst = edgeNum
+				if random.random() < randomThreshold:
+					link.append("%d-%d" %(i + middleFirst, (i + 1) %edgeNum + middleFirst))
+				# 中间和里面多边形顶点间相连
+				middleIndex = i + middleFirst
+				if random.random() < randomThreshold:
+					link.append("%d-%d" %(middleIndex, middleIndex % edgeNum ))
+				if random.random() < randomThreshold:
+					link.append("%d-%d" %(middleIndex, (middleIndex + 1) % edgeNum ))
+				if random.random() < randomThreshold:
+					link.append("%d-%d" %(middleIndex, (middleIndex + 9) % edgeNum ))
+			for i in range(0, outerEdgeNum) :
+				# 最外边的正多边形的顶点相连
+				middleFirst = edgeNum
+				outerFirst = 2 * edgeNum
+				if random.random() < randomThreshold:
+					link.append("%d-%d" %(i + outerFirst, (i + 1)%outerEdgeNum + outerFirst))
+				# 外面和中间的多边形顶点间相连
+				outerIndex = i + outerFirst
+				if random.random() < randomThreshold:
+					link.append("%d-%d" %(outerIndex, outerIndex % edgeNum + middleFirst))
+				if random.random() < randomThreshold:
+					link.append("%d-%d" %(outerIndex, (outerIndex + 1) % edgeNum + middleFirst))
+				if random.random() < randomThreshold:
+					link.append("%d-%d" %(outerIndex, (outerIndex + 9) % edgeNum + middleFirst))
+			if self.isConnectedGraph(scale, link):
+				break
+		return link
+
+	# 检测是否为连通图
+	def isConnectedGraph(self, scale, links):
+		AdjList = [ [] for i in range(scale)]
+		for link in links:
+			x = int(link.split("-")[0])
+			y = int(link.split("-")[1])
+			AdjList[x].append(y)
+			AdjList[y].append(x)
+		print AdjList
+		count = self.BFS(AdjList, 0)
+		print count
+		if count == scale:
+			return True
+		else:
+			return False
+
+	# BFS，返回BFS树的节点数
+	def BFS(self, AdjList, i):
+		scale = len(AdjList)
+		markArray = [ False for i in range(scale)]
+		count = 1
+		queue = []
+		markArray[i] = True
+		queue.append(i)
+		while len(queue) != 0:
+			u = queue[0]
+			del queue[0]
+			for v in AdjList[u]:
+				if not markArray[v]:
+					markArray[v] = True
+					count += 1
+					queue.append(v)
+		return count
+
+
 
 class LoginHandler(BaseHandler):
 	def get(self):
