@@ -523,7 +523,7 @@ class StudentListHandler(BaseHandler):
 						flag = QuizFlag["FULL_SCORED"]
 					else:
 						flag = QuizFlag["SEMI_SCORED"]
-				
+
 				elif user_quiz['status'] == QuizStatus['BLANK']:
 					flag = QuizFlag["BLANK"]
 				# user_quiz["status"] == QuizStatus["REVIEW"]
@@ -1215,6 +1215,7 @@ class LoginHandler(BaseHandler):
 		a_user = yield db_ptr.users.find_one({"userId":{"$regex":regexStr, "$options":"i"}, "password":hashlib.md5(password + md5Salt).hexdigest()})
 		a_admin = yield db_ptr.admin.find_one({"userId":{"$regex":regexStr, "$options":"i"}, "password":hashlib.md5(password + md5Salt).hexdigest()})
 		if a_user:
+			self.clear_current_admin()
 			self.set_secure_cookie("userId", a_user['userId'],domain=domain, expires_days=expires_days)
 			self.online_data[a_user['userId']] = {'name': a_user['name'],'userId':a_user['userId'], "loginTime":datetime.now(), 'classNo':a_user['classNo'], 'group':a_user['group'],'yearOfEntry':a_user['yearOfEntry']}
 			# testMode 下只能做支持实验测试，其他测试无法支持
@@ -1228,6 +1229,7 @@ class LoginHandler(BaseHandler):
 				self.redirect("/main")
 				return
 		elif a_admin:
+			self.clear_current_user()
 			logger.info("administrator: %s is logging in" %userId)
 			self.set_secure_cookie("adminId", a_admin['userId'], expires_days=expires_days)
 			self.online_data[a_admin['userId']] = {'name': a_admin['name'],'adminId':a_admin['userId'], "loginTime":datetime.now()}
@@ -1245,22 +1247,38 @@ class PasswordHandler(BaseHandler):
 	def post(self):
 		regEx = r'^([0-9a-zA-Z]){6,15}$'
 		userId = self.get_current_user()
-		origin_pass = self.get_argument("origin_pass")
-		new_pass = self.get_argument("new_pass")
-		new_pass_again = self.get_argument("new_pass_again")
+		adminId = self.get_current_admin()
+		origin_pass = self.get_argument("origin_pass", None)
+		new_pass = self.get_argument("new_pass", None)
+		new_pass_again = self.get_argument("new_pass_again", None)
+		a_user = yield db.users.find_one({"userId":userId, "password":hashlib.md5(origin_pass + md5Salt).hexdigest()})
+		a_admin = yield db.admin.find_one({"userId":adminId, "password":hashlib.md5(origin_pass + md5Salt).hexdigest()})
 		if userId:
-			a_user = yield db.users.find_one({"userId":userId, "password":hashlib.md5(origin_pass + md5Salt).hexdigest()})
 			if a_user and new_pass==new_pass_again and re.match(regEx, new_pass):
-				logger.info("student: %s is modifying password to %s" %(userId, new_pass))
-				a_user["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
-				yield db.users.save(a_user)
+				if userId and a_user:
+					logger.info("student: %s is modifying password to %s" %(userId, new_pass))
+					a_user["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
+					yield db.users.save(a_user)
+					self.clear_current_user()
+					self.clear_current_admin()
+					self.write('<script>alert("修改成功，请重新登录系统");window.location="/login"</script>')
+					self.finish()
+					return
+				elif adminId and a_admin:
+					logger.info("administrator: %s is modifying password to %s" %(adminId, new_pass))
+					a_admin["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
+					yield db.admin.save(a_admin)
+					self.clear_current_user()
+					self.clear_current_admin()
+					self.write('<script>alert("修改成功，请重新登录系统");window.location="/login"</script>')
+					self.finish()
+					return
 			else:
 				logger.info("student: %s failed to modify password to %s" %(userId, new_pass))
-				self.write('<script>alert("原密码有误或新密码不符合输入规则，修改失败");;window.history.back()</script>')
+				self.write('<script>alert("原密码有误或新密码不符合输入规则，修改失败");window.history.back()</script>')
 				self.finish()
 				return
-		self.redirect("/main")
-		return
+
 
 
 class UnfoundHandler(BaseHandler):
@@ -1287,7 +1305,7 @@ class ExitHandler(BaseHandler):
 		return
 
 settings = {
-	"debug": True,
+	#"debug": True,
 	"default_handler_class": UnfoundHandler,
 	"static_path": os.path.join(os.path.dirname(__file__), "static"),
 	"cookie_secret": "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
@@ -1408,7 +1426,7 @@ def involeQuartzTasks():
 		            		reviewQuiz,
 		            		a_quiz['quiz_id']
 		       	)
-			
+
 
 
 if __name__ == "__main__":
