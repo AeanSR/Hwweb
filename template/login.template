@@ -13,7 +13,7 @@
 <body>
     <!-- contact-form -->
     <div class="message warning">
-        <div class="inset"  style="width:450px; height: 400px">
+        <div class="inset"  style="width:auto; height: 400px">
             <div class="login-head">
                 <h1>用户登录</h1>
             </div>
