@@ -1413,6 +1413,7 @@ def reviewQuiz(quiz_id):
 # 遍历quizs，将定时任务加入到系统，每次系统初始化都要做此工作
 @tornado.gen.coroutine
 def involeQuartzTasks():
+	print "system: scan the quizs and add the timing-reviewing tasks"
 	logger.info("system: scan the quizs and add the timing-reviewing tasks")
 	quizs_cursor = db.quizs.find({"status":QuizStatus["PUBLISH"]},{"content":0, "description":0,"title":0})
 	quizs = yield quizs_cursor.to_list(None)
@@ -1420,6 +1421,7 @@ def involeQuartzTasks():
 		# 满足以下条件，才进行客观提评分。否则说明客观提已评分，只是主管题未评分
 		# 如果由于各种原因系统在截至日时没有给予客观提评分，那么只能将此次Quiz的截至日调后进行批改
 		if datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
+			print "system: add the quartz task: homework-%d will get reviewd at %s" %(a_quiz['quiz_id'], a_quiz['deadline'])
 			logger.info("system: add the quartz task: homework-%d will get reviewd at %s" %(a_quiz['quiz_id'], a_quiz['deadline']))
 			tornado.ioloop.IOLoop.instance().add_timeout(
 		            		datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S") - datetime.now(),
@@ -1429,6 +1431,7 @@ def involeQuartzTasks():
 
 
 
+# 每次加入新的作业都必须要重启一次系统，因为需要把自动该作业的任务加入到定时任务中去
 if __name__ == "__main__":
 	application.listen(80)
 	#application.listen(8888)
