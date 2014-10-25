@@ -20,18 +20,16 @@
                 $("form#quiz_form").attr("action","/quiz/{{ a_quiz['quiz_id'] }}/save");
             });
             {% if flag > QuizFlag["UNDONE"] %}
-                {% set count = 0 %}
                 {% for a_solution in user_quiz["solutions"] %}
-                    {% set count = count + 1 %}
                     {% if a_solution['solution'] %}  
                         {% if a_solution["type"] == 1 %}
-                        $("input#{{count}}_{{a_solution['solution'][0]}}").attr("checked", "checked");
+                        $("input#{{a_solution["id"]}}_{{a_solution['solution'][0]}}").attr("checked", "checked");
                         {% elif a_solution["type"] == 2 %}
                             {% for a_ans in a_solution["solution"] %}
-                                $("input#{{count}}_{{a_ans}}").attr("checked", "checked");
+                                $("input#{{a_solution["id"]}}_{{a_ans}}").attr("checked", "checked");
                             {% end %}
                         {% else %}
-                            $("textarea#{{count}}_Text").val(unescapeHtml("{{a_solution['solution'][0]}}"));
+                            $("textarea#{{a_solution["id"]}}_Text").val(unescapeHtml("{{a_solution['solution'][0]}}"));
                         {% end %}
                     {% end %}
                 {% end %}
@@ -59,10 +57,10 @@
                         {% end %}
                     {% end %}
                 {% end %}
-            {% elif flag == QuizFlag["END"] %}
+            {% elif flag == QuizFlag["BLANK"] %}
                 $("form#quiz_form input").button({ disabled: true });
                 $("form#quiz_form textarea").attr("disabled", "disabled");
-                $("#all_score").text("截至日期前没有提交作业(总得分: 0),无法查看标准答案")
+                $("#all_score").text("截至日期前没有任何作业记录(总得分: 0),无法查看标准答案")
                 $("#all_score").css({"color":"red"})
             {% else %}
             {% end %}
@@ -93,24 +91,22 @@
                 <div id="all_score"></div>
             </div>
             <div id="quiz_content">
-                {% set count = 0 %}
-                {% for a_ques in a_quiz["content"] %} 
-                {% set count = count+1 %}
+                {% for a_ques in a_quiz["content"] %}
                     {% if a_ques["type"]  != QuizType["ESSAYQUES"] %}
-                        <div class="quiz_choices"><p>{{count}}.&nbsp;{% raw a_ques["head"] %}</p>
+                        <div class="quiz_choices"><p>{{a_ques['id']}}.&nbsp;{% raw a_ques["head"] %}</p>
                             <!-- <fieldset data-role="controlgroup">
-                                <legend>{{count}}.&nbsp;{% raw a_ques["head"] %}</legend> -->
+                                <legend>{{a_ques['id']}}.&nbsp;{% raw a_ques["head"] %}</legend> -->
                             {% for a_choice in a_ques["choices"] %} 
-                                    <input id="{{count}}_{{ a_choice['value'] }}" name="quiz_{{a_quiz['quiz_id']}}_{{count}}" type="radio" value="{{ a_choice['value'] }}" />
-                                    <label for="{{count}}_{{ a_choice['value'] }}"> {{ a_choice["value"] }}.&nbsp;{% raw a_choice["text"] %}</label>
+                                    <input id="{{a_ques['id']}}_{{ a_choice['value'] }}" name="quiz_{{a_quiz['quiz_id']}}_{{a_ques['id']}}" type="radio" value="{{ a_choice['value'] }}" />
+                                    <label for="{{a_ques['id']}}_{{ a_choice['value'] }}"> {{ a_choice["value"] }}.&nbsp;{% raw a_choice["text"] %}</label>
                             {% end %}
                             <!-- </fieldset> -->
-                            <p height="15" id="answer_{{count}}"></p>
+                            <p height="15" id="answer_{{a_ques['id']}}"></p>
                         </div>
                     {% else %}
-                        <div class="quiz_essay"><p>{{count}}.&nbsp;{% raw a_ques["head"] %}</p>
-                            <textarea id="{{count}}_Text" name="quiz_{{a_quiz['quiz_id']}}_{{count}}"></textarea>
-                            <p height="15" id="answer_{{count}}"></p>
+                        <div class="quiz_essay"><p>{{a_ques['id']}}.&nbsp;{% raw a_ques["head"] %}</p>
+                            <textarea id="{{a_ques['id']}}_Text" name="quiz_{{a_quiz['quiz_id']}}_{{a_ques['id']}}"></textarea>
+                            <p height="15" id="answer_{{a_ques['id']}}"></p>
                         </div>
                     {% end %}
                 {% end %}

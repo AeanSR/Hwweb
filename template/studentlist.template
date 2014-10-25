@@ -31,8 +31,8 @@
                 {% elif quiz['status'] == QuizStatus['PUBLISH'] %}
                     $("td#{{quiz['quiz_id']}}").text("Quiz{{quiz['quiz_id']}}(已截止，等待批改)")
                     {% for stu in users_list %}
-                        {% if stu['quiz_info'][i]["flag"] == QuizFlag["UNDONE"] or stu['quiz_info'][i]["flag"] == QuizFlag["END"] %}
-                            $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").text("0分，无记录")
+                        {% if stu['quiz_info'][i]["flag"] == QuizFlag["BLANK"] %}
+                            $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").text("0分(无记录)")
                             $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").css("color","red")
                         {% elif stu['quiz_info'][i]["flag"] == QuizFlag["SEMI_SCORED"] %}
                             $("td#{{ stu['userId'] }}_{{ quiz['quiz_id'] }}").text("客观题分数：{{stu['quiz_info'][i]['all_score']}}/主观题未评分")
@@ -43,7 +43,12 @@
                 {% elif quiz['status'] == QuizStatus['REVIEW']%}
                     $("td#{{quiz['quiz_id']}}").text("Quiz{{quiz['quiz_id']}}(已完全批改)")
                     {% for stu in users_list %}
-                        $("td#{{stu['userId']}}_{{quiz['quiz_id']}}").text("总分：{{stu['quiz_info'][i]['all_score']}}")
+                        {% if stu['quiz_info'][i]["flag"] == QuizFlag["BLANK"] %}
+                            $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").text("总分：{{stu['quiz_info'][i]['all_score']}}(无记录)")
+                            $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").css("color","red")
+                         {% else %}   
+                            $("td#{{stu['userId']}}_{{quiz['quiz_id']}}").text("总分：{{stu['quiz_info'][i]['all_score']}}")
+                         {% end %}
                     {% end %}
                 {% end %}
 

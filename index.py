@@ -15,6 +15,7 @@ import logging.config
 
 from datetime import datetime
 from datetime import timedelta
+import time
 
 
 from HwWebUtil import HwWebUtil
@@ -30,6 +31,7 @@ from HwWebUtil import TopoStatus
 # to do, 多选题
 # to do, admin打包下载报告
 # to do, admin上传题目
+# to do, 用上a_ques 数据的id字段，将所有使用cnt/count的换成id
 
 #db = motor.MotorClient('localhost', 27017).test
 db = motor.MotorClient('localhost', 27017).hwweb
@@ -95,39 +97,38 @@ class BaseHandler(tornado.web.RequestHandler):
 			print kwargs["exc_info"]
 		self.flush()
 
-	# 如果存在全是客观题，状态为publish，且已过deadline的quiz，置其状态为review
-	# 所有有Quiz状态信息的都要首先调用这个函数
-	# 针对Quiz状态
-	@tornado.gen.coroutine
-	def checkQuizAndUpdateStatus(self):
-		quiz_cursor = db.quizs.find()
-		quizs = yield quiz_cursor.to_list(None)
-    		for a_quiz in quizs:
-    			if a_quiz["status"] == QuizStatus["PUBLISH"] and not datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
-    				tmp = filter(lambda x:x['type']==QuizType['ESSAYQUES'],a_quiz['content'])
-    				if not tmp:
-    					a_quiz['status'] = QuizStatus["REVIEW"]
-    					yield db.quizs.update({"quiz_id":a_quiz['quiz_id']}, {"$set":{"status":QuizStatus['REVIEW']}})
+	# # 如果存在全是客观题，状态为publish，且已过deadline的quiz，置其状态为review
+	# # 所有有Quiz状态信息的都要首先调用这个函数
+	# # 针对Quiz状态
+	# @tornado.gen.coroutine
+	# def checkQuizAndUpdateStatus(self):
+	# 	quiz_cursor = db.quizs.find()
+	# 	quizs = yield quiz_cursor.to_list(None)
+ #    		for a_quiz in quizs:
+ #    			if a_quiz["status"] == QuizStatus["PUBLISH"] and not datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
+ #    				tmp = filter(lambda x:x['type']==QuizType['ESSAYQUES'],a_quiz['content'])
+ #    				if not tmp:
+ #    					a_quiz['status'] = QuizStatus["REVIEW"]
+ #    					yield db.quizs.update({"quiz_id":a_quiz['quiz_id']}, {"$set":{"status":QuizStatus['REVIEW']}})
 
-    	# 将每道客观题的分数和客观提总分保存到数据库
-    	# 针对solution的选择题分数和客观题总分
-    	@tornado.gen.coroutine
-    	def reviewSelectionQues(self, user_quiz, a_quiz, essayQueses):
-    		if user_quiz["all_score"] == -1 :
-					all_score = 0
-					cnt = 0
-					for a_content in a_quiz["content"]:
-						score = 0
-						if a_content["type"] != QuizType["ESSAYQUES"] and set(a_content["answer"])  == set(user_quiz["solutions"][cnt]["solution"]) :
-							score = a_content["score"]
-							all_score += a_content["score"]
-						user_quiz["solutions"][cnt]["score"] = score
-						cnt += 1
-					user_quiz["all_score"] = all_score
-					# 如果全部为选择题，不仅进行自动打分操作，而且设置solu为REVIEW，flag为QuizFlag["FULL_SCORED"]
-					if not essayQueses:
-						user_quiz['status'] = QuizStatus["REVIEW"]
-					yield db.solutions.save(user_quiz)
+ #    	# 将每道客观题的分数和客观提总分保存到数据库
+ #    	# 针对solution的选择题分数和客观题总分
+ #    	@tornado.gen.coroutine
+ #    	def reviewSelectionQues(self, user_quiz, a_quiz, essayQueses):
+	# 	all_score = 0
+	# 	cnt = 0
+	# 	for a_content in a_quiz["content"]:
+	# 		score = 0
+	# 		if a_content["type"] != QuizType["ESSAYQUES"] and set(a_content["answer"])  == set(user_quiz["solutions"][cnt]["solution"]) :
+	# 			score = a_content["score"]
+	# 			all_score += a_content["score"]
+	# 		user_quiz["solutions"][cnt]["score"] = score
+	# 		cnt += 1
+	# 	user_quiz["all_score"] = all_score
+	# 	# 如果全部为选择题，不仅进行自动打分操作，而且设置solu为REVIEW，flag为QuizFlag["FULL_SCORED"]
+	# 	if not essayQueses:
+	# 		user_quiz['status'] = QuizStatus["REVIEW"]
+	# 	yield db.solutions.save(user_quiz)
 
 	def isTestUser(self, userId):
 		regexEx = r'^test'
@@ -151,7 +152,7 @@ class MainHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
     	def get(self):
-    		self.checkQuizAndUpdateStatus()
+    		# self.checkQuizAndUpdateStatus()
 
     		nt_cursor = db.notices.find().sort("id", pymongo.DESCENDING)
     		notices = yield nt_cursor.to_list(None)
@@ -184,14 +185,13 @@ class QuizSaveHandler(BaseHandler):
 			doc['userId'] = user_quiz["userId"]
 		doc["userId"] =  self.current_user
 		doc["quiz_id"] = int(quiz_id)
-		count = 0
 		solutions= []
 		status = 0
 		for a_content in quiz_contents["content"]:
 			ques_status = QuesStatus["UNDONE"]
+			ques_id = a_content['id']
 			answer = []
-			count +=1
-			tmp = self.get_argument("quiz_"+quiz_id+"_"+str(count), None)
+			tmp = self.get_argument("quiz_"+quiz_id+"_"+str(ques_id), None)
 			# 检测选择题输入，要求必须在选项之内
 			if  tmp:
 				if a_content['type'] == QuizType['SINCHOICE']:
@@ -202,10 +202,10 @@ class QuizSaveHandler(BaseHandler):
 						return
 				ques_status = QuesStatus["DONE"]
 				answer.append(tmp)
-			solutions.append({"type":a_content["type"], "solution":answer, "score":0, "status":ques_status, "id":a_content["id"]})
+			solutions.append({"type":a_content["type"], "solution":answer, "score":0, "status":ques_status, "id":ques_id})
 		doc["lastTime"] = op_now.strftime("%Y-%m-%d %H:%M:%S")
 		doc["solutions"] = solutions
-		doc["all_score"] = -1
+		doc["all_score"] = 0
 		doc["status"] = QuizStatus["SAVE"]
 		logger.info("student: %s is saving an answer for homework-%d: %s " %(doc['userId'], int(quiz_id), strSolution(doc)))
 		yield db.solutions.save(doc)
@@ -232,15 +232,14 @@ class QuizSubmitHandler(BaseHandler):
 			doc['userId'] = user_quiz["userId"]
 		doc["userId"] =  self.current_user
 		doc["quiz_id"] = int(quiz_id)
-		count = 0
 		solutions= []
 		status = 0
 		for a_content in quiz_contents["content"]:
 			ques_status = QuesStatus["UNDONE"]
+			ques_id = a_content['id']
 			solution = []
 			score = 0
-			count +=1
-			tmp = self.get_argument("quiz_"+quiz_id+"_"+str(count), None)
+			tmp = self.get_argument("quiz_"+quiz_id+"_"+str(ques_id), None)
 			# 检测选择题输入，要求必须在选项之内
 			if  tmp:
 				if a_content['type'] == QuizType['SINCHOICE']:
@@ -253,10 +252,10 @@ class QuizSubmitHandler(BaseHandler):
 			# if submit , i will test whether the student had done all the questions
 				ques_status = QuesStatus["DONE"]
 				solution.append(tmp)
-			solutions.append({"type":a_content["type"], "solution":solution, "score":score, "status":ques_status, "id":a_content["id"]})
+			solutions.append({"type":a_content["type"], "solution":solution, "score":score, "status":ques_status, "id":ques_id})
 		doc["lastTime"] = op_now.strftime("%Y-%m-%d %H:%M:%S")
 		doc["solutions"] = solutions
-		doc["all_score"] = -1
+		doc["all_score"] = 0
 		doc["status"] = QuizStatus["SUBMIT"]
 		logger.info("student: %s is submitting an answer for homework-%d: %s " %(doc['userId'], int(quiz_id), strSolution(doc)))
 		yield db.solutions.save(doc)
@@ -268,7 +267,7 @@ class QuizHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def get(self, quiz_id):
-		self.checkQuizAndUpdateStatus()
+		# self.checkQuizAndUpdateStatus()
 
 		a_quiz = yield db.quizs.find_one({"quiz_id": int(quiz_id)})
 		if not a_quiz  or a_quiz["status"] == QuizStatus["UNPUBLISH"]:
@@ -283,25 +282,24 @@ class QuizHandler(BaseHandler):
 
 			# quizs for indexing
 			quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1}).sort("quiz_id", pymongo.ASCENDING)
-	    		quizs = yield quiz_cursor.to_list(length=20) #???
+	    		quizs = yield quiz_cursor.to_list(None)
 			user_quiz = yield db.solutions.find_one({"quiz_id":int (quiz_id), "userId":self.current_user})
 			flag = 0 #it mark the quiz_flag out of the QuizFlag map
 			if not user_quiz and datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
 				flag = QuizFlag["UNDONE"]
-			elif (not user_quiz or user_quiz["status"] == QuizStatus["SAVE"]) and not datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):#a_quiz["status"] >= QuizStatus["END"]:
-				flag = QuizFlag["END"]
 			elif user_quiz["status"] == QuizStatus["SAVE"]:
 				flag = QuizFlag["SAVE"]
 			elif user_quiz["status"] == QuizStatus["SUBMIT"] and datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
 				flag = QuizFlag["SUB_NOTSCORED"]
 			# note: solution在SUBMIT后，若quiz已经截止，则可以查看到客观题分数
 			elif user_quiz["status"] == QuizStatus["SUBMIT"]:
-				#initial value of all_score is -1, all_score == -1 means it hasn't ever been calculated
-				self.reviewSelectionQues(user_quiz=user_quiz, a_quiz=a_quiz, essayQueses=essayQueses)
+				# self.reviewSelectionQues(user_quiz=user_quiz, a_quiz=a_quiz, essayQueses=essayQueses)
 				if not essayQueses:
 					flag = QuizFlag["FULL_SCORED"]
 				else:
 					flag = QuizFlag["SEMI_SCORED"]
+			elif user_quiz["status"] == QuizStatus["BLANK"]:
+				flag = QuizFlag["BLANK"]
 			# user_quiz["status"] == QuizStatus["REVIEW"]
 			else:
 				flag = QuizFlag["FULL_SCORED"]
@@ -458,7 +456,7 @@ class AdminHandler(BaseHandler):
 			self.redirect("/login")
 			return
 
-		self.checkQuizAndUpdateStatus()
+		# self.checkQuizAndUpdateStatus()
     		nt_cursor = db.notices.find().sort("id", pymongo.DESCENDING)
     		notices = yield nt_cursor.to_list(None)
     		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1, "content":1}).sort("quiz_id", pymongo.ASCENDING)
@@ -466,45 +464,6 @@ class AdminHandler(BaseHandler):
 	 	self.render("./template/admin.template", info = self.online_data[self.get_current_admin()],notices = notices, quizs_index=quizs_index)
 	 	return
 
-# admin opearation
-class QuizCreateHandler(BaseHandler):
-
-	@tornado.web.asynchronous
-	@tornado.gen.coroutine
-	def post(self, quiz_id):
-		if not self.get_current_admin():
-			self.redirect("/login")
-			return
-		## except quiz_id, releaseTime, status, all other parameters are needed
-		doc = self.get_argument("quiz_json")
-		cursor = yield db.quizs.find({},{"_id":0, "quiz_id":1}).sort("quiz_id", pymongo.ASCENDING)
-		quiz_id_list = cusor.to_list("length=20") ##???
-		doc["quiz_id"] = max(quiz_id_list) + 1
-		doc["releaseTime"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-		doc["status"] = QuizStatus["PUBLISH"]
-		deadline = datetime.strptime(doc["deadline"], "%Y-%m-%d %H:%M:%S")
-		scheduler.add_job(review, 'date', run_date=deadline,args=[doc])
-
-	@tornado.web.asynchronous
-	@tornado.gen.coroutine
-	def review(doc):
-		print doc
-		cursor = yield db.solutions.find({"quiz_id":doc["quiz_id"], "status":QuizStatus["SUBMIT"]})
-		user_quizs = cursor.to_list("length=1000")
-		for user_quiz in user_quizs:
-			all_score = 0
-			cnt = 0
-			for a_content in doc["content"]:
-				score = 0
-				if set(a_content["answer"])  == set(user_quiz["solutions"][cnt]["solution"]) :
-					score = a_content["score"]
-					all_score += a_content["score"]
-				cnt += 1
-				user_quiz["solutions"][cnt]["score"] = score
-			user_quiz["all_score"] = all_score
-			yield db.solutions.save(user_quiz)
-		self.finish()
-		return
 
 class StudentListHandler(BaseHandler):
 
@@ -514,7 +473,7 @@ class StudentListHandler(BaseHandler):
 		if not self.get_current_admin():
 			self.redirect("/login")
 			return
-		self.checkQuizAndUpdateStatus()
+		# self.checkQuizAndUpdateStatus()
 		page = int(self.get_argument("page", 1))
 		quiz_id = int(self.get_argument("quiz_id", 0))
 		quiz_cursor = None
@@ -544,7 +503,7 @@ class StudentListHandler(BaseHandler):
 			for a_quiz in quizs:
 				if a_quiz['status'] == QuizStatus["UNPUBLISH"]:
 					flag = QuizFlag["UNDONE"]
-					quiz_info.append({"quiz_id":a_quiz["quiz_id"], "all_score":-1, "flag":flag})
+					quiz_info.append({"quiz_id":a_quiz["quiz_id"], "all_score":0, "flag":flag})
 					continue
 				essayQueses = filter(lambda x:x['type']==QuizType['ESSAYQUES'],a_quiz['content'])
 
@@ -552,24 +511,22 @@ class StudentListHandler(BaseHandler):
 				flag = 0 #it mark the quiz_flag out of the QuizFlag map
 				if not user_quiz:
 					flag = QuizFlag["UNDONE"]
-					quiz_info.append({"quiz_id":a_quiz["quiz_id"], "all_score":-1, "flag":flag})
+					quiz_info.append({"quiz_id":a_quiz["quiz_id"], "all_score":0, "flag":flag})
 					continue
-				elif user_quiz["status"] == QuizStatus["SAVE"] and not datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):#a_quiz["status"] >= QuizStatus["END"]:
-					flag = QuizFlag["END"]
 				elif user_quiz["status"] == QuizStatus["SAVE"]:
 					flag = QuizFlag["SAVE"]
 				elif user_quiz["status"] == QuizStatus["SUBMIT"] and datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
 					flag = QuizFlag["SUB_NOTSCORED"]
 				elif user_quiz["status"] == QuizStatus["SUBMIT"]:
-					# all_score == -1 means it hasn't ever been calculated
-
-					self.reviewSelectionQues(user_quiz=user_quiz, a_quiz=a_quiz, essayQueses=essayQueses)
-
+					# self.reviewSelectionQues(user_quiz=user_quiz, a_quiz=a_quiz, essayQueses=essayQueses)
 					if not essayQueses:
 						flag = QuizFlag["FULL_SCORED"]
 					else:
 						flag = QuizFlag["SEMI_SCORED"]
-				# user_quiz["status"] == QuizStatus["REVIEW"] 即可
+				
+				elif user_quiz['status'] == QuizStatus['BLANK']:
+					flag = QuizFlag["BLANK"]
+				# user_quiz["status"] == QuizStatus["REVIEW"]
 				else:
 					flag = QuizFlag["FULL_SCORED"]
 				quiz_info.append({"quiz_id":a_quiz["quiz_id"], "all_score":user_quiz["all_score"], "flag":flag})
@@ -586,7 +543,7 @@ class ReviewHandler(BaseHandler):
     		if not self.get_current_admin():
 			self.redirect("/login")
 			return
-		self.checkQuizAndUpdateStatus()
+		# self.checkQuizAndUpdateStatus()
     		a_quiz = yield db.quizs.find_one({"quiz_id": int(quiz_id)})
     		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1}).sort("quiz_id", pymongo.ASCENDING)
     		quizs_index = yield quiz_cursor.to_list(None)
@@ -629,7 +586,7 @@ class ReviewHandler(BaseHandler):
     			for a_user_solu in solutions:
     				solu_tmp= filter(lambda x: x["type"] == QuizType["ESSAYQUES"],a_user_solu["solutions"])
 
-    				self.reviewSelectionQues(user_quiz=a_user_solu, a_quiz=a_quiz, essayQueses=essayQueses)
+    				# self.reviewSelectionQues(user_quiz=a_user_solu, a_quiz=a_quiz, essayQueses=essayQueses)
     				user = yield db.users.find_one({"userId":a_user_solu["userId"]}, {"name":1, "_id":0,"userId":1})
     				users_solutions.append({"userId":user["userId"], "solutions":solu_tmp,"all_score":a_user_solu["all_score"], "name":user["name"]})
     			# 将content只保存问答题
@@ -1330,7 +1287,7 @@ class ExitHandler(BaseHandler):
 		return
 
 settings = {
-	#"debug": True,
+	"debug": True,
 	"default_handler_class": UnfoundHandler,
 	"static_path": os.path.join(os.path.dirname(__file__), "static"),
 	"cookie_secret": "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
@@ -1361,7 +1318,7 @@ application = tornado.web.Application([
     ],**settings )
 
 
-# 每隔30秒进行在线用户过滤， 过期时间设置为10分钟。由于打作业时间较长，暂不提供这个功能
+# 每隔30秒进行在线用户过滤， 过期时间设置为10分钟。由于学生在大实验上需要较长时间，暂不提供这个功能
 def filterOnlineData():
 	od = BaseHandler.online_data
 	now = datetime.now()
@@ -1370,17 +1327,98 @@ def filterOnlineData():
 			del od[key]
 	tornado.ioloop.IOLoop.instance().add_timeout(
             		timedelta(seconds=30),
-            		lambda: filterOnlineData
+            		lambda: filterOnlineData()
        	)
 
+# 自动批改作业, quiz_id为int
+@tornado.gen.coroutine
+def reviewQuiz(quiz_id):
+	a_quiz = yield db.quizs.find_one({"quiz_id":quiz_id})
+	logger.info("system: reviewing homeword-%d " %quiz_id)
+	op_now = datetime.now()
+	if a_quiz['status'] == QuizStatus['UNPUBLISH']:
+		logger.error("system: review homeword-%d has encountered a problem: the homework is unpublished" % quiz_id)
+		return
+	elif a_quiz['status'] == QuizStatus['REVIEW']:
+		logger.error("system: review homeword-%d has encountered a problem: the homework has been reviewed" % quiz_id)
+		return
+	else:
+		if 'content' in a_quiz:
+			essayQueses = filter(lambda x:x['type']==QuizType['ESSAYQUES'],a_quiz['content'])
+		else:
+			return
+		users_cursor = db.users.find()
+		users = yield users_cursor.to_list(None)
+		for user in users:
+			user_solution = yield db.solutions.find_one({"quiz_id":quiz_id, "userId":user["userId"]})
+			# 完全没有记录的学生，生成一条0分的空记录
+			# 暂存的学生和提交的同学，一视同仁，不进行区分
+			# review the total score of all the objective questions
+			if not user_solution:
+				user_solution = {}
+				user_solution["userId"] =  user['userId']
+				user_solution["quiz_id"] = quiz_id
+				user_solution["lastTime"] = op_now.strftime("%Y-%m-%d %H:%M:%S")
+				user_solution["solutions"] = []
+				user_solution["all_score"] = 0
+				user_solution["status"] = QuizStatus["BLANK"]
+				yield db.solutions.save(user_solution)
+			else:
+				all_score = user_solution["all_score"]
+
+				# 兼容以前的数据逻辑
+				if user_solution['status'] == QuizStatus["SAVE"]:
+					user_solution['status'] = QuizStatus['SUBMIT']
+				if all_score < 0:
+					all_score = 0
+
+				cnt = 0
+				for a_content in a_quiz["content"]:
+					score = 0
+					if a_content["type"] != QuizType["ESSAYQUES"] and set(a_content["answer"])  == set(user_solution["solutions"][cnt]["solution"]) :
+						score = a_content["score"]
+						all_score += score
+					user_solution["solutions"][cnt]["score"] = score
+					cnt += 1
+				user_solution["all_score"] = all_score
+				# change the status of user_solutions to "REVIEW"
+				# 如果全部为选择题，不仅进行自动打分操作，而且设置solu为REVIEW
+				if not essayQueses:
+					user_solution['status'] = QuizStatus["REVIEW"]
+				yield db.solutions.save(user_solution)
+		# change the status of the quiz to "REVIEW"
+		if not essayQueses:
+			a_quiz['status'] = QuizStatus["REVIEW"]
+			yield db.quizs.save(a_quiz)
+		logger.info("system: review homeword-%d perfectly(deadline: %s)" % (quiz_id, a_quiz['deadline']) )
+
+# 遍历quizs，将定时任务加入到系统，每次系统初始化都要做此工作
+@tornado.gen.coroutine
+def involeQuartzTasks():
+	logger.info("system: scan the quizs and add the timing-reviewing tasks")
+	quizs_cursor = db.quizs.find({"status":QuizStatus["PUBLISH"]},{"content":0, "description":0,"title":0})
+	quizs = yield quizs_cursor.to_list(None)
+	for a_quiz in quizs:
+		# 满足以下条件，才进行客观提评分。否则说明客观提已评分，只是主管题未评分
+		# 如果由于各种原因系统在截至日时没有给予客观提评分，那么只能将此次Quiz的截至日调后进行批改
+		if datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
+			logger.info("system: add the quartz task: homework-%d will get reviewd at %s" %(a_quiz['quiz_id'], a_quiz['deadline']))
+			tornado.ioloop.IOLoop.instance().add_timeout(
+		            		datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S") - datetime.now(),
+		            		reviewQuiz,
+		            		a_quiz['quiz_id']
+		       	)
+			
 
 
 if __name__ == "__main__":
 	application.listen(80)
 	#application.listen(8888)
 	print "The http server has been started!"
+	logger.info("The http server has been started!")
 	#tornado.ioloop.IOLoop.instance().add_timeout(
             	#	timedelta(seconds=5),
-            	#	lambda: filterOnlineData
+            	#	lambda: filterOnlineData()
        	#)
+	involeQuartzTasks()
 	tornado.ioloop.IOLoop.instance().start()

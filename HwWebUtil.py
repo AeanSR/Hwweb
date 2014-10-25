@@ -7,22 +7,27 @@ import tornado.ioloop
 import tornado.web
 
 # the quiz self has four status:
-# UNPUBLISH PUBLISH REVIEW
+# UNPUBLISH PUBLISH REVIEW(所有题目都已经批改，否则不进入RIVIEW)
+
 # the solution done by user has two status:
 # SAVE SUBMIT REVIEW
 # note: solution在SUBMIT后，若quiz已经截止，则可以查看到客观题分数，此时用flag=QuizFlag["SEMI_SCORED"]来表示
 # note: solution的REVIEW条件：admin对其非客观题打分
-QuizStatus = {"UNPUBLISH":0, "PUBLISH":1, "SAVE":2, "SUBMIT":3, "REVIEW":4}
+# 截至日过后，solution要么进入BLANK最终状态，要么直接进入REVIEW状态，要么进入SUBMIT再进入REVIEW
+QuizStatus = {"UNPUBLISH":0, "PUBLISH":1, "SAVE":2, "SUBMIT":3, "REVIEW":4, "BLANK":5}
 QuesStatus = {"UNDONE":0, "DONE":1}
 ProjectStatus = {"UNPUBLISH":0, "PUBLISH":1}
 ProjectFlag = {"END":-1, "UNDONE":0, "SUBMIT":1, "DEAD":2}
 
-# END: the user only save when passing the deadline
+
 # UNDONE: the user hasn't done anything about the quiz before deadline
-# SAVE: the user save before the deadline
-# SEMI_SCORED: submit but the subjective questions haven't been reviewed
-# FULL_SCORED: submit and the subjective questions have been reviewed
-QuizFlag = {"END": -1,"UNDONE":0,"SAVE":1,"SUB_NOTSCORED":2,"SEMI_SCORED":3 ,"FULL_SCORED":4}
+# SAVE: save before the deadline
+# SUB_NOTSCORED: submit before the deadline 
+# SEMI_SCORED: save or submit but the subjective questions haven't been reviewed
+# FULL_SCORED: save or submit and the subjective questions have been reviewed
+# BLANK: the user hasn't done anything about the quiz after deadline, the system add a blank record for his solution
+# 截至前的状态有：UNDONE/SAVE/SUB_NOTSCORED, 截止后的状态有:BLANK/SEMI_SCORED/FULL_SCORED
+QuizFlag = {"BLANK": -1,"UNDONE":0,"SAVE":1,"SUB_NOTSCORED":2,"SEMI_SCORED":3 ,"FULL_SCORED":4}
 
 QuizType = {"SINCHOICE":1, "MULTICHOICE":2, "ESSAYQUES":3}
 
