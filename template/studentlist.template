@@ -13,23 +13,24 @@
             {% set i = 0 %}
             {% for quiz in quizs %}
                 {% if quiz['status'] == QuizStatus['UNPUBLISH'] %}
-                    $("td#{{quiz['quiz_id']}}").text("Quiz{{quiz['quiz_id']}}(未发布)")
+                    $("td#{{quiz['quiz_id']}}").text("Homework{{quiz['quiz_id']}}(未发布)")
                     {% for stu in users_list %}
                         $("td#{{stu['userId']}}_{{quiz['quiz_id']}}").text("无记录")
                     {% end %}
                 {% elif quiz['status'] == QuizStatus['PUBLISH'] and datetime.now() < datetime.strptime(quiz["deadline"], "%Y-%m-%d %H:%M:%S") %}
-                    $("td#{{quiz['quiz_id']}}").text("Quiz{{quiz['quiz_id']}}(已发布)")
+                    $("td#{{quiz['quiz_id']}}").text("Homework{{quiz['quiz_id']}}(已发布)")
                     {% for stu in users_list %}
                         {% if stu['quiz_info'][i]["flag"] == QuizFlag["UNDONE"] %}
                             $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").text("还未开始")
+                            $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").css("color","red")
                         {% elif stu['quiz_info'][i]["flag"] == QuizFlag["SAVE"] %}
-                            $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").text("正在做")
+                            $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").text("暂存")
                         {% elif stu['quiz_info'][i]["flag"] == QuizFlag["SUB_NOTSCORED"]  %}
                             $("td#{{ stu['userId']}}_{{ quiz['quiz_id'] }}").text("已提交")
                         {% end %}
                     {% end %}
                 {% elif quiz['status'] == QuizStatus['PUBLISH'] %}
-                    $("td#{{quiz['quiz_id']}}").text("Quiz{{quiz['quiz_id']}}(已截止，等待批改)")
+                    $("td#{{quiz['quiz_id']}}").text("Homework{{quiz['quiz_id']}}(已截止，等待批改)")
                     {% for stu in users_list %}
                         {% if stu['quiz_info'][i]["flag"] == QuizFlag["BLANK"] %}
                             $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").text("0分(无记录)")
@@ -41,7 +42,7 @@
                         {% end %}
                     {% end %}
                 {% elif quiz['status'] == QuizStatus['REVIEW']%}
-                    $("td#{{quiz['quiz_id']}}").text("Quiz{{quiz['quiz_id']}}(已完全批改)")
+                    $("td#{{quiz['quiz_id']}}").text("Homework{{quiz['quiz_id']}}(已完全批改)")
                     {% for stu in users_list %}
                         {% if stu['quiz_info'][i]["flag"] == QuizFlag["BLANK"] %}
                             $("td#{{stu['userId'] }}_{{ quiz['quiz_id'] }}").text("总分：{{stu['quiz_info'][i]['all_score']}}(无记录)")
@@ -65,15 +66,15 @@
 {% include "./review_navigator.template" %}
 
 <div id="content">
-    <h1>{% for quiz in quizs %}
-                Quiz{{quiz["quiz_id"]}}&nbsp;
-            {% end %}的作业情况</h1>
+    <h3>{% for quiz in quizs %}
+                Homework{{quiz["quiz_id"]}}&nbsp;
+            {% end %}的作业情况</h3>
 	<table border=1>
 		<tr>
 			<td>学号</td>
 			<td>姓名</td>
 			{% for quiz in quizs %}
-                                            <td id="{{quiz['quiz_id']}}">Quiz{{quiz["quiz_id"]}}</td>
+                                            <td id="{{quiz['quiz_id']}}">Homework{{quiz["quiz_id"]}}</td>
                                         {% end %}
 		</tr>
 		{% for stu in users_list %}
