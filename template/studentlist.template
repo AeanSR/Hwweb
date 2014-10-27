@@ -72,7 +72,7 @@
 	<table border=1>
 		<tr>
 			<td>学号</td>
-			<td>姓名</td>
+			<td width="60px">姓名</td>
 			{% for quiz in quizs %}
                                             <td id="{{quiz['quiz_id']}}">Homework{{quiz["quiz_id"]}}</td>
                                         {% end %}

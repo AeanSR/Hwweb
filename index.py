@@ -1352,13 +1352,13 @@ def filterOnlineData():
 @tornado.gen.coroutine
 def reviewQuiz(quiz_id):
 	a_quiz = yield db.quizs.find_one({"quiz_id":quiz_id})
-	logger.info("system: reviewing homeword-%d " %quiz_id)
+	logger.info("system: reviewing homework-%d " %quiz_id)
 	op_now = datetime.now()
 	if a_quiz['status'] == QuizStatus['UNPUBLISH']:
-		logger.error("system: review homeword-%d has encountered a problem: the homework is unpublished" % quiz_id)
+		logger.error("system: review homework-%d has encountered a problem: the homework is unpublished" % quiz_id)
 		return
 	elif a_quiz['status'] == QuizStatus['REVIEW']:
-		logger.error("system: review homeword-%d has encountered a problem: the homework has been reviewed" % quiz_id)
+		logger.error("system: review homework-%d has encountered a problem: the homework has been reviewed" % quiz_id)
 		return
 	else:
 		if 'content' in a_quiz:
@@ -1408,7 +1408,7 @@ def reviewQuiz(quiz_id):
 		if not essayQueses:
 			a_quiz['status'] = QuizStatus["REVIEW"]
 			yield db.quizs.save(a_quiz)
-		logger.info("system: review homeword-%d perfectly(deadline: %s)" % (quiz_id, a_quiz['deadline']) )
+		logger.info("system: review homework-%d perfectly(deadline: %s)" % (quiz_id, a_quiz['deadline']) )
 
 # 遍历quizs，将定时任务加入到系统，每次系统初始化都要做此工作
 @tornado.gen.coroutine
