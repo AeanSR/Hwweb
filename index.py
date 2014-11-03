@@ -71,7 +71,7 @@ class BaseHandler(tornado.web.RequestHandler):
 			return
 		elif self.online_data and adminId in self.online_data.keys():
 			del self.online_data[adminId]
-		self.clear_cookie("adminId")
+		self.clear_cookie("adminId", domain=domain)
 
 	# 普通学生登录
 	def get_current_user(self):
