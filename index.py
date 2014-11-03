@@ -1097,7 +1097,7 @@ class LoginHandler(BaseHandler):
 				self.redirect("/admin")
 				return
 			else:
-				self.clear_cookie("adminId")
+				self.clear_cookie("adminId", domain=domain)
 		self.render("./template/login.template", error="")
 		return
 
@@ -1197,7 +1197,7 @@ class UnfoundHandler(BaseHandler):
 
 
 class ExitHandler(BaseHandler):
-	@tornado.web.authenticated
+
 	def get(self):
 		userId = self.get_current_user()
 		logger.info("user: %s is exiting" %userId)
