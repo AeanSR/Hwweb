@@ -144,7 +144,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
 	#for test, release version needs to delete it
 	def test_admin(self):
-		self.set_secure_cookie("adminId", "lichundian", expires_days=expires_days)
+		self.set_secure_cookie("adminId", "lichundian", domain=domain, expires_days=expires_days)
 		self.online_data["lichundian"] = {'name': "李春典",'adminId':"lichundian"}
 
 class MainHandler(BaseHandler):
@@ -464,6 +464,40 @@ class AdminHandler(BaseHandler):
 	 	self.render("./template/admin.template", info = self.online_data[self.get_current_admin()],notices = notices, quizs_index=quizs_index)
 	 	return
 
+class TransciptHandler(BaseHandler):
+
+
+	@tornado.gen.coroutine
+	def get(self, quiz_id):
+		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+		transcipt_dir=os.path.join(os.path.dirname(__file__), 'transcipt')
+		if not os.path.exists(transcipt_dir):
+			os.makedirs(transcipt_dir)
+		filename = "transcipt-" + str(quiz_id) + ".csv"
+		transcipt_path = os.path.join(transcipt_dir, filename)
+		if os.path.exists(transcipt_path):
+			os.remove(transcipt_path)
+		users_cursor = db.users.find().sort("userId", pymongo.ASCENDING)
+		users = yield users_cursor.to_list(None)
+		with open(transcipt_path,'w') as up:
+			up.write(",".join(["学号", "姓名", "班级", "分数"]) + "\n")
+			for user in users:
+				if re.match(r"^ucas\d+$", user["userId"]):
+					continue
+				user_solution = yield db.solutions.find_one({"quiz_id":int(quiz_id), "userId":user["userId"]}, {"_id":0,"all_score":1})
+				record = ",".join([user["userId"], user["name"] , str(user["classNo"]), str(user_solution["all_score"] ) ])
+				up.write(record.encode('utf8') + "\n")
+		with open(transcipt_path, "r") as f:
+			self.set_header('Content-Disposition', 'attachment;filename='+filename)
+			self.set_header('Content-Type','application/csv')
+			self.write(f.read().decode('utf-8'))
+      			self.finish()
+      		return
+
+
+
 
 class StudentListHandler(BaseHandler):
 
@@ -554,7 +588,8 @@ class ReviewHandler(BaseHandler):
     			return
     		# can't be reviewd because it's before the deadline, so just list the questions.
     		elif datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
-    			self.render("./template/quiz_view.template", info = self.online_data[self.get_current_admin()], a_quiz=a_quiz,quizs_index=quizs_index)
+    			self.redirect("/studentlist?quiz_id=" + quiz_id)
+    			#self.render("./template/quiz_view.template", info = self.online_data[self.get_current_admin()], a_quiz=a_quiz,quizs_index=quizs_index)
     			return
     		# it has been reviewd
     		elif a_quiz["status"] == QuizStatus["REVIEW"]:
@@ -680,142 +715,7 @@ class ReviewHandler(BaseHandler):
     		self.redirect("/review/"+quiz_id)
     		return
 
-class ProjectMainHandler(BaseHandler):
-	@tornado.web.authenticated
-	@tornado.web.asynchronous
-	@tornado.gen.coroutine
-    	def get(self):
-    		pro_cursor = db.projects.find().sort("pro_id", pymongo.ASCENDING)
-    		projects = yield pro_cursor.to_list(None)
-	 	self.render("./template/project.template", projects = projects, info = self.online_data[self.get_current_user()], main=1, flag=0)
-	 	return
 
-class ProjectHandler(BaseHandler):
-	@tornado.web.authenticated
-	@tornado.web.asynchronous
-	@tornado.gen.coroutine
-    	def get(self, pro_id):
-    		try:
-    			pro_id = int(pro_id)
-    		except ValueError, e:
-    			print "The argument does not contain numbers\n", e
-    			self.render("./template/404.template")
-    			return
-    		pro_cursor = db.projects.find().sort("pro_id", pymongo.ASCENDING)
-    		projects = yield pro_cursor.to_list(None)
-    		a_pro = yield db.projects.find_one({"pro_id":pro_id, "status":ProjectStatus["PUBLISH"]})
-    		if not a_pro:
-    			self.redirect("/project")
-    			return
-    		userId = self.get_current_user()
-    		up_record = yield db.user_uploads.find_one({"pro_id": pro_id, "userId": userId})
-    		flag = 0
-    		if not up_record and not  datetime.now() < datetime.strptime(a_pro['deadline'], '%Y-%m-%d %H:%M:%S')  :
-    			flag = ProjectFlag["END"]
-    		elif not up_record:
-    			flag = ProjectFlag["UNDONE"]
-    		elif datetime.now() < datetime.strptime(a_pro['deadline'], '%Y-%m-%d %H:%M:%S') :
-    			flag = ProjectFlag["SUBMIT"]
-    		else :
-    			flag = ProjectFlag["DEAD"]
-	 	self.render("./template/project.template", projects = projects,a_pro=a_pro, info = self.online_data[self.get_current_user()], flag=flag, main=0, up_record=up_record)
-	 	return
-
-class ProjectUploadHandler(BaseHandler):
-
-	support_type=["application/pdf"]
-
-	@tornado.web.authenticated
-	@tornado.web.asynchronous
-	@tornado.gen.coroutine
-	def post(self, pro_id):
-		try:
-    			pro_id = int(pro_id)
-    		except ValueError, e:
-    			print "The argument does not contain numbers\n", e
-    			self.render("./template/404.template")
-    			return
-
-    		a_pro = yield db.projects.find_one({"pro_id":pro_id,"status":ProjectStatus["PUBLISH"]})
-
-    		# 不存在此project或project已经截止
-    		if not a_pro or not datetime.now() < datetime.strptime(a_pro['deadline'], '%Y-%m-%d %H:%M:%S')  :
-    			self.redirect("/project")
-    			return
-
-    		userId = self.get_current_user()
-    		up_record = yield db.user_uploads.find_one({"pro_id":pro_id, "userId": userId})
-
-		upload_path=os.path.join(os.path.dirname(__file__),'report_files',str(pro_id))
-		# 创建目录
-		if not os.path.exists(upload_path):
-			os.makedirs(upload_path)
-
-
-		if self.request.files.get('uploadfile', None):
-			uploadFile = self.request.files['uploadfile'][0]
-			file_size = len(uploadFile['body'])
-
-			# 检测MIME类型
-			if not uploadFile["content_type"] in self.support_type or not re.match(r'^.*\.pdf$',uploadFile['filename'] ):
-				self.write('<script>alert("仅支持pdf格式,doc/ppt需要转化为pdf格式才能上传");window.location="/project/'+ str(pro_id)+'"</script>')
-				self.finish()
-				return
-			# 检测文件大小
-			if  file_size > 10 * 1024 * 1024:
-				self.write('<script>alert("请上传10M以下");window.location="/project/'+ str(pro_id)+'"</script>')
-				self.finish()
-				return
-			else :
-				filename = userId + ".pdf"
-				filepath=os.path.join(upload_path,filename)
-				if up_record and os.path.exists(filepath):
-					os.remove(filepath)
-				else:
-					up_record = {}
-					up_record["userId"]=userId
-					up_record["pro_id"]=pro_id
-					up_record["file_suffix"]="pdf"
-				up_record["uploadTime"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-				up_record["size"] = file_size
-				with open(filepath,'wb') as up:      #有些文件需要已二进制的形式存储，实际中可以更改
-					up.write(uploadFile['body'])
-				yield db.user_uploads.save(up_record)
-		else:
-			self.write('<script>alert("请选择文件");window.history.back()</script>')
-			self.finish()
-			return
-		self.redirect('/project/'+ str(pro_id))
-		return
-
-
-# 学生可以通过指定pro_id下载其对应的报告
-class ProjectDownloadHandler(BaseHandler):
-	@tornado.web.authenticated
-	@tornado.web.asynchronous
-	@tornado.gen.coroutine
-    	def get(self, pro_id):
-    		try:
-    			pro_id = int(pro_id)
-    		except ValueError, e:
-    			print "The argument does not contain numbers\n", e
-    			self.render("./template/404.template")
-    			return
-    		userId = self.get_current_user()
-    		up_record = yield db.user_uploads.find_one({"pro_id":pro_id, "userId": userId})
-    		if not up_record:
-    			self.render("./template/404.template")
-    			return
-    		else:
-    			upload_path=os.path.join(os.path.dirname(__file__),'report_files',str(pro_id))
-    			filename = userId + "." + up_record["file_suffix"]
-    			filepath=os.path.join(upload_path,filename)
-    			with open(filepath, "rb") as f:
-    				self.set_header('Content-Disposition', 'attachment;filename='+filename)
-    				self.set_header('Content-Type','application/pdf')
-      				self.write(f.read())
-      			self.finish()
-      			return
 
 class APIGetHandler(BaseHandler):
 	@tornado.web.authenticated
@@ -1178,8 +1078,9 @@ class LoginHandler(BaseHandler):
 	def get(self):
 		# test
 		#self.test_user()
-		#self.test_admin()
 		#self.redirect("/main")
+		#self.test_admin()
+		#self.redirect("/admin")
 		#return
 		# delete when releasing
 
@@ -1305,37 +1206,6 @@ class ExitHandler(BaseHandler):
 		self.redirect("./login")
 		return
 
-settings = {
-	#"debug": True,
-	"default_handler_class": UnfoundHandler,
-	"static_path": os.path.join(os.path.dirname(__file__), "static"),
-	"cookie_secret": "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
- 	"login_url": "/login",
-}
-
-application = tornado.web.Application([
-    (r"/", tornado.web.RedirectHandler, {"url":"/main", "permanent":False}),
-    (r"/login", LoginHandler),
-    (r"/main", MainHandler),
-    (r"/exit", ExitHandler),
-    (r"/password", PasswordHandler),
-    # (r"/quiz/([0-9]+)/submit", QuizSubmitHandler),
-    (r"/quiz/([0-9]+)/save", QuizSaveHandler),
-    (r"/quiz/([0-9]+)", QuizHandler),
-    (r"/studentlist", StudentListHandler),
-    (r"/admin", AdminHandler),
-    (r"/review/([0-9]+)", ReviewHandler),
-    (r"/project", ProjectMainHandler),
-    (r"/project/([0-9]+)/upload", ProjectUploadHandler),
-    (r"/project/([0-9]+)/download", ProjectDownloadHandler),
-    (r"/project/([0-9]+)", ProjectHandler),
-    (r"/api/getinfo",APIGetHandler),
-    (r"/api/putinfo",APIPutHandler),
-    (r"/api/route/getinfo",RouteAPIGetInfoHandler),
-    (r"/api/route/getTopo",RouteAPIGetTopoHandler),
-    (r"/api/route/submitResult",RouteAPISubmitResultHandler)
-    ],**settings )
-
 
 # 每隔30秒进行在线用户过滤， 过期时间设置为10分钟。由于学生在大实验上需要较长时间，暂不提供这个功能
 def filterOnlineData():
@@ -1430,9 +1300,39 @@ def involeQuartzTasks():
 		            		a_quiz['quiz_id']
 		       	)
 
+settings = {
+	#"debug": True,
+	"default_handler_class": UnfoundHandler,
+	"static_path": os.path.join(os.path.dirname(__file__), "static"),
+	"cookie_secret": "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
+ 	"login_url": "/login",
+}
 
+application = tornado.web.Application([
+    (r"/", tornado.web.RedirectHandler, {"url":"/main", "permanent":False}),
+    (r"/login", LoginHandler),
+    (r"/main", MainHandler),
+    (r"/exit", ExitHandler),
+    (r"/password", PasswordHandler),
+    # (r"/quiz/([0-9]+)/submit", QuizSubmitHandler),
+    (r"/quiz/([0-9]+)/save", QuizSaveHandler),
+    (r"/quiz/([0-9]+)", QuizHandler),
+    (r"/studentlist", StudentListHandler),
+    (r"/studentlist/transcipt/([0-9]+)", TransciptHandler),
+    (r"/admin", AdminHandler),
+    (r"/review/([0-9]+)", ReviewHandler),
+    (r"/project", ProjectMainHandler),
+    (r"/project/([0-9]+)/upload", ProjectUploadHandler),
+    (r"/project/([0-9]+)/download", ProjectDownloadHandler),
+    (r"/project/([0-9]+)", ProjectHandler),
+    (r"/api/getinfo",APIGetHandler),
+    (r"/api/putinfo",APIPutHandler),
+    (r"/api/route/getinfo",RouteAPIGetInfoHandler),
+    (r"/api/route/getTopo",RouteAPIGetTopoHandler),
+    (r"/api/route/submitResult",RouteAPISubmitResultHandler)
+    ],**settings )
 
-# 每次加入新的作业都必须要重启一次系统，因为需要把自动该作业的任务加入到定时任务中去
+# 每次加入新的作业或者修改作业的截止日期都必须要重启一次系统，因为需要把自动该作业的任务加入到定时任务中去
 if __name__ == "__main__":
 	application.listen(80)
 	#application.listen(8888)
