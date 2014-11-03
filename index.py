@@ -1132,7 +1132,7 @@ class LoginHandler(BaseHandler):
 		elif a_admin:
 			self.clear_current_user()
 			logger.info("administrator: %s is logging in" %userId)
-			self.set_secure_cookie("adminId", a_admin['userId'], expires_days=expires_days)
+			self.set_secure_cookie("adminId", a_admin['userId'],domain=domain, expires_days=expires_days)
 			self.online_data[a_admin['userId']] = {'name': a_admin['name'],'adminId':a_admin['userId'], "loginTime":datetime.now()}
 			self.redirect("/admin")
 			return
