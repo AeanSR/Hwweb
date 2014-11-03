@@ -1,0 +1,87 @@
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<script type="text/x-mathjax-config">
+			MathJax.Hub.Config({
+			  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+			});
+		</script>
+		<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+	</head>
+	<body>
+		<p>定义：称$ f(n) $是$ \Omega (g(n)) $的，如果存在常数$ c > 0 $，使得$ f(n) \ge c g(n) $。</p>
+		<p>称$ f(n) $是$ \Theta (g(n)) $的，如果$ f(n) $既是$ \Omega (g(n)) $的，也是$ O(g(n)) $的。<p>
+		<p>1. 关于 $ O(.)$ , $ \Omega (.)  $和 $ \Theta (.) $，下列叙述正确的是(&nbsp;&nbsp;&nbsp;&nbsp;)<p>
+		<p>A. $ 2n^3 + n \ln n $是$ O(n^2) $ 
+			B. $ n^2 + 3 $是 $ \Theta (n^2 \log n) $
+			C. $ 2^n $是$ \Omega (n) $
+			D. $ n^{\log n} $是$ O(n^{100}) $
+		</p>
+		<p>2. 以下选项中，对渐近表达式$ O((\log n)^n) $, $ O(n^{100}) $, $ O(n^{\log n}) $, $ O((\log n)!) $,按量级由小到大排列正确的是哪一个 (&nbsp;&nbsp;&nbsp;&nbsp;)</p>
+		<p>A. $ O((\log n)!) $, $ O((\log n)^n) $, $ O(n^{100}) $, $ O(n^{\log n}) $
+			B. $ O((\log n)^n) $, $ O((\log n)!) $, $ O(n^{100}) $, $ O(n^{\log n}) $
+			C. $ O((\log n)!) $, $ O(n^{100}) $, $ O((\log n)^n) $, $ O(n^{\log n}) $
+			D. $ O(n^{100}) $, $ O((\log n)!) $, $ O(n^{\log n}) $, $ O((\log n)^n) $
+		</p>
+		<p>3. 截止到 2013 年 6月，世界上运算速度最快的超级计算机是由中国研制的天河二号，它每秒能完成 5 亿亿次运算！如果我们使用该计算机来近似计算有 1000 个节点的斯坦纳树问题（Steinertree problem），该问题目前最好的算法的时间复杂度为$ n ^ {\log_{2}n} $(n 表示斯坦纳树的节点个数)，最坏情况下我们大约需要算多长的时间(&nbsp;&nbsp;&nbsp;&nbsp;)</p>
+		<p>A. 5个月 B. 50年 C. 500年 D. 500000年</p>
+		<p>4. 快速排序（quicksort）是最常用的排序算法之一，算法描述如下，其平均复杂度是$ O(n \ln n) $的（为什么？）。请问快排算法在最坏情况下的运行时间是多少(&nbsp;&nbsp;&nbsp;&nbsp;)<br/>
+<table class='ques_desc'> <tr><td>1. 从 $n$ 个输入数据中随机选取一个，记作$x$</td></tr>
+	<tr><td>2. 将剩余的 $n-1$ 个数与 $x$ 进行比较，比 $x$ 大的所有数放在 $x$ 的右边，其余放的左边</td></tr>
+	<tr><td>3. 递归调用快排算法两次，分别对 $x$ 左边的数和右边的数进行排序（不包括 $x$）</td></tr>
+	<tr><td>4. 返回排序结果</td></tr>
+</table>
+		</p>
+		<p>A. $ O(n) $ B. $ O(n \ln n) $ C. $ O(n^2) $ D. $ O(n^2 \ln n) $</p>
+		<p>5. 求解下列递归式的渐进式：$ T(n) = ?$(&nbsp;&nbsp;&nbsp;&nbsp;)<br/>
+			$ \left\{ \begin{array}{l l} T(1) = 1 \\ T(n)=3T( \frac {n}{2} ) + n^2 \end{array} \right.$
+		</p>
+		<p>A. $ \Theta (n \ln n) $ B. $ \Theta (n^2) $ C. $ \Theta (n^2 \ln n) $ D. $ \Theta (n^3) $</p>
+		<p>6. 以下计算问题是否属于 NP 问题(&nbsp;&nbsp;&nbsp;&nbsp;)<br/>
+			问题一：输入 $n$ 个整数$ a_1, a_2, … , a_𝑛 $和正整数 $ k ( < n) $，判定是否能从中找到$ k$个数使得其和为 0。<br/>
+			问题二：输入两个正整数 $ a $ 和 $ b $，判定 $ a $ 和 $ b $ 是否互素。
+		</p>
+		<p>A. 是，是 B. 是，否 C. 否，是 D. 否，否</p>
+		<p>7. 考虑具有如下初始状态的“三柱汉诺塔”问题：其第一根柱子上的圆盘编号为1号，3号和5号，第二根柱子上的圆盘编号为2号和4号，第三根柱子为空。请问至少还要多少步才能将所有圆盘搬到第三根柱子上 (&nbsp;&nbsp;&nbsp;&nbsp;)</p>
+		<p>A. 20 B. 21 C. 22 D. 23
+		</p>
+		<p> 8. 稳定匹配问题输入如下。请问如果采用男性主动的算法求得的匹配是哪一个(&nbsp;&nbsp;&nbsp;&nbsp;) </br>
+			<table class='ques_desc'><tr><td colspan='5'>男生对女生的喜好排名（越靠前表示越喜欢）</td></tr>
+				<tr><td>B1</td><td>G3</td><td>G2</td><td>G4</td><td>G1</td></tr>
+				<tr><td>B2</td><td>G2</td><td>G4</td><td>G3</td><td>G1</td></tr>
+				<tr><td>B3</td><td>G3</td><td>G4</td><td>G2</td><td>G1</td></tr>
+				<tr><td>B4</td><td>G4</td><td>G3</td><td>G2</td><td>G1</td></tr>
+			</table></br>
+			<table class='ques_desc'><tr><td colspan='5'>女生对男生的喜好排名（越靠前表示越喜欢）</td></tr>
+				<tr><td>G1</td><td>B4</td><td>B1</td><td>B3</td><td>B2</td></tr>
+				<tr><td>G2</td><td>B1</td><td>B3</td><td>B2</td><td>B4</td></tr>
+				<tr><td>G3</td><td>B2</td><td>B3</td><td>B1</td><td>B4</td></tr>
+				<tr><td>G4</td><td>B2</td><td>B3</td><td>B1</td><td>B4</td></tr>
+			</table></br>
+			<table class='ques_desc_noneborder'>
+				<tr><td><img src='/static/content/homework/homework_2_8_A.png' /></td><td><img src='/static/content/homework/homework_2_8_B.png' /></td></tr>
+				<tr><td><img src='/static/content/homework/homework_2_8_C.png' /></td><td><img src='/static/content/homework/homework_2_8_D.png' /></td></tr>
+			</table>
+		</p>
+		<p>A. 图8-1
+			B. 图8-2
+			C. 图8-3
+			D. 图8-4
+		</p>
+		<p>9. 考虑如下“二人博弈”问题，Alice和Bob各可采取两种策略：策略$a_1$、策略$a_2$和策略$b_1$、策略$b_2$，收益矩阵如下：<br/>
+注：$(p,q)$表示以$p$的概率选择策略$a_1$，以$q$的概率选择策略$a_2$。<br/>
+<table class='ques_desc'>
+	<tr><td></td><td>策略$b_1$</td><td>策略$b_2$</td></tr>
+	<tr><td>策略$a_1$</td><td>$(1, -1)$</td><td>$(0, 0)$</td></tr>
+	<tr><td>策略$a_2$</td><td>$(0.5, -0.5)$</td><td>$(0.75, -0.75)$</td></tr>
+</table><br/>
+假如 Bob 采用“策略$b_1$”、“策略$b_2$”的概率分别为 1/2 和 1/2，Alice 最大化自己收益的最优策略是什么(&nbsp;&nbsp;&nbsp;&nbsp;)
+</p>
+		<p>A. $(0, 1)$ B. $(0.3, 0.7) $ C. $(0.5, 0.5)$ D. $(1, 0)$</p>
+		<p>10. 在上题中，Alice和Bob的最优策略分别是什么？即在最坏情况下（对方知道他们的策略），他们该如何最大化自己的收益。(&nbsp;&nbsp;&nbsp;&nbsp;)</p>
+		<p>A. Alice: $(\frac{4}{5}, \frac{1}{5})$&nbsp;&nbsp;Bob:$(\frac{3}{5}, \frac{2}{5})$
+			B. Alice: $(\frac{4}{5}, \frac{1}{5})$&nbsp;&nbsp;Bob:$(\frac{2}{5}, \frac{3}{5})$
+			C. Alice: $(\frac{1}{5}, \frac{4}{5})$&nbsp;&nbsp;Bob:$(\frac{3}{5}, \frac{2}{5})$
+			D. Alice: $(\frac{1}{5}, \frac{4}{5})$&nbsp;&nbsp;Bob:$(\frac{2}{5}, \frac{3}{5})$</p>
+	</body>
+</html>

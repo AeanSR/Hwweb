@@ -88,3 +88,19 @@ html, body {
 	padding-left: 10px;
 }
 
+table.ques_desc, table.ques_desc td {
+	border: 1px solid black;
+}
+
+table.ques_desc_dashed {
+	border:1px dashed black;
+}
+
+div.ques_head {
+	font-weight:640;
+	font-size: 1.2em;
+	margin: 10px 0 10px 0;
+}
+div.ques_content {
+	margin: 20px 0 10px 0;
+}

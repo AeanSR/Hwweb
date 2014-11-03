@@ -270,7 +270,7 @@ class QuizHandler(BaseHandler):
 		# self.checkQuizAndUpdateStatus()
 
 		a_quiz = yield db.quizs.find_one({"quiz_id": int(quiz_id)})
-		if not a_quiz  or a_quiz["status"] == QuizStatus["UNPUBLISH"]:
+		if not a_quiz  or a_quiz["status"] == QuizStatus["UNPUBLISH"] or datetime.now() < datetime.strptime(a_quiz["releaseTime"], "%Y-%m-%d %H:%M:%S"):
 			self.redirect("/main")
 			return
 		else:
@@ -1296,6 +1296,7 @@ class UnfoundHandler(BaseHandler):
 
 
 class ExitHandler(BaseHandler):
+	@tornado.web.authenticated
 	def get(self):
 		userId = self.get_current_user()
 		logger.info("user: %s is exiting" %userId)
@@ -1318,7 +1319,7 @@ application = tornado.web.Application([
     (r"/main", MainHandler),
     (r"/exit", ExitHandler),
     (r"/password", PasswordHandler),
-    (r"/quiz/([0-9]+)/submit", QuizSubmitHandler),
+    # (r"/quiz/([0-9]+)/submit", QuizSubmitHandler),
     (r"/quiz/([0-9]+)/save", QuizSaveHandler),
     (r"/quiz/([0-9]+)", QuizHandler),
     (r"/studentlist", StudentListHandler),

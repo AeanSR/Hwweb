@@ -12,7 +12,7 @@
         <ul id="quiz_menu" class="ui-menu">
         {% for quizIndex in quizs %}
         	{% set clickEvent = "" %}
-       	{% if quizIndex['status']  == QuizStatus["UNPUBLISH"] %} 
+       	{% if quizIndex['status']  == QuizStatus["UNPUBLISH"] or datetime.now() < datetime.strptime(quizIndex["releaseTime"], "%Y-%m-%d %H:%M:%S")%} 
 		{% set statusStr = "未发布" %}
 		{% set clickEvent = "javascript:alert('未发布');href='/main'" %}
 	{% elif quizIndex['status']  == QuizStatus["PUBLISH"]  and datetime.now() < datetime.strptime(quizIndex["deadline"],"%Y-%m-%d %H:%M:%S")   %}
