@@ -22,6 +22,9 @@ $sudo mongod -f mongod.conf
 > $sudo vim /etc/rc.d/rc.local
 add $MONGO_HOME/bin/mongod -f $MONGO_HOME/mongod.conf
 
+ - when your computer crashes(MongoDB crashes, e.g. via kill), you cann't start the mongod service normally. Then you should repair it.
+> $sudo mongod --repair -f mongod.conf
+
 2. pip (pip is python package manager, you should install python 2.7 firstly)
  - install pip through the command below
 > curl -O [https://bootstrap.pypa.io/get-pip.py](https://bootstrap.pypa.io/get-pip.py)

@@ -31,7 +31,7 @@ QuizFlag = {"BLANK": -1,"UNDONE":0,"SAVE":1,"SUB_NOTSCORED":2,"SEMI_SCORED":3 ,"
 
 QuizType = {"SINCHOICE":1, "MULTICHOICE":2, "ESSAYQUES":3}
 
-TopoStatus = {"NEW" : 0, "ING":1, "DONE":2}
+TopoStatus = {"CHOOSING" : -1, "NEW" : 0, "ING":1, "DONE":2}
 
 class HwWebUtil:
 	@staticmethod
@@ -40,3 +40,40 @@ class HwWebUtil:
 			return False
 		else:
 			return True
+
+
+	# 检测是否为连通图
+	@staticmethod
+	def isConnectedGraph(scale, links):
+		AdjList = [ [] for i in range(scale)]
+		for link in links:
+			x = int(link.split("-")[0])
+			y = int(link.split("-")[1])
+			AdjList[x].append(y)
+			AdjList[y].append(x)
+		print AdjList
+		count = HwWebUtil.BFS(AdjList, 0)
+		print count
+		if count == scale:
+			return True
+		else:
+			return False
+
+	# BFS，返回BFS树的节点数
+	@staticmethod
+	def BFS(AdjList, i):
+		scale = len(AdjList)
+		markArray = [ False for i in range(scale)]
+		count = 1
+		queue = []
+		markArray[i] = True
+		queue.append(i)
+		while len(queue) != 0:
+			u = queue[0]
+			del queue[0]
+			for v in AdjList[u]:
+				if not markArray[v]:
+					markArray[v] = True
+					count += 1
+					queue.append(v)
+		return count

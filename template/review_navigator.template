@@ -10,7 +10,7 @@
 <div id="navigator" class="navigator">
 <h3>后台管理</h3>
         <ul id="menu">
-        <li><a href="/project">下载大实验报告</a></li>
+        <li><a href="/project/zipdownload">下载大实验报告</a></li>
         <li><a href="/studentlist">查看学生作业情况</a></li>
         {% for quizIndex in quizs_index %}
         	{% set clickEvent = "" %}

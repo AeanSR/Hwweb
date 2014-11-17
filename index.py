@@ -7,6 +7,7 @@ import tornado.web
 import motor
 import json
 
+import zipfile
 import hashlib
 import random
 import pymongo
@@ -139,8 +140,8 @@ class BaseHandler(tornado.web.RequestHandler):
 
 	#for test, release version needs to delete it
 	def test_user(self):
-		self.set_secure_cookie("userId", "ucas10", domain=domain, expires_days=expires_days)
-               	self.online_data["ucas10"] = {'name': "Sai",'userId':"ucas10", "classNo":10, "group":"0-0", "yearOfEntry":2014}
+		self.set_secure_cookie("userId", "ucas1", domain=domain, expires_days=expires_days)
+               	self.online_data["ucas1"] = {'name': "Sai",'userId':"ucas1", "classNo":2, "group":"0-1", "yearOfEntry":2014}
 
 	#for test, release version needs to delete it
 	def test_admin(self):
@@ -466,7 +467,6 @@ class AdminHandler(BaseHandler):
 
 class TransciptHandler(BaseHandler):
 
-
 	@tornado.gen.coroutine
 	def get(self, quiz_id):
 		if not self.get_current_admin():
@@ -496,7 +496,34 @@ class TransciptHandler(BaseHandler):
       			self.finish()
       		return
 
+class ReportZipDownload(BaseHandler):
 
+	@tornado.gen.coroutine
+	def get(self, quiz_id):
+		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+		report_dir = os.path.join(os.path.dirname(__file__), 'report_files/' + quiz_id)
+		if not os.path.exists(report_dir):
+			self.write('<script>alert("学生未上传报告，无法下载");window.history.back()</script>')
+			self.finish()
+			return
+		zipfilename = 'report_' + quiz_id + '.zip'
+		zipfilepath = os.path.join(os.path.dirname(__file__), 'report_files/' + zipfilename) 
+		if os.path.exists(zipfilepath):
+			os.remove(zipfilepath)
+		f = zipfile.ZipFile(zipfilepath, 'w', zipfile.ZIP_DEFLATED)
+		tmpDir = u'实验' + quiz_id + u"-报告包/"
+		for dirpath, dirnames, filenames in os.walk(report_dir): 
+		    for filename in filenames: 
+		        f.write(os.path.join(report_dir, filename), tmpDir + filename) 
+		f.close()
+		with open(zipfilepath, "rb") as f:
+			self.set_header('Content-Disposition', 'attachment;filename='+zipfilename)
+			self.set_header('Content-Type','application/zip')
+			self.write(f.read())
+      			self.finish()
+      		return
 
 
 class StudentListHandler(BaseHandler):
@@ -840,7 +867,8 @@ class RouteAPIGetInfoHandler(BaseHandler):
 		group_users_cursor = db.users.find({"group":group}, {"name": 1, "_id" :0, "userId" : 1})
 		group_users = yield group_users_cursor.to_list(None)
 		info = self.online_data[self.get_current_user()].copy()
-		del info['loginTime']
+		if "loginTime" in info:
+			del info['loginTime']
 
 		gameTimes = 1
 		step = 0 #客户端此时应该在第几步后
@@ -849,16 +877,20 @@ class RouteAPIGetInfoHandler(BaseHandler):
 		if not topos or len(topos) == 0:
 			pass
 		elif topos[0]["status"] == TopoStatus["NEW"]:
+			step = 1
 			gameTimes = topos[0]["gameTimes"]
-		elif topos[0]["status"] == TopoStatus["ING"] and self.get_current_user() in topos[0]["submitUser"]:
-			gameTimes = topos[0]["gameTimes"]
-			step = 2
-		elif topos[0]["status"] == TopoStatus["ING"] and self.get_current_user() not in topos[0]["submitUser"]:
+		# elif topos[0]["status"] == TopoStatus["ING"] and self.get_current_user() in topos[0]["submitUser"]:
+		# 	gameTimes = topos[0]["gameTimes"]
+		# 	step = 2
+		# elif topos[0]["status"] == TopoStatus["ING"] and self.get_current_user() not in topos[0]["submitUser"]:
+		# 	gameTimes = topos[0]["gameTimes"]
+		# 	step = 1
+		elif topos[0]["status"] == TopoStatus["ING"]:
 			gameTimes = topos[0]["gameTimes"]
 			step = 1
 		else:
-			gameTimes = topos[0]["gameTimes"]+1
-			step = 0
+			#gameTimes = topos[0]["gameTimes"]+1
+			step = 3
 		record = {"info":info,
 			"group_users" : group_users, "gameTimes":gameTimes, "step":step}
 		if gameTimes > 10:
@@ -869,7 +901,7 @@ class RouteAPIGetInfoHandler(BaseHandler):
 		self.finish()
 		return
 
-class RouteAPISubmitResultHandler(BaseHandler):
+class RouteAPISubmitRouteHandler(BaseHandler):
 	# 检测是否能进入下一步
 	@tornado.web.authenticated
 	@tornado.web.asynchronous
@@ -904,21 +936,23 @@ class RouteAPISubmitResultHandler(BaseHandler):
 		if not gameTimes:
 			self.finishi()
 			return
-		resultJson = self.get_argument("result", None)
+		routeJson = self.get_argument("route", None)
 		topo = yield db.routeTopo.find_one({"group":self.online_data[self.get_current_user()]["group"], "gameTimes":gameTimes, "year":self.online_data[self.get_current_user()]["yearOfEntry"]})
-		result = None
-		returnStatus = None
-		if not resultJson or not topo or resultJson == "null":
+		print routeJson
+		print topo
+		route = None
+		returnStatus = "ING"
+		if not routeJson or not topo or routeJson == "null":
 			returnStatus = "ERROR"
 			self.write(json.dumps({"status": returnStatus}))
 			self.finish()
 			return
-		if topo["status"] == TopoStatus["DONE"] or self.get_current_user() in topo["submitUser"]:
+		if topo["status"] == TopoStatus["DONE"]: # or self.get_current_user() in topo["submitUser"]:
 			returnStatus = "REJECT"
 			self.write(json.dumps({"status": returnStatus}))
 			return
 		try:
-			result = json.loads(resultJson);
+			route = json.loads(routeJson);
 		except ValueError, e:
 			returnStatus = "ERROR"
 			self.write(json.dumps({"status": returnStatus}))
@@ -926,18 +960,48 @@ class RouteAPISubmitResultHandler(BaseHandler):
 			return
 
 		topo["submitUser"].append(self.get_current_user())
-		if set(topo["submitUser"]) == set(topo["distributeNodes"].keys()):
-			topo["status"] = TopoStatus["DONE"];
-			returnStatus = "DONE"
-		else:
-			topo["status"] = TopoStatus["ING"]
-			returnStatus = "ING"
-		topo["result"]= dict(topo["result"].items() + result.items())
+		# if set(topo["submitUser"]) == set(topo["distributeNodes"].keys()):
+		# 	topo["status"] = TopoStatus["DONE"];
+		# 	returnStatus = "DONE"
+		# else:
+		# 	topo["status"] = TopoStatus["ING"]
+		# 	returnStatus = "ING"
+		for node in route:
+			topo["route"][node] = route[node]
+		# topo["result"]= dict(topo["result"].items() + result.items())
 		yield db.routeTopo.save(topo)
-		self.write(json.dumps({"status": returnStatus, "gameTimes":gameTimes, "result":result}))
+		self.write(json.dumps({"status": returnStatus, "gameTimes":gameTimes, "route":route}))
 		self.finish()
 		return
 
+class RouteAPISubmitTopoHandler(BaseHandler):
+	#topo:{"scale":30, "link":["1-2","3-4","5-29"], "group":"10-2", "year":2014, "type":0, "distributeNodes":{"2011":[0,3], "2012":[1,2,4]}}
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def post(self):
+		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		self.set_header('Access-Control-Allow-Credentials','true')
+		topoStr = self.get_argument("topo", None)
+		print "topo"
+		print topoStr
+		if not topoStr:
+			self.write(json.dumps({"status":"ERROR"}))
+		else:
+			topo = json.loads(topoStr)
+
+			print topo
+			if "scale" in topo and "link" in topo and HwWebUtil.isConnectedGraph(topo["scale"], topo["link"]):
+				yield db.routeTopo.save(topo)
+				self.write(json.dumps({"status":"NORMAL"}))
+				print "true"
+			else:
+				print "false"
+				self.write(json.dumps({"status":"ERROR"}))
+		self.finish()
+		return
+
+# 获取topo，选取topo和查看已确定的topo都从这儿开始
 class RouteAPIGetTopoHandler(BaseHandler):
 	#topo:{"scale":30, "link":["1-2","3-4","5-29"], "group":"10-2", "year":2014, "type":0, "distributeNodes":{"2011":[0,3], "2012":[1,2,4]}}
 	@tornado.web.authenticated
@@ -962,9 +1026,10 @@ class RouteAPIGetTopoHandler(BaseHandler):
 			topo["gameTimes"] = gameTimes
 			topo["group"] = group
 			topo["year"] = self.online_data[self.get_current_user()]["yearOfEntry"]
-			topo["status"] = TopoStatus["NEW"]
+			#topo["status"] = TopoStatus["NEW"]
+			topo["status"] = TopoStatus["CHOOSING"]
 			topo["submitUser"] = []
-			topo["result"] = {}
+			topo["route"] = {}
 			topo["type"] = 0
 
 			# 将结点随机分配给该组成员
@@ -986,13 +1051,12 @@ class RouteAPIGetTopoHandler(BaseHandler):
 						user_hash[a_userId].append(i)
 						break
 			link = self.initialLink(scale)
-			print link
 			topo["distributeNodes"] = user_hash
 			topo["link"] = link
 			print topo
-			yield db.routeTopo.save(topo)
-		if "_id" in topo:
-			del topo["_id"]
+			#yield db.routeTopo.save(topo)
+		# if "_id" in topo:
+		# 	del topo["_id"]
 		self.write(json.dumps(topo))
 		self.finish()
 		return
@@ -1034,44 +1098,20 @@ class RouteAPIGetTopoHandler(BaseHandler):
 					link.append("%d-%d" %(outerIndex, (outerIndex + 1) % edgeNum + middleFirst))
 				if random.random() < randomThreshold:
 					link.append("%d-%d" %(outerIndex, (outerIndex + 9) % edgeNum + middleFirst))
-			if self.isConnectedGraph(scale, link):
+			if HwWebUtil.isConnectedGraph(scale, link):
 				break
 		return link
 
-	# 检测是否为连通图
-	def isConnectedGraph(self, scale, links):
-		AdjList = [ [] for i in range(scale)]
-		for link in links:
-			x = int(link.split("-")[0])
-			y = int(link.split("-")[1])
-			AdjList[x].append(y)
-			AdjList[y].append(x)
-		print AdjList
-		count = self.BFS(AdjList, 0)
-		print count
-		if count == scale:
-			return True
-		else:
-			return False
-
-	# BFS，返回BFS树的节点数
-	def BFS(self, AdjList, i):
-		scale = len(AdjList)
-		markArray = [ False for i in range(scale)]
-		count = 1
-		queue = []
-		markArray[i] = True
-		queue.append(i)
-		while len(queue) != 0:
-			u = queue[0]
-			del queue[0]
-			for v in AdjList[u]:
-				if not markArray[v]:
-					markArray[v] = True
-					count += 1
-					queue.append(v)
-		return count
-
+# 保存测试结果，实验结束
+class RouteAPISaveRouteEvaluationHandler(BaseHandler):
+	#topo:{"scale":30, "link":["1-2","3-4","5-29"], "group":"10-2", "year":2014, "type":0, "distributeNodes":{"2011":[0,3], "2012":[1,2,4]}}
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def post(self):
+		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		self.set_header('Access-Control-Allow-Credentials','true')
+		gameTimes = int(self.get_argument("times", None))
 
 
 class LoginHandler(BaseHandler):
@@ -1325,17 +1365,19 @@ application = tornado.web.Application([
     (r"/project/([0-9]+)/upload", ProjectUploadHandler),
     (r"/project/([0-9]+)/download", ProjectDownloadHandler),
     (r"/project/([0-9]+)", ProjectHandler),
+    (r"/project/zipdownload/([0-9]+)", ReportZipDownload),
     (r"/api/getinfo",APIGetHandler),
     (r"/api/putinfo",APIPutHandler),
     (r"/api/route/getinfo",RouteAPIGetInfoHandler),
     (r"/api/route/getTopo",RouteAPIGetTopoHandler),
-    (r"/api/route/submitResult",RouteAPISubmitResultHandler)
+    (r"/api/route/submitTopo",RouteAPISubmitTopoHandler),
+    (r"/api/route/submitRoute",RouteAPISubmitRouteHandler)
     ],**settings )
 
 # 每次加入新的作业或者修改作业的截止日期都必须要重启一次系统，因为需要把自动该作业的任务加入到定时任务中去
 if __name__ == "__main__":
-	application.listen(80)
-	#application.listen(8888)
+	#application.listen(80)
+	application.listen(8888)
 	print "The http server has been started!"
 	logger.info("The http server has been started!")
 	#tornado.ioloop.IOLoop.instance().add_timeout(
