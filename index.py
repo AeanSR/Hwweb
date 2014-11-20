@@ -6,6 +6,7 @@ import tornado.ioloop
 import tornado.web
 import motor
 import json
+import sys
 
 import zipfile
 import hashlib
@@ -40,6 +41,7 @@ testdb = motor.MotorClient('localhost', 27017).test_hwweb
 domain = ".ucas-2014.tk"
 expires_days = 7
 md5Salt='a~n!d@r#e$w%l^e&e'
+deployed=True
 
 logpath = os.path.join(os.path.dirname(__file__),'log')
 if not os.path.exists(logpath):
@@ -768,14 +770,24 @@ class ClearProjectRecord(BaseHandler):
 			ogger.warn("user: %s tried to attack" %userId)
 			self.redirect("/main")
 			return
-
+		group = self.online_data[userId]["group"]
 		# 清除路由器实验的记录
-		yield db.routeTopo.remove({"group":self.online_data[userId]["group"], "year":self.online_data[userId]["yearOfEntry"]})
+		yield db.routeTopo.remove({"group":group, "year":self.online_data[userId]["yearOfEntry"]})
 
 		# 老鼠实验
-
+		yield db.games.remove({"userId":userId})
+		yield db.games.remove({"group":group})
 		# 系统实验
-
+		try:
+			Exp3Connection.days[group] = 0
+			Exp3Connection.numPlayers[group] = 5 
+			Exp3Connection.clients.pop(group)
+			for uid in Exp3Connection.members[group]:
+				Exp3Connection.members[group][uid]['online'] = False
+			tornado.ioloop.IOLoop.instance().remove_timeout(Exp3Connection.timers[group] )
+			Exp3Connection.timers[group] = None
+		except:
+			None
 		self.redirect("/main")
 		return
 
@@ -817,6 +829,7 @@ class  SetProjectRecord(BaseHandler):
 		# 老鼠实验
 
 		# 系统实验
+		Exp3Connection.numPlayers[self.online_data[userId]["group"]] = 1
 
 		self.redirect("/main")
 		return
@@ -827,7 +840,10 @@ class APIGetHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk:8080')
+		if deployed:
+			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		else:
+			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk:8080')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		try:
 			gameId = int(self.get_argument("gameId", 1))
@@ -835,7 +851,7 @@ class APIGetHandler(BaseHandler):
 			return
 		userId = self.get_current_user()
 		group = self.online_data[userId]["group"]
-		if gameId not in [1,2,3,4]:
+		if gameId not in [1,2,3,4,5]:
 			return
 		# 无分组游戏情况
 		if gameId in [1,2,3]:
@@ -849,7 +865,7 @@ class APIGetHandler(BaseHandler):
 					"histories":{}}
 				yield db.games.save(record)
 		# 分组情况
-		elif gameId in [4]:
+		elif gameId in [4,5]:
 			record = yield db.games.find_one({"gameId":gameId, "group": group})
 			if not record:
 				record = {"group":group,
@@ -874,7 +890,10 @@ class APIPutHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk:8080')
+		if deployed:
+			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		else:
+			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk:8080')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		try:
 			gameId = int(self.get_argument("gameId", 1))
@@ -1211,7 +1230,7 @@ class Exp3Connection(SockJSConnection):
 	timers = {}
 	# 存储days
 	days = {}
-	numPlayers = 2
+	numPlayers = {}
 	numTraitor = 1
 	# 一天的实际时间
 	interval = 60
@@ -1288,6 +1307,7 @@ class Exp3Connection(SockJSConnection):
 			if group not in self.clients:
 				self.clients[group] = {}
 				self.days[group] = 0
+				self.numPlayers[group] = 5
 			if userId not in self.clients[group]:
 				self.clients[group][userId] = {}
 				isTraitor = False
@@ -1296,6 +1316,7 @@ class Exp3Connection(SockJSConnection):
 				self.clients[group][userId]['traitor'] = isTraitor
 				self.clients[group][userId]['messages'] = 0
 				self.clients[group][userId]['stage'] = 0
+
 			self.clients[group][userId]['sock'] = self
 			self.clients[group][userId]['attack'] = None
 			self.authenticated = True
@@ -1378,8 +1399,9 @@ class Exp3Connection(SockJSConnection):
 				if sock:
 					dest.add(self.clients[self.group][userid]['sock'])
 		return dest
-	def isStart(self):		
-		if len(self.clients[self.group]) == self.numPlayers:
+	def isStart(self):
+		#print "numPlayers ", self.numPlayers[self.group]	
+		if len(self.clients[self.group]) == self.numPlayers[self.group]:
 			allStage2 = True
 			for id in self.clients[self.group]:
 				if self.clients[self.group][id]['stage'] !=1:
@@ -1392,7 +1414,7 @@ class Exp3Connection(SockJSConnection):
 	def isWin(self):
 		attack = set()
 		not_attack =set()
-		loyals =  self.numPlayers - self.numTraitor
+		loyals =  self.numPlayers[self.group] - self.numTraitor
 		loyal = set()
 		for id in self.clients[self.group]:
 			#print 'a,', self.clients[self.group][id]['traitor'],  self.clients[self.group][id]['attack'] , id
@@ -1435,7 +1457,7 @@ class Exp3Connection(SockJSConnection):
 			self.sync
 			)
 	def newDay(self):
-		traitor= random.randint(0,self.numPlayers-1)
+		traitor= random.randint(0,self.numPlayers[self.group]-1)
 		self.days[self.group] += 1
 		n = 0
 		for userId in self.clients[self.group] :
@@ -1721,8 +1743,13 @@ application = tornado.web.Application([
 
 # 每次加入新的作业或者修改作业的截止日期都必须要重启一次系统，因为需要把自动该作业的任务加入到定时任务中去
 if __name__ == "__main__":
-	#application.listen(80)
-	application.listen(8888)
+	if len(sys.argv) == 2:
+		if sys.argv[1] == 'test':
+			deployed = False
+	if deployed:
+		application.listen(80)
+	else:
+		application.listen(8888)
 	print "The http server has been started!"
 	logger.info("The http server has been started!")
 	#tornado.ioloop.IOLoop.instance().add_timeout(
