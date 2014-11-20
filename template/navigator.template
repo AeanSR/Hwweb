@@ -2,6 +2,12 @@
 {% from HwWebUtil import QuizStatus %}
 <script>
   $(function() {
+    var userId = "{{info['userId']}}"
+    regExp = new RegExp("^ucas", "i")
+    if(userId.match(regExp)!=null){
+      $('<li><a href="/api/clearProjectRecord">清除游戏信息</a></li>').appendTo("#project_menu")
+      $('<li><a href="/api/setProjectRecord">设置游戏信息</a></li>').appendTo("#project_menu")
+    }
     $( "#quiz_menu" ).menu();
     $( "#project_menu" ).menu();
   });
@@ -36,11 +42,10 @@
 	{% end %}
             
             </li>
-        {% end %}
+        {% end %}       
         </ul >
 
         <ul id="project_menu" class="ui-menu">
         <li><a href="/project">提交大实验报告入口</a></li>
-
         </ul>
     </div>
