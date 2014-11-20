@@ -573,8 +573,13 @@ class StudentListHandler(BaseHandler):
 
 				user_quiz = yield db.solutions.find_one({"quiz_id":a_quiz['quiz_id'], "userId":user["userId"]})
 				flag = 0 #it mark the quiz_flag out of the QuizFlag map
-				if not user_quiz:
+				if not user_quiz and datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
 					flag = QuizFlag["UNDONE"]
+					quiz_info.append({"quiz_id":a_quiz["quiz_id"], "all_score":0, "flag":flag})
+					continue
+				# 为了兼容新添的用户没有作业记录，同时作业也截止了。
+				elif not user_quiz:
+					flag = QuizFlag["BLANK"]
 					quiz_info.append({"quiz_id":a_quiz["quiz_id"], "all_score":0, "flag":flag})
 					continue
 				elif user_quiz["status"] == QuizStatus["SAVE"]:
