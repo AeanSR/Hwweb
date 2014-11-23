@@ -829,7 +829,7 @@ class  SetProjectRecord(BaseHandler):
 		# 老鼠实验
 
 		# 系统实验
-		Exp3Connection.numPlayers[self.online_data[userId]["group"]] = 1
+		Exp3Connection.numPlayers[self.online_data[userId]["group"]] = 2
 
 		self.redirect("/main")
 		return
@@ -853,19 +853,8 @@ class APIGetHandler(BaseHandler):
 		group = self.online_data[userId]["group"]
 		if gameId not in [1,2,3,4,5]:
 			return
-		# 无分组游戏情况
-		if gameId in [1,2,3]:
-			record = yield db.games.find_one({"gameId":gameId, "userId": userId})
-			if not record:
-				record = {"userId":userId,
-					"gameId":gameId,
-					"curLoop":0,
-					"scores":{},
-					"bestScore":"None",
-					"histories":{}}
-				yield db.games.save(record)
-		# 分组情况
-		elif gameId in [4,5]:
+		# 分组游戏情况
+		if gameId in [1,2,3,4,5]:
 			record = yield db.games.find_one({"gameId":gameId, "group": group})
 			if not record:
 				record = {"group":group,
@@ -907,20 +896,9 @@ class APIPutHandler(BaseHandler):
 		group = self.online_data[userId]["group"]
 		if gameId not in [1,2,3,4]:
 			return
-		# 无分组游戏情况
-		if gameId in [1,2,3]:
-			record = yield db.games.find_one({"gameId":gameId,
-				"userId": userId})
-			if not record:
-				record = {"userId":userId,
-					"gameId":gameId,
-					"curLoop":0,
-					"scores":{},
-					"bestScore":"None",
-					"histories":{}}
-			if gameLoop!=record["curLoop"] or gameLoop>2:
-				return
-		elif gameId in [4]:
+		# 分组游戏情况
+
+		if gameId in [1,2,3,4]:
 			record = yield db.games.find_one({"gameId":gameId,
 				"group": group})
 			if not record:
@@ -930,10 +908,13 @@ class APIPutHandler(BaseHandler):
 					"scores":{},
 					"bestScore":"None",
 					"histories":{}}
-	 		if gameLoop!=record["curLoop"] or gameLoop>4:
-				return
 		else:
 			None
+		if gameId in [1,2,3]:
+			if gameLoop!=record["curLoop"] or gameLoop>2:
+				return
+	 		if gameLoop!=record["curLoop"] or gameLoop>4:
+				return
 
 		if record["bestScore"] == "None":
 			if gameScore>0:
