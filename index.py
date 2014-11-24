@@ -829,7 +829,7 @@ class  SetProjectRecord(BaseHandler):
 		# 老鼠实验
 
 		# 系统实验
-		Exp3Connection.numPlayers[self.online_data[userId]["group"]] = 2
+		Exp3Connection.numPlayers[self.online_data[userId]["group"]] = 1
 
 		self.redirect("/main")
 		return
