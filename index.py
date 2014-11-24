@@ -1034,13 +1034,6 @@ class RouteAPISubmitTopoHandler(BaseHandler):
 		if not topoStr:
 			self.write(json.dumps({"status":"ERROR"}))
 		else:
-			# 检测数据库是否已经有topo，如果有，则返回错误信息
-			topoInDB = yield db.routeTopo.find_one({"group":group, "gameTimes":gameTimes, "year":self.online_data[self.get_current_user()]["yearOfEntry"]},{"_id": 0})
-			if topoInDB:
-				self.write(json.dumps({"status": "someoneSubmited"}))
-				self.finish()
-				return
-
 			topo = None
 			try:
 				topo = json.loads(topoStr)
@@ -1048,6 +1041,18 @@ class RouteAPISubmitTopoHandler(BaseHandler):
 				self.write(json.dumps({"status": "ERROR"}))
 				self.finish()
 				return
+
+			# 检测数据库是否已经有topo，如果有，则返回错误信息
+			# to do 还要验证gameTimes是否正确？
+			if "group" in topo and "gameTimes" in topo:
+				topoInDB = yield db.routeTopo.find_one({"group":topo["group"], "gameTimes":int(topo["gameTimes"]), "year":self.online_data[self.get_current_user()]["yearOfEntry"]},{"_id": 0})
+				if topoInDB:
+					self.write(json.dumps({"status": "someoneSubmited"}))
+					self.finish()
+					return
+			else:
+				print "false"
+				self.write(json.dumps({"status":"ERROR"}))
 
 			if "scale" in topo and "link" in topo and HwWebUtil.isConnectedGraph(topo["scale"], topo["link"]):
 				yield db.routeTopo.save(topo)
@@ -1169,6 +1174,7 @@ class RouteAPISaveRouteEvaluationHandler(BaseHandler):
 		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		gameTimes = int(self.get_argument("times", None))
+		# 验证是否有同学提交
 
 
 class LoginHandler(BaseHandler):
