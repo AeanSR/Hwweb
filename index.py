@@ -6,6 +6,7 @@ import tornado.ioloop
 import tornado.web
 import motor
 import json
+import sys
 
 import zipfile
 import hashlib
@@ -18,7 +19,7 @@ from datetime import datetime
 from datetime import timedelta
 import time
 
-
+from sockjs.tornado import SockJSRouter, SockJSConnection
 from HwWebUtil import HwWebUtil
 from HwWebUtil import QuizStatus
 from HwWebUtil import QuesStatus
@@ -40,6 +41,7 @@ testdb = motor.MotorClient('localhost', 27017).test_hwweb
 domain = ".ucas-2014.tk"
 expires_days = 7
 md5Salt='a~n!d@r#e$w%l^e&e'
+deployed=True
 
 logpath = os.path.join(os.path.dirname(__file__),'log')
 if not os.path.exists(logpath):
@@ -768,14 +770,24 @@ class ClearProjectRecord(BaseHandler):
 			ogger.warn("user: %s tried to attack" %userId)
 			self.redirect("/main")
 			return
-
+		group = self.online_data[userId]["group"]
 		# 清除路由器实验的记录
-		yield db.routeTopo.remove({"group":self.online_data[userId]["group"], "year":self.online_data[userId]["yearOfEntry"]})
+		yield db.routeTopo.remove({"group":group, "year":self.online_data[userId]["yearOfEntry"]})
 
 		# 老鼠实验
-
+		yield db.games.remove({"userId":userId})
+		yield db.games.remove({"group":group})
 		# 系统实验
-
+		try:
+			Exp3Connection.days[group] = 0
+			Exp3Connection.numPlayers[group] = 5 
+			Exp3Connection.clients.pop(group)
+			for uid in Exp3Connection.members[group]:
+				Exp3Connection.members[group][uid]['online'] = False
+			tornado.ioloop.IOLoop.instance().remove_timeout(Exp3Connection.timers[group] )
+			Exp3Connection.timers[group] = None
+		except:
+			None
 		self.redirect("/main")
 		return
 
@@ -817,6 +829,7 @@ class  SetProjectRecord(BaseHandler):
 		# 老鼠实验
 
 		# 系统实验
+		Exp3Connection.numPlayers[self.online_data[userId]["group"]] = 2
 
 		self.redirect("/main")
 		return
@@ -827,7 +840,10 @@ class APIGetHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		if deployed:
+			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		else:
+			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk:8080')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		try:
 			gameId = int(self.get_argument("gameId", 1))
@@ -835,21 +851,10 @@ class APIGetHandler(BaseHandler):
 			return
 		userId = self.get_current_user()
 		group = self.online_data[userId]["group"]
-		if gameId not in [1,2,3,4]:
+		if gameId not in [1,2,3,4,5]:
 			return
-		# 无分组游戏情况
-		if gameId in [1,2,3]:
-			record = yield db.games.find_one({"gameId":gameId, "userId": userId})
-			if not record:
-				record = {"userId":userId,
-					"gameId":gameId,
-					"curLoop":0,
-					"scores":{},
-					"bestScore":"None",
-					"histories":{}}
-				yield db.games.save(record)
-		# 分组情况
-		elif gameId in [4]:
+		# 分组游戏情况
+		if gameId in [1,2,3,4,5]:
 			record = yield db.games.find_one({"gameId":gameId, "group": group})
 			if not record:
 				record = {"group":group,
@@ -874,7 +879,10 @@ class APIPutHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		if deployed:
+			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		else:
+			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk:8080')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		try:
 			gameId = int(self.get_argument("gameId", 1))
@@ -888,18 +896,9 @@ class APIPutHandler(BaseHandler):
 		group = self.online_data[userId]["group"]
 		if gameId not in [1,2,3,4]:
 			return
-		# 无分组游戏情况
-		if gameId in [1,2,3]:
-			record = yield db.games.find_one({"gameId":gameId,
-				"userId": userId})
-			if not record:
-				record = {"userId":userId,
-					"gameId":gameId,
-					"curLoop":0,
-					"scores":{},
-					"bestScore":"None",
-					"histories":{}}
-		elif gameId in [4]:
+		# 分组游戏情况
+
+		if gameId in [1,2,3,4]:
 			record = yield db.games.find_one({"gameId":gameId,
 				"group": group})
 			if not record:
@@ -911,8 +910,12 @@ class APIPutHandler(BaseHandler):
 					"histories":{}}
 		else:
 			None
-		if gameLoop!=record["curLoop"] or gameLoop>2:
-			return
+		if gameId in [1,2,3]:
+			if gameLoop!=record["curLoop"] or gameLoop>2:
+				return
+	 		if gameLoop!=record["curLoop"] or gameLoop>4:
+				return
+
 		if record["bestScore"] == "None":
 			if gameScore>0:
 				record["bestScore"] = gameScore
@@ -920,15 +923,16 @@ class APIPutHandler(BaseHandler):
 			if gameScore>0 and gameScore < record["bestScore"] and gameId in [1,2,3]:
 				record["bestScore"] = gameScore
 			if gameScore>0 and gameId in [4]:
-				record["bestScore"]  = (record["bestScore"]  + gameScore) / 5
-		if gameScore>0:
-			if gameScore != len(gameHist['results']):
-				return
+				record["bestScore"]  = (record["bestScore"]*gameLoop + gameScore) / (gameLoop + 1)
+		#if gameScore>0:
+		#	if gameScore != len(gameHist['results']):
+		#		return
 		record["scores"][str(gameLoop)] = gameScore
 		record["histories"][str(gameLoop)] = gameHist
 		record["curLoop"] = gameLoop + 1
 
 		yield db.games.save(record)
+		logger.info("Exp1: user %s submits."% userId)
 		self.write('true')
 		self.finish()
 		return
@@ -1176,6 +1180,291 @@ class RouteAPISaveRouteEvaluationHandler(BaseHandler):
 		gameTimes = int(self.get_argument("times", None))
 		# 验证是否有同学提交
 
+# 全局函数，创建以组为一级索引的用户表
+@tornado.gen.coroutine
+def createUserlist(userlist, mapper):
+	cursor = db.users.find()
+	for message in (yield cursor.to_list(None)):
+		if message:
+			uid = message['userId']
+			group = message['group']
+			if group not in userlist:
+				userlist[group] = {}
+			userlist[group][uid] = {}
+			userlist[group][uid]['online'] = False
+			userlist[group][uid]['name'] = message['name']
+	for group in userlist:
+		i = 0
+		for uid in userlist[group]:
+			if group not in mapper:
+				mapper[group] = {}
+			mapper[group][uid] = str(i)
+			# 由于uid比较大，不会冲突
+			mapper[group][str(i)] = uid
+			i += 1
+
+class Exp3Connection(SockJSConnection):
+	"""Exp3 connection implementation"""
+	# 面向系统
+	clients = {}
+	# 面向用户
+	members = {}
+	# 记录userid，group -> id 映射 ,用户不可见
+	maps = {}
+	# 构建用户登陆表
+	createUserlist(members,maps)
+	# 存储timer
+	timers = {}
+	# 存储days
+	days = {}
+	numPlayers = {}
+	numTraitor = 1
+	# 一天的实际时间
+	interval = 60
+
+	def send_error(self, message, error_type=None):
+		"""
+		Standard format for all errors
+		"""
+		return self.send(json.dumps({
+			'data_type': 'error' if not error_type else '%s_error' % error_type,
+			'data': {
+				'message': message
+			}
+        }))
+
+	def send_message(self, message, data_type):
+		"""
+		Standard format for all messages
+		"""
+		return self.send(json.dumps({
+			'data_type': data_type,
+			'data': message,
+		}))
+
+	def broadcast_message(self, src, dest, message, data_type):
+		"""
+		Standard format for all messages
+		"""
+		return self.broadcast(self.getDest(dest),json.dumps({
+			'data_type': data_type,
+			'data': message,
+			'from': src
+		}))
+
+	def broadcast_userlist(self,event):
+		"""
+		Standard format for boardcasting messages to everyone
+		"""
+		return self.broadcast(self.getDest([]),json.dumps({
+			'data_type': 'update',
+			'data': self.members[self.group],
+			'event':event
+		}))
+
+
+	def on_open(self, request):
+		"""
+		Request the client to authenticate and add them to client pool.
+		"""
+		self.authenticated = False
+		self.channel = None
+		self.send_message({}, 'request_login')
+
+	def on_message(self, msg):
+		"""
+		Handle authentication and notify the client if anything is not ok,
+		but don't give too many details
+		"""
+		try:
+			message = json.loads(msg)
+		except ValueError:
+			self.send_error("Invalid JSON")
+			return
+
+		if message['data_type'] == 'login' and not self.authenticated:
+			try:
+				userId = message['data']['userId']
+				group = BaseHandler.online_data[userId]["group"]
+			except:
+				self.send_error("Invalid user")
+				return
+			self.group = group
+			self.userId = userId
+			if group not in self.clients:
+				self.clients[group] = {}
+				self.days[group] = 0
+				self.numPlayers[group] = 5
+			if userId not in self.clients[group]:
+				self.clients[group][userId] = {}
+				isTraitor = False
+				if len(self.clients[group]) ==1:
+					isTraitor = True
+				self.clients[group][userId]['traitor'] = isTraitor
+				self.clients[group][userId]['messages'] = 0
+				self.clients[group][userId]['stage'] = 0
+
+			self.clients[group][userId]['sock'] = self
+			self.clients[group][userId]['attack'] = None
+			self.authenticated = True
+			self.members[self.group][self.userId]['online'] = True
+			self.broadcast_userlist(True)
+			self.send_message({'notify': 'success', 'isTraitor':self.clients[group][userId]['traitor'], 
+				'id':self.maps[group][userId],'messages':self.clients[group][userId]['messages'],
+				'stage':self.clients[group][userId]['stage']}, 'auth'
+				)
+			logger.info("Exp3:Client authenticated for %s" % userId)
+			self.isStart()
+
+		elif message['data_type'] == 'nextstage' and self.authenticated:
+			stage = self.clients[self.group][self.userId]['stage']
+			if stage == 0:
+				self.clients[self.group][self.userId]['stage'] += 1
+				self.isStart()
+
+		elif message['data_type'] == 'message' and self.authenticated and self.timers[self.group] != None:
+			# example: GM.sock.send(GM.getMsgJson(["2014n1000706041"], 'hello',"message"))
+			self.broadcast_message(self.maps[self.group][self.userId], message['to'],message['data'],"message")
+
+		elif message['data_type'] == 'report' and self.authenticated and self.timers[self.group] != None:
+			# Report the current ready status
+			# example: GM.sock.send(GM.getMsgJson(1, {ready:true},"report"))
+			self.clients[self.group][self.userId]['ready'] = message['data']['ready']
+
+		elif message['data_type'] == 'attack' and self.authenticated  and self.timers[self.group] != None:
+			if self.clients[self.group][self.userId]['attack'] == None:
+				self.clients[self.group][self.userId]['attack'] = message['data']
+				self.broadcast_message(self.maps[self.group][self.userId],[], message['data'],"attack")
+				iswin = self.isWin()
+				if iswin == True:
+					# Game Win
+					self.broadcast_message("",[],{'event':'gameresult','win':True},'notify')
+					self.resetTimer()
+					self.newDay()
+
+				elif iswin == False:
+					# Game Lose
+					self.broadcast_message("",[],{'event':'gameresult','win':False},'notify')
+					self.resetTimer()
+					self.newDay()
+
+				else:
+					# Game continue
+					None
+
+		elif message['data_type'] == 'register' and self.authenticated  and self.timers[self.group] != None:
+			self.clients[self.group][self.userId]['name'] = message['data']['generalname']
+
+		else:
+			self.send(msg)
+			#self.send_error("Invalid data type %s" % message['data_type'])
+			logger.info("Exp3:Invalid data type %s" % message['data_type'])
+
+	def on_close(self):
+		"""
+		Remove client from pool. Unlike Socket.IO connections are not
+		re-used on e.g. browser refresh.
+		"""
+		self.members[self.group][self.userId]['online'] = False
+		self.broadcast_userlist(False)
+		tornado.ioloop.IOLoop.instance().remove_timeout(self.timers[self.group] )
+		self.timers[self.group] = None
+		self.clients[self.group][self.userId]['sock'] = None
+		return super(Connection, self).on_close()
+
+	def getDest(self, to):
+		dest = set()
+		if len(to)>0:
+			for id in to:
+				try:
+					dest.add(self.clients[self.group][self.maps[self.group][id]]['sock'])
+				except:
+					None
+		else:
+			for userid in self.clients[self.group]:
+				sock = self.clients[self.group][userid]['sock']
+				if sock:
+					dest.add(self.clients[self.group][userid]['sock'])
+		return dest
+	def isStart(self):
+		#print "numPlayers ", self.numPlayers[self.group]	
+		if len(self.clients[self.group]) == self.numPlayers[self.group]:
+			allStage2 = True
+			for id in self.clients[self.group]:
+				if self.clients[self.group][id]['stage'] !=1:
+					allStage2 = False
+			if allStage2 == True:
+				self.broadcast_message("",[],{'event':'start','interval':self.interval,'day':self.days[self.group]},'notify')
+				self.resetTimer()
+				logger.info("Exp3: %s 's players are in position. Now game start." % self.group)
+
+	def isWin(self):
+		attack = set()
+		not_attack =set()
+		loyals =  self.numPlayers[self.group] - self.numTraitor
+		loyal = set()
+		for id in self.clients[self.group]:
+			#print 'a,', self.clients[self.group][id]['traitor'],  self.clients[self.group][id]['attack'] , id
+			if self.clients[self.group][id]['traitor'] == False:
+				loyal.add(id)
+				if self.clients[self.group][id]['attack'] == True:
+					attack.add(id)
+				elif self.clients[self.group][id]['attack'] == False:
+					not_attack.add(id)
+		# 一致性：只关注忠诚的将军的决策结果, 忠诚将军达成一致决策。
+		#print 'b,', len(attack), len(not_attack), loyals
+		if len(attack) + len(not_attack) != loyals:
+			# 终止性条件：所有忠臣将军做出决策，此情况为未决策完。
+			return None
+		elif len(attack) == loyals:
+			decideAttack = True
+		elif len(not_attack) == loyals:
+			decideAttack = False
+		else:
+			return False
+
+		R = 0
+		for id in loyal:
+			if self.clients[self.group][id]['ready']:
+				R += 1
+		# 有效性：当Ｒ大于N时做出决定攻击，R<N情况拒绝攻击, R=N 随便
+		N = loyals - R
+		if (R>N and decideAttack == True) or  (R<N and decideAttack == False) or R==N:
+			return True
+		else:
+			return False
+
+	def resetTimer(self):
+		try:
+			tornado.ioloop.IOLoop.instance().remove_timeout(self.timers[self.group])
+		except:
+			None
+		self.timers[self.group] = tornado.ioloop.IOLoop.instance().add_timeout(
+			timedelta(seconds=self.interval),
+			self.sync
+			)
+	def newDay(self):
+		traitor= random.randint(0,self.numPlayers[self.group]-1)
+		self.days[self.group] += 1
+		n = 0
+		for userId in self.clients[self.group] :
+			if self.clients[self.group][userId] and self.clients[self.group][userId]['sock']!=None:
+				self.clients[self.group][userId]['attack'] = None
+				if n!= traitor:
+					self.clients[self.group][userId]['traitor'] = False
+				else:
+					self.clients[self.group][userId]['traitor'] = True
+				self.clients[self.group][userId]['sock'].send_message({
+					'event':'sync', 'day':self.days[self.group],'isTraitor':self.clients[self.group][userId]['traitor']}, "notify")
+				n += 1
+
+	def sync(self):
+		self.timers[self.group] = tornado.ioloop.IOLoop.instance().add_timeout(
+			timedelta(seconds=self.interval),
+			self.sync
+			)
+		self.newDay()
+		#self.broadcast_message("",[],{'event':'sync', 'day':self.days[self.group]},'notify')
 
 class LoginHandler(BaseHandler):
 	def get(self):
@@ -1410,7 +1699,7 @@ settings = {
 	"cookie_secret": "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
  	"login_url": "/login",
 }
-
+SockRouter = SockJSRouter(Exp3Connection, '/api/exp3')
 application = tornado.web.Application([
     (r"/", tornado.web.RedirectHandler, {"url":"/main", "permanent":False}),
     (r"/login", LoginHandler),
@@ -1436,13 +1725,18 @@ application = tornado.web.Application([
     (r"/api/route/getinfo",RouteAPIGetInfoHandler),
     (r"/api/route/getTopo",RouteAPIGetTopoHandler),
     (r"/api/route/submitTopo",RouteAPISubmitTopoHandler),
-    (r"/api/route/submitRoute",RouteAPISubmitRouteHandler) 
-    ],**settings )
+    (r"/api/route/submitRoute",RouteAPISubmitRouteHandler)
+    ] + SockRouter.urls, **settings )
 
 # 每次加入新的作业或者修改作业的截止日期都必须要重启一次系统，因为需要把自动该作业的任务加入到定时任务中去
 if __name__ == "__main__":
-	#application.listen(80)
-	application.listen(8888)
+	if len(sys.argv) == 2:
+		if sys.argv[1] == 'test':
+			deployed = False
+	if deployed:
+		application.listen(80)
+	else:
+		application.listen(8888)
 	print "The http server has been started!"
 	logger.info("The http server has been started!")
 	#tornado.ioloop.IOLoop.instance().add_timeout(
