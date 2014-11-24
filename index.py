@@ -840,11 +840,11 @@ class APIGetHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		if deployed:
-			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
-		else:
-			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk:8080')
-		self.set_header('Access-Control-Allow-Credentials','true')
+		# if deployed:
+		# 	self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		# else:
+		# 	self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk:8080')
+		# self.set_header('Access-Control-Allow-Credentials','true')
 		try:
 			gameId = int(self.get_argument("gameId", 1))
 		except:
@@ -879,11 +879,11 @@ class APIPutHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		if deployed:
-			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
-		else:
-			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk:8080')
-		self.set_header('Access-Control-Allow-Credentials','true')
+		# if deployed:
+		# 	self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		# else:
+		# 	self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk:8080')
+		# self.set_header('Access-Control-Allow-Credentials','true')
 		try:
 			gameId = int(self.get_argument("gameId", 1))
 			gameLoop = int(self.get_argument("gameLoop", 1))
