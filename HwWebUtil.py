@@ -71,7 +71,6 @@ class HwWebUtil:
 	      		if now > scheduleTable["date"][i][0] and now < scheduleTable["date"][i+1][1]:
 	      			project_time = i + 1
 	      			break
-	      	print project_time
 	      	if project_time == 0 or int(scheduleTable["table"][classNo][project_time-1]) != projectNo:
 	      		return False
 	      	else:

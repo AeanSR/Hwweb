@@ -856,10 +856,10 @@ class APIGetHandler(BaseHandler):
 		if gameId not in [1,2,3,4,5]:
 			return
 		if not self.isTestUser(userId):
-			if gameId not in [1,2,3,4]:	
+			if gameId in [1,2,3,4]:	
 				if not HwWebUtil.isValid(self.online_data[userId]["classNo"], 2):
 					return
-			elif gameId not in [5]:	
+			elif gameId in [5]:	
 				if not HwWebUtil.isValid(self.online_data[userId]["classNo"], 4):
 					return
 		# 分组游戏情况
@@ -1752,6 +1752,5 @@ if __name__ == "__main__":
             	#	timedelta(seconds=5),
             	#	lambda: filterOnlineData()
        	#)
-	print HwWebUtil.isValid(2, 2)
 	involeQuartzTasks()
 	tornado.ioloop.IOLoop.instance().start()
