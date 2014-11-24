@@ -767,7 +767,7 @@ class ClearProjectRecord(BaseHandler):
 	def post(self):
 		userId = self.get_current_user()
 		if not self.isTestUser(userId):
-			ogger.warn("user: %s tried to attack" %userId)
+			logger.warn("user: %s tried to attack" %userId)
 			self.redirect("/main")
 			return
 		group = self.online_data[userId]["group"]

@@ -47,5 +47,8 @@
 
         <ul id="project_menu" class="ui-menu">
         <li><a href="/project">提交大实验报告入口</a></li>
+        <li><a href="http://www.ucas-2014.tk:8889/exp2">实验二（算法）</a></li>
+        <li><a href="http://www.ucas-2014.tk:8889/exp3">实验三（网络）</a></li>
+        <li><a href="http://www.ucas-2014.tk:8889/exp4">实验四（系统）</a></li>
         </ul>
     </div>
