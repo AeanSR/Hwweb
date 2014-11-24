@@ -829,7 +829,7 @@ class  SetProjectRecord(BaseHandler):
 		# 老鼠实验
 
 		# 系统实验
-		Exp3Connection.numPlayers[self.online_data[userId]["group"]] = 2
+		Exp3Connection.numPlayers[self.online_data[userId]["group"]] = 1
 
 		self.redirect("/main")
 		return
@@ -841,7 +841,7 @@ class APIGetHandler(BaseHandler):
 	@tornado.gen.coroutine
 	def post(self):
 		if deployed:
-			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+			self.set_header('Access-Control-Allow-Origin','http://ucas-2014.tk:8889')
 		else:
 			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk:8080')
 		self.set_header('Access-Control-Allow-Credentials','true')
@@ -880,7 +880,7 @@ class APIPutHandler(BaseHandler):
 	@tornado.gen.coroutine
 	def post(self):
 		if deployed:
-			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+			self.set_header('Access-Control-Allow-Origin','http://ucas-2014.tk:8889')
 		else:
 			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk:8080')
 		self.set_header('Access-Control-Allow-Credentials','true')
@@ -943,7 +943,7 @@ class RouteAPIGetInfoHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def get(self):
-		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2014.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		group = self.online_data[self.get_current_user()]["group"]
 		group_users_cursor = db.users.find({"group":group}, {"name": 1, "_id" :0, "userId" : 1})
@@ -984,7 +984,7 @@ class RouteAPISubmitRouteHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2014.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		gameTimes = int(self.get_argument("times", None))
 		if not gameTimes:
@@ -1030,7 +1030,7 @@ class RouteAPISubmitTopoHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2014.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		topoStr = self.get_argument("topo", None)
 
@@ -1075,7 +1075,7 @@ class RouteAPIGetTopoHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2014.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		gameTimes = int(self.get_argument("times", None))
 		if not gameTimes:
@@ -1175,7 +1175,7 @@ class RouteAPISaveRouteEvaluationHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2014.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		gameTimes = int(self.get_argument("times", None))
 		# 验证是否有同学提交
