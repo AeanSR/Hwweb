@@ -45,6 +45,7 @@ class HwWebUtil:
 
 	@staticmethod
 	def isValid(classNo, projectNo):
+		classNo = int(classNo)
 		scheduleTable = HwWebUtil.scheduleTable
 		if not scheduleTable:
 			schedleFile =os.path.join(os.path.dirname(__file__),'conf','schedule.csv')

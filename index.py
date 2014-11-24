@@ -1752,5 +1752,6 @@ if __name__ == "__main__":
             	#	timedelta(seconds=5),
             	#	lambda: filterOnlineData()
        	#)
+	print HwWebUtil.isValid(2, 2)
 	involeQuartzTasks()
 	tornado.ioloop.IOLoop.instance().start()
