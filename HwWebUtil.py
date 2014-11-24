@@ -47,7 +47,6 @@ class HwWebUtil:
 	def isValid(classNo, projectNo):
 		scheduleTable = HwWebUtil.scheduleTable
 		if not scheduleTable:
-			print "new"
 			schedleFile =os.path.join(os.path.dirname(__file__),'conf','schedule.csv')
 			with open(schedleFile, "r") as f:
 				heads = f.readline().split(",")
@@ -55,24 +54,23 @@ class HwWebUtil:
 				for dateStr in heads[1:]:
 					startDate = dateStr.split("-")[0].strip()
 					endDate = dateStr.split("-")[1].strip()
-					scheduleTable["date"].append(datetime.strptime(startDate, "%Y/%m/%d"))
-					scheduleTable["date"].append(datetime.strptime(endDate, "%Y/%m/%d"))
-				scheduleTable["table"] = []
+					scheduleTable["date"].append([datetime.strptime(startDate, "%Y/%m/%d"), datetime.strptime(endDate, "%Y/%m/%d")])
+				scheduleTable["table"] = {}
 				line = f.readline().strip()
 	      			while line:
 	      				nos = line.split(",")
-	      				scheduleTable["table"].append({int(nos[0]): nos[1:]})
+	      				scheduleTable["table"][int(nos[0])] = nos[1:]
 	      				line = f.readline().strip()
-	      	print scheduleTable
 	      	# 测试帐号都是0班级
 	      	if classNo == 0:
 	      		return True
 	      	now = datetime.now()
 	      	project_time = 0
 	      	for i in range(0, len(scheduleTable["date"])):
-	      		if now > scheduleTable["date"][i] and now < scheduleTable["date"][i+1]:
+	      		if now > scheduleTable["date"][i][0] and now < scheduleTable["date"][i+1][1]:
 	      			project_time = i + 1
 	      			break
+	      	print project_time
 	      	if project_time == 0 or int(scheduleTable["table"][classNo][project_time-1]) != projectNo:
 	      		return False
 	      	else:
