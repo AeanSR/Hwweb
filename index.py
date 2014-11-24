@@ -840,6 +840,7 @@ class APIGetHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
+
 		if deployed:
 			self.set_header('Access-Control-Allow-Origin','http://ucas-2014.tk:8889')
 		else:
@@ -851,8 +852,16 @@ class APIGetHandler(BaseHandler):
 			return
 		userId = self.get_current_user()
 		group = self.online_data[userId]["group"]
+		
 		if gameId not in [1,2,3,4,5]:
 			return
+		if not self.isTestUser(userId):
+			if gameId not in [1,2,3,4]:	
+				if not HwWebUtil.isValid(self.online_data[userId]["classNo"], 2):
+					return
+			elif gameId not in [5]:	
+				if not HwWebUtil.isValid(self.online_data[userId]["classNo"], 4):
+					return
 		# 分组游戏情况
 		if gameId in [1,2,3,4,5]:
 			record = yield db.games.find_one({"gameId":gameId, "group": group})
