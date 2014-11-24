@@ -856,9 +856,11 @@ class APIGetHandler(BaseHandler):
 		if gameId not in [1,2,3,4,5]:
 			return
 		if gameId not in [1,2,3,4]:	
-			HwWebUtil.isValid(self.online_data[userId]["classNo"], 2)
+			if not HwWebUtil.isValid(self.online_data[userId]["classNo"], 2):
+				return
 		elif gameId not in [5]:	
-			HwWebUtil.isValid(self.online_data[userId]["classNo"], 4)
+			if not HwWebUtil.isValid(self.online_data[userId]["classNo"], 4):
+				return
 		# 分组游戏情况
 		if gameId in [1,2,3,4,5]:
 			record = yield db.games.find_one({"gameId":gameId, "group": group})
