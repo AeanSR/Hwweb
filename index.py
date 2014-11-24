@@ -856,10 +856,10 @@ class APIGetHandler(BaseHandler):
 		if gameId not in [1,2,3,4,5]:
 			return
 		if gameId not in [1,2,3,4]:	
-			if not HwWebUtil.isValid(self.online_data[userId]["classNo"], 2):
+			if not HwWebUtil.isValid(self.online_data[userId]["classNo"], 2) and not self.isTestUser(userId):
 				return
 		elif gameId not in [5]:	
-			if not HwWebUtil.isValid(self.online_data[userId]["classNo"], 4):
+			if not HwWebUtil.isValid(self.online_data[userId]["classNo"], 4) and not self.isTestUser(userId):
 				return
 		# 分组游戏情况
 		if gameId in [1,2,3,4,5]:
