@@ -34,12 +34,50 @@ QuizType = {"SINCHOICE":1, "MULTICHOICE":2, "ESSAYQUES":3}
 TopoStatus = {"CHOOSING" : -1, "NEW" : 0, "ING":1, "DONE":2}
 
 class HwWebUtil:
+	scheduleTable = {}
 	@staticmethod
 	def canSaveOrSubmit(a_quiz, user_quiz, op_now):
 		if not a_quiz or a_quiz["status"] != QuizStatus["PUBLISH"] or op_now > datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S") or user_quiz and user_quiz["status"] != QuizStatus["SAVE"]:
 			return False
 		else:
 			return True
+
+
+	@staticmethod
+	def isValid(classNo, projectNo):
+		scheduleTable = HwWebUtil.scheduleTable
+		if not scheduleTable:
+			print "new"
+			schedleFile =os.path.join(os.path.dirname(__file__),'conf','schedule.csv')
+			with open(schedleFile, "r") as f:
+				heads = f.readline().split(",")
+				scheduleTable["date"] = []
+				for dateStr in heads[1:]:
+					startDate = dateStr.split("-")[0].strip()
+					endDate = dateStr.split("-")[1].strip()
+					scheduleTable["date"].append(datetime.strptime(startDate, "%Y/%m/%d"))
+					scheduleTable["date"].append(datetime.strptime(endDate, "%Y/%m/%d"))
+				scheduleTable["table"] = []
+				line = f.readline().strip()
+	      			while line:
+	      				nos = line.split(",")
+	      				scheduleTable["table"].append({int(nos[0]): nos[1:]})
+	      				line = f.readline().strip()
+	      	print scheduleTable
+	      	# 测试帐号都是0班级
+	      	if classNo == 0:
+	      		return True
+	      	now = datetime.now()
+	      	project_time = 0
+	      	for i in range(0, len(scheduleTable["date"])):
+	      		if now > scheduleTable["date"][i] and now < scheduleTable["date"][i+1]:
+	      			project_time = i + 1
+	      			break
+	      	if project_time == 0 or int(scheduleTable["table"][classNo][project_time-1]) != projectNo:
+	      		return False
+	      	else:
+	      		return True
+
 
 
 	# 检测是否为连通图
