@@ -144,7 +144,10 @@ class BaseHandler(tornado.web.RequestHandler):
 	def canDoExperiment(self, exp_id):
 		if not self.isTestUser(self.get_current_user()):
 			if not HwWebUtil.isValid(self.online_data[self.get_current_user()]["classNo"], exp_id):
-				self.write(json.dumps({"status":"NA"})) # not availabe
+				info = copy.deepcopy(self.online_data[self.get_current_user()])
+				if "loginTime" in info:
+					del info['loginTime']
+				self.write(json.dumps({"status":"NA", "info":info})) # not availabe
 				self.finish()
 				return False
 		else:
