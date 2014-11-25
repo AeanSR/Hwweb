@@ -962,6 +962,10 @@ class APIPutHandler(BaseHandler):
 
 
 class RouteAPIGetInfoHandler(BaseHandler):
+
+	def get(self):
+		self.post()
+
 	@tornado.web.authenticated
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
@@ -1069,7 +1073,6 @@ class RouteAPISubmitTopoHandler(BaseHandler):
 		mode = int(self.get_argument("mode", 1))
 		topoStr = self.get_argument("topo", None)
 
-		print topoStr
 		if not topoStr:
 			self.write(json.dumps({"status":"ERROR"}))
 		else:
@@ -1090,15 +1093,12 @@ class RouteAPISubmitTopoHandler(BaseHandler):
 					self.finish()
 					return
 			else:
-				print "false"
 				self.write(json.dumps({"status":"ERROR"}))
 
 			if "scale" in topo and "link" in topo and HwWebUtil.isConnectedGraph(topo["scale"], topo["link"]):
 				yield db.routeTopo.save(topo)
 				self.write(json.dumps({"status":"NORMAL"}))
-				print "true"
 			else:
-				print "false"
 				self.write(json.dumps({"status":"ERROR"}))
 		self.finish()
 		return
