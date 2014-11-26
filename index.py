@@ -892,6 +892,7 @@ class APIGetHandler(BaseHandler):
 				yield db.games.save(record)
 		else:
 			None
+		logger.info("Exp2: Group %s user %s gets info of game %d."% (group, userId, gameId)
 		self.write(json.dumps({"userId":userId,
 			"curLoop":record["curLoop"],
 			"name":self.online_data[userId]["name"],
@@ -939,9 +940,14 @@ class APIPutHandler(BaseHandler):
 		if gameId in [1,2,3]:
 			if gameLoop!=record["curLoop"] or gameLoop>2:
 				return
+		if gameId in [4]:
 	 		if gameLoop!=record["curLoop"] or gameLoop>4:
 				return
-
+		# 游戏分数优于16的，我们要判断其是否作弊
+		if gameScore>0:
+			if gameScore != len(gameHist['results']) and gameScore<16:
+				logger.warn("Exp2: Group %s user %s submits info of game %d with a wrong result."% (group, userId, gameId, gameScore)
+				return
 		if record["bestScore"] == "None":
 			if gameScore>0:
 				record["bestScore"] = gameScore
@@ -950,15 +956,13 @@ class APIPutHandler(BaseHandler):
 				record["bestScore"] = gameScore
 			if gameScore>0 and gameId in [4]:
 				record["bestScore"]  = (record["bestScore"]*gameLoop + gameScore) / (gameLoop + 1)
-		#if gameScore>0:
-		#	if gameScore != len(gameHist['results']):
-		#		return
+
 		record["scores"][str(gameLoop)] = gameScore
 		record["histories"][str(gameLoop)] = gameHist
 		record["curLoop"] = gameLoop + 1
 
 		yield db.games.save(record)
-		logger.info("Exp1: user %s submits."% userId)
+		logger.info("Exp2: Group %s user %s submits info of game %d with score of %d."% (group, userId, gameId, gameScore)
 		self.write('true')
 		self.finish()
 		return
