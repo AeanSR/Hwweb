@@ -795,13 +795,13 @@ class ClearProjectRecord(BaseHandler):
 		yield db.games.remove({"group":group})
 		# 系统实验
 		try:
-			Exp3Connection.days[group] = 0
-			Exp3Connection.numPlayers[group] = 5 
-			Exp3Connection.clients.pop(group)
-			for uid in Exp3Connection.members[group]:
-				Exp3Connection.members[group][uid]['online'] = False
-			tornado.ioloop.IOLoop.instance().remove_timeout(Exp3Connection.timers[group] )
-			Exp3Connection.timers[group] = None
+			Exp4Connection.days[group] = 0
+			Exp4Connection.numPlayers[group] = 5 
+			Exp4Connection.clients.pop(group)
+			for uid in Exp4Connection.members[group]:
+				Exp4Connection.members[group][uid]['online'] = False
+			tornado.ioloop.IOLoop.instance().remove_timeout(Exp4Connection.timers[group] )
+			Exp4Connection.timers[group] = None
 		except:
 			None
 		self.redirect("/main")
@@ -848,7 +848,7 @@ class  SetProjectRecord(BaseHandler):
 		# 老鼠实验
 
 		# 系统实验
-		Exp3Connection.numPlayers[self.online_data[userId]["group"]] = 1
+		Exp4Connection.numPlayers[self.online_data[userId]["group"]] = 1
 
 		self.redirect("/main")
 		return
@@ -894,6 +894,7 @@ class APIGetHandler(BaseHandler):
 				yield db.games.save(record)
 		else:
 			None
+		logger.info("Exp2: Group %s user %s gets info of game %d."% (group, userId, gameId))
 		self.write(json.dumps({"userId":userId,
 			"curLoop":record["curLoop"],
 			"name":self.online_data[userId]["name"],
@@ -941,9 +942,14 @@ class APIPutHandler(BaseHandler):
 		if gameId in [1,2,3]:
 			if gameLoop!=record["curLoop"] or gameLoop>2:
 				return
+		if gameId in [4]:
 	 		if gameLoop!=record["curLoop"] or gameLoop>4:
 				return
-
+		# 游戏分数优于16的，我们要判断其是否作弊
+		if gameScore>0:
+			if gameScore != len(gameHist['results']) and gameScore<16:
+				logger.warn("Exp2: Group %s user %s submits info of game %d with a wrong result."% (group, userId, gameId, gameScore))
+				return
 		if record["bestScore"] == "None":
 			if gameScore>0:
 				record["bestScore"] = gameScore
@@ -952,15 +958,13 @@ class APIPutHandler(BaseHandler):
 				record["bestScore"] = gameScore
 			if gameScore>0 and gameId in [4]:
 				record["bestScore"]  = (record["bestScore"]*gameLoop + gameScore) / (gameLoop + 1)
-		#if gameScore>0:
-		#	if gameScore != len(gameHist['results']):
-		#		return
+
 		record["scores"][str(gameLoop)] = gameScore
 		record["histories"][str(gameLoop)] = gameHist
 		record["curLoop"] = gameLoop + 1
 
 		yield db.games.save(record)
-		logger.info("Exp1: user %s submits."% userId)
+		logger.info("Exp2: Group %s user %s submits info of game %d with score of %d."% (group, userId, gameId, gameScore))
 		self.write('true')
 		self.finish()
 		return
@@ -1319,8 +1323,8 @@ def createUserlist(userlist, mapper):
 			mapper[group][str(i)] = uid
 			i += 1
 
-class Exp3Connection(SockJSConnection):
-	"""Exp3 connection implementation"""
+class Exp4Connection(SockJSConnection):
+	"""Exp4 connection implementation"""
 	# 面向系统
 	clients = {}
 	# 面向用户
@@ -1429,7 +1433,7 @@ class Exp3Connection(SockJSConnection):
 				'id':self.maps[group][userId],'messages':self.clients[group][userId]['messages'],
 				'stage':self.clients[group][userId]['stage']}, 'auth'
 				)
-			logger.info("Exp3:Client authenticated for %s" % userId)
+			logger.info("Exp4:Client authenticated for %s" % userId)
 			self.isStart()
 
 		elif message['data_type'] == 'nextstage' and self.authenticated:
@@ -1474,7 +1478,7 @@ class Exp3Connection(SockJSConnection):
 		else:
 			self.send(msg)
 			#self.send_error("Invalid data type %s" % message['data_type'])
-			logger.info("Exp3:Invalid data type %s" % message['data_type'])
+			logger.info("Exp4:Invalid data type %s" % message['data_type'])
 
 	def on_close(self):
 		"""
@@ -1512,7 +1516,7 @@ class Exp3Connection(SockJSConnection):
 			if allStage2 == True:
 				self.broadcast_message("",[],{'event':'start','interval':self.interval,'day':self.days[self.group]},'notify')
 				self.resetTimer()
-				logger.info("Exp3: %s 's players are in position. Now game start." % self.group)
+				logger.info("Exp4: %s 's players are in position. Now game start." % self.group)
 
 	def isWin(self):
 		attack = set()
@@ -1815,7 +1819,7 @@ settings = {
 	"cookie_secret": "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
  	"login_url": "/login",
 }
-SockRouter = SockJSRouter(Exp3Connection, '/api/exp3')
+SockRouter = SockJSRouter(Exp4Connection, '/api/exp4')
 application = tornado.web.Application([
     (r"/", tornado.web.RedirectHandler, {"url":"/main", "permanent":False}),
     (r"/login", LoginHandler),
