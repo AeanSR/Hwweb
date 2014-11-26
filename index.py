@@ -144,6 +144,7 @@ class BaseHandler(tornado.web.RequestHandler):
 	def canDoExperiment(self, exp_id):
 		if not self.isTestUser(self.get_current_user()):
 			if not HwWebUtil.isValid(self.online_data[self.get_current_user()]["classNo"], exp_id):
+				logger.warn("Exp%d user: %s try to do experiment 3 when the exp%d is not available for himself" %(exp_id, self.get_current_user(), exp_id)  )
 				info = copy.deepcopy(self.online_data[self.get_current_user()])
 				if "loginTime" in info:
 					del info['loginTime']
@@ -781,9 +782,10 @@ class ClearProjectRecord(BaseHandler):
 	def post(self):
 		userId = self.get_current_user()
 		if not self.isTestUser(userId):
-			logger.warn("user: %s tried to attack" %userId)
+			logger.warn("user: %s tried to attack to clear experiment records" %userId)
 			self.redirect("/main")
 			return
+		logger.info("user: %s clear experiment records" %userId)
 		group = self.online_data[userId]["group"]
 		# 清除路由器实验的记录
 		yield db.routeTopo.remove({"group":group, "year":self.online_data[userId]["yearOfEntry"]})
@@ -818,10 +820,10 @@ class  SetProjectRecord(BaseHandler):
 	def post(self):
 		userId = self.get_current_user()
 		if not self.isTestUser(userId):
-			logger.warn("user: %s tried to attack" %userId)
+			logger.warn("user: %s tried to attack to set experiment records" %userId)
 			self.redirect("/main")
 			return
-
+		logger.info("user: %s set experiment records" %userId)
 		users_cursor = db.users.find({"group":self.online_data[userId]["group"], "yearOfEntry":self.online_data[userId]["yearOfEntry"]}, {"userId":1}).sort("userId", pymongo.ASCENDING)
 		usersInGroup = yield users_cursor.to_list(None)
 		assert(len(usersInGroup) == 5)
@@ -977,27 +979,23 @@ class RouteAPIGetInfoHandler(BaseHandler):
 		self.set_header('Access-Control-Allow-Credentials','true')
 		if not self.canDoExperiment(3):
 			return
-
 		mode = int(self.get_argument("mode", 1))
 		group = self.online_data[self.get_current_user()]["group"]
+		logger.info("Exp3: %s of group %s try to getinfo in mode %d" %(self.get_current_user(), group, mode) )
 		group_users_cursor = db.users.find({"group":group}, {"name": 1, "_id" :0, "userId" : 1})
 		group_users = yield group_users_cursor.to_list(None)
 		info = copy.deepcopy(self.online_data[self.get_current_user()])
 		if "loginTime" in info:
 			del info['loginTime']
-
 		gameTimes = 1
 		step = 0 #客户端此时应该在第几步后
-		topo_cursor = db.routeTopo.find({"group":group, "year":self.online_data[self.get_current_user()]["yearOfEntry"], "mode":mode},{"gameTimes":1, "status":1, "finalScore":1, "averageScore":1}).sort("gameTimes", pymongo.DESCENDING)
+		topo_cursor = db.routeTopo.find({"group":group, "year":self.online_data[self.get_current_user()]["yearOfEntry"], "mode":mode}).sort("gameTimes", pymongo.DESCENDING)
 		topos = yield topo_cursor.to_list(None)
 		if not topos or len(topos) == 0:
 			pass
-		elif topos[0]["status"] == TopoStatus["NEW"]:
+		elif topos[0]["status"] == TopoStatus["NEW"] or topos[0]["status"] == TopoStatus["ING"]:
 			step = 1
 			gameTimes = topos[0]["gameTimes"]
-		elif topos[0]["status"] == TopoStatus["ING"]:
-			gameTimes = topos[0]["gameTimes"]
-			step = 1
 		else:
 			#TopoStatus["DONE"]
 			step = 3
@@ -1008,8 +1006,11 @@ class RouteAPIGetInfoHandler(BaseHandler):
 		else:
 			record["status"] = "NORMAL" #正常
 		if step == 3:
+			print topos[0]
 			record["finalScore"] = topos[0]["finalScore"]
-			record["averageScore"] = topos[0]["averageScore"]
+			record["averageRateScore"] = topos[0]["averageRateScore"]
+			record["averageLengthScore"] = topos[0]["averageLengthScore"]
+		logger.info("Exp3: %s of group %s 's experiment step is %d in mode %d" %(self.get_current_user(), group, step, mode) )
 		self.write(json.dumps(record))
 		self.finish()
 		return
@@ -1025,14 +1026,15 @@ class RouteAPISubmitRouteHandler(BaseHandler):
 		self.set_header('Access-Control-Allow-Credentials','true')
 		if not self.canDoExperiment(3):
 			return
-
-		gameTimes = int(self.get_argument("times", None))
 		mode = int(self.get_argument("mode", 1))
+		group = self.online_data[self.get_current_user()]["group"]
+		gameTimes = int(self.get_argument("times", None))
 		if not gameTimes:
 			self.finishi()
 			return
 		routeJson = self.get_argument("route", None)
-		topo = yield db.routeTopo.find_one({"group":self.online_data[self.get_current_user()]["group"], "gameTimes":gameTimes, "year":self.online_data[self.get_current_user()]["yearOfEntry"], "mode":mode})
+		logger.info("Exp3: %s of group %s try to save route in mode %d: %s" %(self.get_current_user(), group, mode, routeJson) )
+		topo = yield db.routeTopo.find_one({"group":group, "gameTimes":gameTimes, "year":self.online_data[self.get_current_user()]["yearOfEntry"], "mode":mode})
 		route = None
 		returnStatus = "ING"
 		if not routeJson or not topo or routeJson == "null":
@@ -1056,6 +1058,7 @@ class RouteAPISubmitRouteHandler(BaseHandler):
 			topo["route"][node] = route[node]
 		# topo["result"]= dict(topo["result"].items() + result.items())
 		topo["status"] = TopoStatus["ING"]
+		logger.info("Exp3: %s of group %s try to save route in mode %d: %s" %(self.get_current_user(), group, mode, routeJson) )
 		yield db.routeTopo.save(topo)
 		self.write(json.dumps({"status": returnStatus, "gameTimes":gameTimes, "route":route}))
 		self.finish()
@@ -1075,7 +1078,8 @@ class RouteAPISubmitTopoHandler(BaseHandler):
 
 		mode = int(self.get_argument("mode", 1))
 		topoStr = self.get_argument("topo", None)
-
+		group = self.online_data[self.get_current_user()]["group"]
+		logger.info("Exp3: %s of group %s try to decide network topology in mode %d" %(self.get_current_user(), group, mode) )
 		if not topoStr:
 			self.write(json.dumps({"status":"ERROR"}))
 		else:
@@ -1092,6 +1096,7 @@ class RouteAPISubmitTopoHandler(BaseHandler):
 			if "group" in topo and "gameTimes" in topo:
 				topoInDB = yield db.routeTopo.find_one({"group":topo["group"], "gameTimes":int(topo["gameTimes"]), "year":self.online_data[self.get_current_user()]["yearOfEntry"], "mode":mode},{"_id": 0})
 				if topoInDB:
+					logger.info("Exp3: %s of group %s failed to decide network topology in mode %d: %s" %(self.get_current_user(), group, mode, topoStr) )
 					self.write(json.dumps({"status": "someoneSubmited"}))
 					self.finish()
 					return
@@ -1099,6 +1104,7 @@ class RouteAPISubmitTopoHandler(BaseHandler):
 				self.write(json.dumps({"status":"ERROR"}))
 
 			if "scale" in topo and "link" in topo and HwWebUtil.isConnectedGraph(topo["scale"], topo["link"]):
+				logger.info("Exp3: %s of group %s succeed to decide network topology in mode %d: %s" %(self.get_current_user(), group, mode, topoStr) )
 				yield db.routeTopo.save(topo)
 				self.write(json.dumps({"status":"NORMAL"}))
 			else:
@@ -1119,6 +1125,7 @@ class RouteAPIGetTopoHandler(BaseHandler):
 
 		mode = int(self.get_argument("mode", 1))
 		gameTimes = int(self.get_argument("times", None))
+
 		if not gameTimes:
 			self.finish()
 			return
@@ -1128,6 +1135,7 @@ class RouteAPIGetTopoHandler(BaseHandler):
 		group_users = yield group_users_cursor.to_list(None)
 		topo = yield db.routeTopo.find_one({"group":group, "gameTimes":gameTimes, "year":self.online_data[self.get_current_user()]["yearOfEntry"], "mode":mode},{"_id": 0})
 		if not topo:
+			logger.info("Exp3: %s of group %s try to get a new network topology in mode %d" %(self.get_current_user(), group, mode) )
 			topo ={}
 			topo["scale"] = scale
 			topo["gameTimes"] = gameTimes
@@ -1159,6 +1167,8 @@ class RouteAPIGetTopoHandler(BaseHandler):
 			link = self.initialLink(scale)
 			topo["distributeNodes"] = user_hash
 			topo["link"] = link
+		else:
+			logger.info("Exp3: %s of group %s try to get a exsited network topology in mode %d" %(self.get_current_user(), group, mode) )
 		self.write(json.dumps(topo))
 		self.finish()
 		return
@@ -1220,11 +1230,13 @@ class RouteAPIClearRouteInTestModeHandler(BaseHandler):
 		group = self.online_data[userId]["group"]
 		# 清除路由器实验的记录
 		if mode == 1:
+			logger.info("Exp3: %s of group %s succeed to clear their experiment records in mode %d" %(self.get_current_user(), group, mode) )
 			yield db.routeTopo.remove({"group":group, "year":self.online_data[userId]["yearOfEntry"], "mode":mode})
 			self.write(json.dumps({"status": "NORMAL"}))
 			self.finish()
 			return
 		else:
+			logger.warn("Exp3: %s of group %s failed to clear their experiment records in mode %d" %(self.get_current_user(), group, mode) )
 			self.write(json.dumps({"status": "ERROR"}))
 			self.finish()
 			return
@@ -1245,33 +1257,43 @@ class RouteAPISubmitRouteEvaluationHandler(BaseHandler):
 		mode = int(self.get_argument("mode", 1))
 		gameTimes = int(self.get_argument("times", None))
 		score = self.get_argument("score", None)
+		group = self.online_data[self.get_current_user()]["group"]
 
+		logger.info("Exp3: %s of group %s try to submit evaluation in mode %d" %(self.get_current_user(), group, mode) )
 		if not score:
+			logger.warn("Exp3: %s of group %s failed to submit evaluation in mode %d because of socre is invalid" %(self.get_current_user(), group, mode) )
 			self.write(json.dumps({"status": "ERROR"}))
-			self.finish()
-			return
-		# 验证是否有同学提交
-		topo = yield db.routeTopo.find_one({"group":self.online_data[self.get_current_user()]["group"], "gameTimes":gameTimes, "year":self.online_data[self.get_current_user()]["yearOfEntry"], "mode":mode})
-		if not topo or topo["status"] == TopoStatus["DONE"]:
-			self.write(json.dumps({"status":"DONE", "averageScore":score["averageScore"],"finalScore":topo["finalScore"]}))
 			self.finish()
 			return
 		else:
 			try:
 				score = json.loads(score)
 			except ValueError, e:
+				logger.warn("Exp3: %s of group %s failed to submit evaluation in mode %d because of socre is invalid" %(self.get_current_user(), group, mode) )
 				self.write(json.dumps({"status": "ERROR"}))
 				self.finish()
 				return
-			# 最终评分
-			topo["finalScore"] = score["finalScore"]
-			topo["averageScore"] = score["averageScore"]
-			topo["practiceScore"] = score["practiceScore"]
-			topo["status"] = TopoStatus["DONE"]
-			yield db.routeTopo.save(topo)
-			self.write(json.dumps({"status": "NORMAL", "averageScore":score["averageScore"], "finalScore":score["finalScore"]}))
+		# 验证是否有同学提交
+		topo = yield db.routeTopo.find_one({"group":self.online_data[self.get_current_user()]["group"], "gameTimes":gameTimes, "year":self.online_data[self.get_current_user()]["yearOfEntry"], "mode":mode})
+		if not topo or topo["status"] == TopoStatus["DONE"]:
+			logger.info("Exp3: %s of group %s failed to submit evaluation in mode %d because of submited evaluation" %(self.get_current_user(), group, mode) )
+			self.write(json.dumps({"status":"DONE", "averageRateScore":topo["averageRateScore"], "averageLengthScore":topo["averageLengthScore"], "finalScore":topo["finalScore"]}))
 			self.finish()
 			return
+
+		# 最终评分
+		# averageLengthScore practiceLengthScore  averageRateScore practiceRateScore 全是平均的实测数据，并没有换算到分数
+		topo["practiceLengthScore"] = score["practiceLengthScore"]
+		topo["averageLengthScore"] = score["averageLengthScore"]
+		topo["finalScore"] = score["finalScore"]
+		topo["averageRateScore"] = score["averageRateScore"]
+		topo["practiceRateScore"] = score["practiceRateScore"]
+		topo["status"] = TopoStatus["DONE"]
+		logger.info("Exp3: %s of group %s succeed to submit evaluation in mode %d, finalscore:%d" %(self.get_current_user(), group, mode, topo["finalScore"]) )
+		yield db.routeTopo.save(topo)
+		self.write(json.dumps({"status": "NORMAL", "averageRateScore":topo["averageRateScore"], "averageLengthScore":topo["averageLengthScore"], "finalScore":topo["finalScore"]}))
+		self.finish()
+		return
 
 
 # 全局函数，创建以组为一级索引的用户表
