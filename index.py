@@ -151,8 +151,7 @@ class BaseHandler(tornado.web.RequestHandler):
 				self.write(json.dumps({"status":"NA", "info":info})) # not availabe
 				self.finish()
 				return False
-		else:
-			return True
+		return True
 	
 
 	#for test, release version needs to delete it
