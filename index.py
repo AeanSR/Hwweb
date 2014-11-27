@@ -1214,6 +1214,11 @@ class RouteAPIGetTopoHandler(BaseHandler):
 					link.append("%d-%d" %(outerIndex, (outerIndex + 1) % edgeNum + middleFirst))
 				if random.random() < randomThreshold:
 					link.append("%d-%d" %(outerIndex, (outerIndex + 9) % edgeNum + middleFirst))
+			# 里边正多边形有一个偏对角相连
+			x = random.random()*((edgeNum+1)/2)
+			y = x + (edgeNum-1)/2
+			link.append("%d-%d" %(x, y))
+
 			if HwWebUtil.isConnectedGraph(scale, link):
 				break
 		return link

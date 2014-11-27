@@ -87,9 +87,7 @@ class HwWebUtil:
 			y = int(link.split("-")[1])
 			AdjList[x].append(y)
 			AdjList[y].append(x)
-		print AdjList
 		count = HwWebUtil.BFS(AdjList, 0)
-		print count
 		if count == scale:
 			return True
 		else:
