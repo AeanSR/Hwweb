@@ -68,7 +68,7 @@ class HwWebUtil:
 	      	now = datetime.now()
 	      	project_time = 0
 	      	for i in range(0, len(scheduleTable["date"])):
-	      		if now > scheduleTable["date"][i][0] and now < scheduleTable["date"][i+1][1]:
+	      		if now > scheduleTable["date"][i][0] and now < scheduleTable["date"][i][1]:
 	      			project_time = i + 1
 	      			break
 	      	if project_time == 0 or int(scheduleTable["table"][classNo][project_time-1]) != projectNo:
