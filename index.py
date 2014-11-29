@@ -152,7 +152,7 @@ class BaseHandler(tornado.web.RequestHandler):
 				self.finish()
 				return False
 		return True
-	
+
 
 	#for test, release version needs to delete it
 	def test_user(self):
@@ -769,7 +769,7 @@ class ReviewHandler(BaseHandler):
 
 # 清除游戏记录
 class ClearProjectRecord(BaseHandler):
-	
+
 
 	def get(self):
 		self.post()
@@ -795,7 +795,7 @@ class ClearProjectRecord(BaseHandler):
 		# 系统实验
 		try:
 			Exp4Connection.days[group] = 0
-			Exp4Connection.numPlayers[group] = 5 
+			Exp4Connection.numPlayers[group] = 5
 			Exp4Connection.clients.pop(group)
 			for uid in Exp4Connection.members[group]:
 				Exp4Connection.members[group][uid]['online'] = False
@@ -870,14 +870,14 @@ class APIGetHandler(BaseHandler):
 			return
 		userId = self.get_current_user()
 		group = self.online_data[userId]["group"]
-		
+
 		if gameId not in [1,2,3,4,5]:
 			return
 		if not self.isTestUser(userId):
-			if gameId in [1,2,3,4]:	
+			if gameId in [1,2,3,4]:
 				if not HwWebUtil.isValid(self.online_data[userId]["classNo"], 2):
 					return
-			elif gameId in [5]:	
+			elif gameId in [5]:
 				if not HwWebUtil.isValid(self.online_data[userId]["classNo"], 4):
 					return
 		# 分组游戏情况
@@ -1009,7 +1009,6 @@ class RouteAPIGetInfoHandler(BaseHandler):
 		else:
 			record["status"] = "NORMAL" #正常
 		if step == 3:
-			print topos[0]
 			record["finalScore"] = topos[0]["finalScore"]
 			record["averageRateScore"] = topos[0]["averageRateScore"]
 			record["averageLengthScore"] = topos[0]["averageLengthScore"]
@@ -1224,7 +1223,7 @@ class RouteAPIGetTopoHandler(BaseHandler):
 
 
 class RouteAPIClearRouteInTestModeHandler(BaseHandler):
-	
+
 	@tornado.web.authenticated
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
@@ -1433,7 +1432,7 @@ class Exp4Connection(SockJSConnection):
 			self.authenticated = True
 			self.members[self.group][self.userId]['online'] = True
 			self.broadcast_userlist(True)
-			self.send_message({'notify': 'success', 'isTraitor':self.clients[group][userId]['traitor'], 
+			self.send_message({'notify': 'success', 'isTraitor':self.clients[group][userId]['traitor'],
 				'id':self.maps[group][userId],'messages':self.clients[group][userId]['messages'],
 				'stage':self.clients[group][userId]['stage']}, 'auth'
 				)
@@ -1511,7 +1510,7 @@ class Exp4Connection(SockJSConnection):
 					dest.add(self.clients[self.group][userid]['sock'])
 		return dest
 	def isStart(self):
-		#print "numPlayers ", self.numPlayers[self.group]	
+		#print "numPlayers ", self.numPlayers[self.group]
 		if len(self.clients[self.group]) == self.numPlayers[self.group]:
 			allStage2 = True
 			for id in self.clients[self.group]:
@@ -1817,7 +1816,7 @@ def involeQuartzTasks():
 		       	)
 
 settings = {
-	#"debug": True,
+	"debug": True,
 	"default_handler_class": UnfoundHandler,
 	"static_path": os.path.join(os.path.dirname(__file__), "static"),
 	"cookie_secret": "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
