@@ -104,3 +104,7 @@ div.ques_head {
 div.ques_content {
 	margin: 20px 0 10px 0;
 }
+
+#quiz_content span {
+	text-align: left;
+}
