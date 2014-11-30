@@ -325,7 +325,7 @@ class QuizHandler(BaseHandler):
 				flag = QuizFlag["FULL_SCORED"]
 
 			logger.info("student: %s is viewing the homework-%d(status: %s)" %(self.get_current_user(), int(quiz_id), flag))
-			self.render("./template/quiz.template", a_quiz = a_quiz, info = self.online_data[self.get_current_user()],  quizs=quizs, user_quiz=user_quiz, flag=flag)
+			self.render("./template/quiz.html", a_quiz = a_quiz, info = self.online_data[self.get_current_user()],  quizs=quizs, user_quiz=user_quiz, flag=flag)
 			return
 
 class ProjectMainHandler(BaseHandler):
@@ -335,7 +335,7 @@ class ProjectMainHandler(BaseHandler):
     	def get(self):
     		pro_cursor = db.projects.find().sort("pro_id", pymongo.ASCENDING)
     		projects = yield pro_cursor.to_list(None)
-	 	self.render("./template/project.template", projects = projects, info = self.online_data[self.get_current_user()], main=1, flag=0)
+	 	self.render("./template/project.html", projects = projects, info = self.online_data[self.get_current_user()], main=1, flag=0)
 	 	return
 
 class ProjectHandler(BaseHandler):
@@ -366,7 +366,7 @@ class ProjectHandler(BaseHandler):
     			flag = ProjectFlag["SUBMIT"]
     		else :
     			flag = ProjectFlag["DEAD"]
-	 	self.render("./template/project.template", projects = projects,a_pro=a_pro, info = self.online_data[self.get_current_user()], flag=flag, main=0, up_record=up_record)
+	 	self.render("./template/project.html", projects = projects,a_pro=a_pro, info = self.online_data[self.get_current_user()], flag=flag, main=0, up_record=up_record)
 	 	return
 
 class ProjectUploadHandler(BaseHandler):
@@ -1816,7 +1816,7 @@ def involeQuartzTasks():
 		       	)
 
 settings = {
-	"debug": True,
+	#"debug": True,
 	"default_handler_class": UnfoundHandler,
 	"static_path": os.path.join(os.path.dirname(__file__), "static"),
 	"cookie_secret": "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",

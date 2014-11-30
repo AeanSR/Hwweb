@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+{% from datetime import datetime %}
+{% from HwWebUtil import ProjectFlag %}
+
+
+<head>
+    <title>实验报告提交</title>
+{% include "./reference.html" %}
+     <script>
+        $(document).ready(function(c) {
+            $("#header-title").text("实验报告提交");
+            {% if flag==ProjectFlag['END'] %}
+            	$("span#warn").text("截止日期已过，您没有按时提交报告。")
+                $("form#upload_form input[type=file]").attr("disabled","disabled");
+            	$("form#upload_form input[type=submit]").button({"disabled":true});
+            {% elif flag==ProjectFlag['SUBMIT'] %}
+            	$("div#history").html('<p>最近一次修改时间：{{up_record['uploadTime']}}</p><p><a href="/project/{{a_pro['pro_id']}}/download" data-ajax="false">{{up_record['userId']}}.{{up_record['file_suffix']}}</a></p><p>可以重新上传以覆盖</p>')
+            {% elif flag==ProjectFlag['DEAD'] %}
+            	$("div#history").html('<p>最近一次修改时间：{{up_record['uploadTime']}}</p><p><a href="/project/{{a_pro['pro_id']}}/download" data-ajax="false">{{up_record['userId']}}.{{up_record['file_suffix']}}</a></p><p>截止日期已过，无法重新上传</p>')
+            	$("form#upload_form input[type=file]").attr("disabled","disabled");
+            $("form#upload_form input[type=submit]").button({"disabled":true});
+            {% else %}
+            {% end %} 
+        });
+        </script>
+</head>
+<body>
+<div id="container" data-role="page" data-theme="b">
+{% include "./project-header.html" %}
+
+    <div role="main" class="ui-content">
+        {% if main != 1 %}
+    	<span id="warn"></span>
+            <table border=1>
+                	<tr><td>标题</td><td>实验{{a_pro["pro_id"]}}:{{a_pro["title"]}}</td></tr>
+                	<tr><td>开始日期</td><td>{{a_pro["releaseTime"]}}</td></tr>
+                	<tr><td>截止日期</td><td>{{a_pro["deadline"]}}</td></tr>
+            </table>
+        <div>
+        	<span>提交报告&nbsp; 备注：上传后文件名将会以学号命名</span>
+        	<div>
+                	<form id="upload_form" action="/project/{{a_pro['pro_id']}}/upload" method="post" enctype="multipart/form-data" data-ajax="false">
+                		<div id="history"></div>
+                                        <div class="action">
+                            		<input type="file" name="uploadfile" data-inline="true" value="" data-clear-btn="true"/>
+                            		<input type="submit" value="上传" data-inline="true" data-icon="check"/>
+                                        </div>
+                	</form>
+        	</div>
+        </div>
+        {% end %}
+    </div>
+
+
+{% include "./footer.html" %}
+</div>
+</body>
+</html>
