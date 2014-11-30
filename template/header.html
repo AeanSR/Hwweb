@@ -2,6 +2,13 @@
 {% from HwWebUtil import QuizStatus %}
 <script>
 $(function() {
+  var userId = "{{info['userId']}}"
+    regExp = new RegExp("^ucas", "i")
+    if(userId.match(regExp)!=null){
+      $('<li><a href="/api/clearProjectRecord" data-ajax="false">清除游戏信息</a></li>').appendTo("#project_menu")
+      $('<li><a href="/api/setProjectRecord" data-ajax="false">设置游戏信息</a></li>').appendTo("#project_menu")
+    }
+    $("#project_menu").listview( "refresh");
     var dialog, form,
  
       origin_pass = $( "#origin_pass" ),

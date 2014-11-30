@@ -803,7 +803,8 @@ class ClearProjectRecord(BaseHandler):
 			Exp4Connection.timers[group] = None
 		except:
 			None
-		self.redirect("/main")
+		self.write('<script>alert("已成功清除所有实验信息");window.location="/main"</script>')
+		self.finish()
 		return
 
 # 设置游戏记录，以便演示
@@ -849,7 +850,8 @@ class  SetProjectRecord(BaseHandler):
 		# 系统实验
 		Exp4Connection.numPlayers[self.online_data[userId]["group"]] = 1
 
-		self.redirect("/main")
+		self.write('<script>alert("已成功设置所有实验信息");window.location="/main"</script>')
+		self.finish()
 		return
 
 
@@ -1816,7 +1818,7 @@ def involeQuartzTasks():
 		       	)
 
 settings = {
-	#"debug": True,
+	"debug": True,
 	"default_handler_class": UnfoundHandler,
 	"static_path": os.path.join(os.path.dirname(__file__), "static"),
 	"cookie_secret": "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
