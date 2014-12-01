@@ -27,7 +27,7 @@ from HwWebUtil import QuesStatus
 from HwWebUtil import QuizFlag
 from HwWebUtil import QuizType
 from HwWebUtil import ProjectStatus
-from HwWebUtil import TopoStatus 
+from HwWebUtil import TopoStatus
 from HwWebUtil import UploadType
 
 # to do, filter the text input
@@ -424,7 +424,7 @@ class ProjectUploadHandler(BaseHandler):
 				self.finish()
 				return
 			else :
-				
+
 				filepath=os.path.join(upload_path,filename)
 				if up_record and os.path.exists(filepath):
 					os.remove(filepath)
@@ -464,7 +464,7 @@ class ProjectDownloadHandler(BaseHandler):
     			print "The argument does not contain numbers\n", e
     			self.render("./template/404.template")
     			return
-    		info = self.online_data[self.get_current_user()]	
+    		info = self.online_data[self.get_current_user()]
     		up_record = yield  db.user_uploads.find_one({"pro_id": pro_id, "group": info["group"], "type":type_id, "year":info["yearOfEntry"]})
     		if not up_record:
     			self.render("./template/404.template")
@@ -1633,7 +1633,7 @@ class LoginHandler(BaseHandler):
 				return
 			else:
 				self.clear_cookie("adminId", domain=domain)
-		self.render("./template/login.template", error="")
+		self.render("./template/login.html", error="")
 		return
 
 	@tornado.web.asynchronous
@@ -1673,7 +1673,7 @@ class LoginHandler(BaseHandler):
 			return
 		else:
 			logger.warn("user: %s failed to log in" %userId)
-			self.render("./template/login.template", error="用户名或密码错误")
+			self.render("./template/login.html", error="用户名或密码错误")
 		return
 
 class PasswordHandler(BaseHandler):
@@ -1836,7 +1836,7 @@ def involeQuartzTasks():
 		       	)
 
 settings = {
-	"debug": True,
+	#"debug": True,
 	"default_handler_class": UnfoundHandler,
 	"static_path": os.path.join(os.path.dirname(__file__), "static"),
 	"cookie_secret": "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
