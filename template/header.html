@@ -1,0 +1,140 @@
+{% from datetime import datetime %}
+{% from HwWebUtil import QuizStatus %}
+<script>
+$(function() {
+  var userId = "{{info['userId']}}"
+    regExp = new RegExp("^ucas", "i")
+    if(userId.match(regExp)!=null){
+      $('<li><a href="/api/clearProjectRecord" data-ajax="false">清除游戏信息</a></li>').appendTo("#project_menu")
+      $('<li><a href="/api/setProjectRecord" data-ajax="false">设置游戏信息</a></li>').appendTo("#project_menu")
+    }
+    $("#project_menu").listview( "refresh");
+    var dialog, form,
+ 
+      origin_pass = $( "#origin_pass" ),
+      new_pass = $( "#new_pass" ),
+      new_pass_again = $( "#new_pass_again" ),
+      allFields = $( [] ).add( origin_pass ).add( new_pass ).add( new_pass_again ),
+      tips = $( ".validateTips" );
+ 
+    function updateTips( t ) {
+      tips
+        .text( t )
+        .addClass( "ui-state-highlight" );
+      setTimeout(function() {
+        tips.removeClass( "ui-state-highlight", 1500 );
+      }, 500 );
+    }
+ 
+    function checkLength( o, n, min, max ) {
+      if ( o.val().length > max || o.val().length < min ) {
+      o.addClass( "ui-state-error" );
+       updateTips( "长度必须在 " +
+          min + "和" + max + "之间." );
+        return false;
+      } else {
+        return true;
+      }
+    }
+ 
+    function checkRegexp( o, regexp, n ) {
+      if ( !( regexp.test( o.val() ) ) ) {
+        o.addClass( "ui-state-error" );
+        updateTips( n );
+        return false;
+      } else {
+        return true;
+      }
+    }
+
+function checkOriginNewPass( origin_pass, new_pass, n ) {
+      if ( origin_pass.val() == new_pass_again.val()) {
+        new_pass_again.addClass( "ui-state-error" );
+        updateTips( n );
+        return false;
+      } else {
+        return true;
+      }
+    }
+
+    function checkTwoNewPass( new_pass, new_pass_again, n ) {
+      if ( ! (new_pass.val() == new_pass_again.val()) ) {
+        new_pass_again.addClass( "ui-state-error" );
+        updateTips( n );
+        return false;
+      } else {
+        return true;
+      }
+    }
+ 
+    function modify_password() {
+      var valid = true;
+      allFields.removeClass( "ui-state-error" );
+ 
+      valid = valid && checkLength( origin_pass, "origin_pass", 6, 15 );
+      valid = valid && checkLength( new_pass, "new_pass", 6, 15 );
+      valid = valid && checkLength( new_pass_again, "new_pass_again", 6, 15 );
+ 
+      valid = valid && checkRegexp( origin_pass, /^([0-9a-zA-Z])+$/, "密码是6～15位的字母和数字组成的串" );
+      valid = valid && checkRegexp( new_pass, /^([0-9a-zA-Z])+$/, "密码是6～15位的字母和数字组成的串" );
+      valid = valid && checkRegexp( new_pass_again, /^([0-9a-zA-Z])+$/, "密码是6～15位的字母和数字组成的串" );
+      valid = valid && checkOriginNewPass( origin_pass,new_pass , "新密码不能和旧密码一样" );
+      valid = valid && checkTwoNewPass( new_pass,new_pass_again , "两次输入新密码不一" );
+ 
+      if ( valid ) {
+        $( "#form_modify_pass" ).submit();
+      }
+      return valid;
+    }
+    $( "#info-modify-button" ).on( "click", function() {
+      event.preventDefault();
+      modify_password()
+    });
+  });
+  </script>
+<div id="nav-panel" data-role="panel">
+    <ul data-role="listview" class="ui-listview-outer">
+       <li data-iconpos="right" data-shadow="false" data-corners="false"><a href="/" data-ajax="false">首页</a></li>
+      <li data-role="collapsible" data-iconpos="right" data-shadow="false" data-corners="false">
+        <h2 class="legend">Homework</h2>
+        <ul id="quiz_menu" data-role="listview" data-corners="false">
+          {% for quizIndex in quizs %}
+            {% set clickEvent = "" %}
+            {% if quizIndex['status']  == QuizStatus["UNPUBLISH"] or datetime.now() < datetime.strptime(quizIndex["releaseTime"], "%Y-%m-%d %H:%M:%S")%} 
+              {% set statusStr = "未发布" %}
+              {% set clickEvent = "javascript:alert('未发布');href='/main'" %}
+            {% elif quizIndex['status']  == QuizStatus["PUBLISH"]  and datetime.now() < datetime.strptime(quizIndex["deadline"],"%Y-%m-%d %H:%M:%S")   %}
+              {# set clickEvent = "javascript:alert('已发布')" #}
+              {% set statusStr = "已发布" %}
+                <li><a href="/quiz/{{quizIndex['quiz_id']}}" title="quiz{{quizIndex['quiz_id']}}" onclick="{% raw clickEvent %}" data-ajax="false">Homework{{quizIndex['quiz_id']}}({{escape(statusStr)}})&nbsp; </a></li>
+            {% elif  quizIndex['status'] != QuizStatus["REVIEW"] and not (datetime.now() < datetime.strptime(quizIndex["deadline"],"%Y-%m-%d %H:%M:%S") ) %}
+              {# set clickEvent = "javascript:alert('已截止')" #}
+              {% set statusStr = "已截止" %}
+                <li><a href="/quiz/{{quizIndex['quiz_id']}}" title="quiz{{quizIndex['quiz_id']}}" onclick="{% raw clickEvent %}" data-ajax="false">Homework{{quizIndex['quiz_id']}}
+({{escape(statusStr)}})&nbsp; </a></li>
+            {% elif quizIndex['status'] == QuizStatus["REVIEW"] %}
+              {# set clickEvent = "javascript:alert('已评分')" #}
+              {% set statusStr = "已评分" %}
+                <li><a href="/quiz/{{quizIndex['quiz_id']}}" title="quiz{{quizIndex['quiz_id']}}" onclick="{% raw clickEvent %}" data-ajax="false">Homework{{quizIndex['quiz_id']}}({{escape(statusStr)}})&nbsp; </a></li>
+            {% end %}
+          {% end %}      
+        </ul >
+      </li>
+      <li data-role="collapsible" data-iconpos="right" data-shadow="false" data-corners="false">
+        <h2 class="legend">Experiment</h2>
+        <ul id="project_menu" data-role="listview" data-corners="false">
+          <li><a href="/project" data-ajax="false">提交大实验报告入口</a></li>
+          <li><a href="http://ucas-2014.tk:8889/exp2" target="_blank" data-ajax="false">实验二（算法）</a></li>
+          <li><a href="http://ucas-2014.tk:8889/exp3" target="_blank" data-ajax="false">实验三（网络）</a></li>
+          <li><a href="#">实验四（系统）</a></li>
+          </ul>
+       </li>
+     </ul>
+  </div>
+  {% include "./header-password.html" %}
+
+  <div id="person_status" data-role="header">
+    <a href="#nav-panel" data-icon="bars">导航</a>
+    <h1 id="header-title">第一次作业</h1>
+    <a href="#nav-info-modify" data-icon="user" data-iconpos="right">{{info['name']}} &nbsp;&nbsp;{{info['userId'].upper()}}&nbsp;&nbsp;{{info['yearOfEntry']}}级&nbsp;&nbsp;{{info['classNo']}}班&nbsp;&nbsp;{{info['group']}}组&nbsp;&nbsp;</a>
+  </div>

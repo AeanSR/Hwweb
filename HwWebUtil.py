@@ -16,9 +16,10 @@ import tornado.web
 # 截至日过后，solution要么进入BLANK最终状态，要么直接进入REVIEW状态，要么进入SUBMIT再进入REVIEW
 QuizStatus = {"UNPUBLISH":0, "PUBLISH":1, "SAVE":2, "SUBMIT":3, "REVIEW":4, "BLANK":5}
 QuesStatus = {"UNDONE":0, "DONE":1}
-ProjectStatus = {"UNPUBLISH":0, "PUBLISH":1}
-ProjectFlag = {"END":-1, "UNDONE":0, "SUBMIT":1, "DEAD":2}
+ProjectStatus = {"UNPUBLISH":0, "PUBLISH":1, "END":2}
 
+# 实验上传的文件类型
+UploadType = {"PRESENTATION":0, "EXPREPORT":1}
 
 # UNDONE: the user hasn't done anything about the quiz before deadline
 # SAVE: save before the deadline
@@ -68,7 +69,7 @@ class HwWebUtil:
 	      	now = datetime.now()
 	      	project_time = 0
 	      	for i in range(0, len(scheduleTable["date"])):
-	      		if now > scheduleTable["date"][i][0] and now < scheduleTable["date"][i+1][1]:
+	      		if now > scheduleTable["date"][i][0] and now < scheduleTable["date"][i][1]:
 	      			project_time = i + 1
 	      			break
 	      	if project_time == 0 or int(scheduleTable["table"][classNo][project_time-1]) != projectNo:
@@ -87,9 +88,7 @@ class HwWebUtil:
 			y = int(link.split("-")[1])
 			AdjList[x].append(y)
 			AdjList[y].append(x)
-		print AdjList
 		count = HwWebUtil.BFS(AdjList, 0)
-		print count
 		if count == scale:
 			return True
 		else:

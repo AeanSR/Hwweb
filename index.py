@@ -27,8 +27,8 @@ from HwWebUtil import QuesStatus
 from HwWebUtil import QuizFlag
 from HwWebUtil import QuizType
 from HwWebUtil import ProjectStatus
-from HwWebUtil import ProjectFlag
-from HwWebUtil import TopoStatus
+from HwWebUtil import TopoStatus 
+from HwWebUtil import UploadType
 
 # to do, filter the text input
 # to do, 多选题
@@ -36,7 +36,6 @@ from HwWebUtil import TopoStatus
 # to do, admin上传题目
 # to do, 用上a_ques 数据的id字段，将所有使用cnt/count的换成id
 
-#db = motor.MotorClient('localhost', 27017).test
 db = motor.MotorClient('localhost', 27017).hwweb
 sdb = pymongo.MongoClient('localhost', 27017).hwweb
 testdb = motor.MotorClient('localhost', 27017).test_hwweb
@@ -152,9 +151,8 @@ class BaseHandler(tornado.web.RequestHandler):
 				self.write(json.dumps({"status":"NA", "info":info})) # not availabe
 				self.finish()
 				return False
-		else:
-			return True
-	
+		return True
+
 
 	#for test, release version needs to delete it
 	def test_user(self):
@@ -327,7 +325,7 @@ class QuizHandler(BaseHandler):
 				flag = QuizFlag["FULL_SCORED"]
 
 			logger.info("student: %s is viewing the homework-%d(status: %s)" %(self.get_current_user(), int(quiz_id), flag))
-			self.render("./template/quiz.template", a_quiz = a_quiz, info = self.online_data[self.get_current_user()],  quizs=quizs, user_quiz=user_quiz, flag=flag)
+			self.render("./template/quiz.html", a_quiz = a_quiz, info = self.online_data[self.get_current_user()],  quizs=quizs, user_quiz=user_quiz, flag=flag)
 			return
 
 class ProjectMainHandler(BaseHandler):
@@ -337,7 +335,7 @@ class ProjectMainHandler(BaseHandler):
     	def get(self):
     		pro_cursor = db.projects.find().sort("pro_id", pymongo.ASCENDING)
     		projects = yield pro_cursor.to_list(None)
-	 	self.render("./template/project.template", projects = projects, info = self.online_data[self.get_current_user()], main=1, flag=0)
+	 	self.render("./template/project.html", projects = projects, info = self.online_data[self.get_current_user()], main=1, flag=0)
 	 	return
 
 class ProjectHandler(BaseHandler):
@@ -351,6 +349,7 @@ class ProjectHandler(BaseHandler):
     			print "The argument does not contain numbers\n", e
     			self.render("./template/404.template")
     			return
+    		info = self.online_data[self.get_current_user()]
     		pro_cursor = db.projects.find().sort("pro_id", pymongo.ASCENDING)
     		projects = yield pro_cursor.to_list(None)
     		a_pro = yield db.projects.find_one({"pro_id":pro_id, "status":ProjectStatus["PUBLISH"]})
@@ -358,17 +357,14 @@ class ProjectHandler(BaseHandler):
     			self.redirect("/project")
     			return
     		userId = self.get_current_user()
-    		up_record = yield db.user_uploads.find_one({"pro_id": pro_id, "userId": userId})
+    		presentation_up_record = yield db.user_uploads.find_one({"pro_id": pro_id, "group": info["group"], "type":UploadType["PRESENTATION"],  "year":info["yearOfEntry"]})
+    		report_up_record = yield db.user_uploads.find_one({"pro_id": pro_id, "group": info["group"], "type":UploadType["EXPREPORT"], "year":info["yearOfEntry"]})
     		flag = 0
-    		if not up_record and not  datetime.now() < datetime.strptime(a_pro['deadline'], '%Y-%m-%d %H:%M:%S')  :
-    			flag = ProjectFlag["END"]
-    		elif not up_record:
-    			flag = ProjectFlag["UNDONE"]
-    		elif datetime.now() < datetime.strptime(a_pro['deadline'], '%Y-%m-%d %H:%M:%S') :
-    			flag = ProjectFlag["SUBMIT"]
-    		else :
-    			flag = ProjectFlag["DEAD"]
-	 	self.render("./template/project.template", projects = projects,a_pro=a_pro, info = self.online_data[self.get_current_user()], flag=flag, main=0, up_record=up_record)
+    		if not datetime.now() < datetime.strptime(a_pro['deadline'], '%Y-%m-%d %H:%M:%S')  :
+    			flag = ProjectStatus["END"]
+    		else:
+    			flag = ProjectStatus["PUBLISH"]
+	 	self.render("./template/project.html", projects = projects,a_pro=a_pro, info = info, flag=flag, main=0, p_up_record=presentation_up_record, r_up_record=report_up_record)
 	 	return
 
 class ProjectUploadHandler(BaseHandler):
@@ -378,14 +374,17 @@ class ProjectUploadHandler(BaseHandler):
 	@tornado.web.authenticated
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
-	def post(self, pro_id):
+	def post(self, pro_id, type_id):
 		try:
     			pro_id = int(pro_id)
+    			type_id = int(type_id)
+    			if not type_id in UploadType.values():
+    				raise ValueError("type %d is not valid" % type_id)
     		except ValueError, e:
     			print "The argument does not contain numbers\n", e
     			self.render("./template/404.template")
     			return
-
+    		info = self.online_data[self.get_current_user()]
     		a_pro = yield db.projects.find_one({"pro_id":pro_id,"status":ProjectStatus["PUBLISH"]})
 
     		# 不存在此project或project已经截止
@@ -393,17 +392,26 @@ class ProjectUploadHandler(BaseHandler):
     			self.redirect("/project")
     			return
 
-    		userId = self.get_current_user()
-    		up_record = yield db.user_uploads.find_one({"pro_id":pro_id, "userId": userId})
+
+    		up_record = yield  db.user_uploads.find_one({"pro_id": pro_id, "group": info["group"], "type":type_id, "year":info["yearOfEntry"]})
 
 		upload_path=os.path.join(os.path.dirname(__file__),'report_files',str(pro_id))
 		# 创建目录
 		if not os.path.exists(upload_path):
 			os.makedirs(upload_path)
 
+		filename = None
+		arg_name = None
+		if type_id == UploadType["PRESENTATION"]:
+			arg_name = "presentation"
+			filename = str(info["yearOfEntry"]) +"-"+ info["group"] + "-presentation.pdf"
+		else:
+			arg_name = "report"
+			filename =  str(info["yearOfEntry"])  +"-"+ info["group"] + "-report.pdf"
 
-		if self.request.files.get('uploadfile', None):
-			uploadFile = self.request.files['uploadfile'][0]
+		if self.request.files.get(arg_name, None):
+
+			uploadFile = self.request.files[arg_name][0]
 			file_size = len(uploadFile['body'])
 
 			# 检测MIME类型
@@ -417,14 +425,16 @@ class ProjectUploadHandler(BaseHandler):
 				self.finish()
 				return
 			else :
-				filename = userId + ".pdf"
+				
 				filepath=os.path.join(upload_path,filename)
 				if up_record and os.path.exists(filepath):
 					os.remove(filepath)
-				else:
+				elif not up_record:
 					up_record = {}
-					up_record["userId"]=userId
+					up_record["year"] = info["yearOfEntry"]
+					up_record["group"]=info["group"]
 					up_record["pro_id"]=pro_id
+					up_record["type"]=type_id
 					up_record["file_suffix"]="pdf"
 				up_record["uploadTime"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 				up_record["size"] = file_size
@@ -439,26 +449,33 @@ class ProjectUploadHandler(BaseHandler):
 		return
 
 
+
 # 学生可以通过指定pro_id下载其对应的报告
 class ProjectDownloadHandler(BaseHandler):
 	@tornado.web.authenticated
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
-    	def get(self, pro_id):
+    	def get(self, pro_id, type_id):
     		try:
     			pro_id = int(pro_id)
+    			type_id = int(type_id)
+    			if not type_id in UploadType.values():
+    				raise ValueError("type %d is not valid" % type_id)
     		except ValueError, e:
     			print "The argument does not contain numbers\n", e
     			self.render("./template/404.template")
     			return
-    		userId = self.get_current_user()
-    		up_record = yield db.user_uploads.find_one({"pro_id":pro_id, "userId": userId})
+    		info = self.online_data[self.get_current_user()]	
+    		up_record = yield  db.user_uploads.find_one({"pro_id": pro_id, "group": info["group"], "type":type_id, "year":info["yearOfEntry"]})
     		if not up_record:
     			self.render("./template/404.template")
     			return
     		else:
     			upload_path=os.path.join(os.path.dirname(__file__),'report_files',str(pro_id))
-    			filename = userId + "." + up_record["file_suffix"]
+    			if type_id == UploadType["PRESENTATION"]:
+				filename = str(info["yearOfEntry"]) +"-" + info["group"] + "-presentation." + up_record["file_suffix"]
+			else:
+				filename =  str(info["yearOfEntry"]) +"-" + info["group"] + "-report." + up_record["file_suffix"]
     			filepath=os.path.join(upload_path,filename)
     			with open(filepath, "rb") as f:
     				self.set_header('Content-Disposition', 'attachment;filename='+filename)
@@ -771,7 +788,7 @@ class ReviewHandler(BaseHandler):
 
 # 清除游戏记录
 class ClearProjectRecord(BaseHandler):
-	
+
 
 	def get(self):
 		self.post()
@@ -799,7 +816,7 @@ class ClearProjectRecord(BaseHandler):
 			yield db.exp4g.remove({"group":self.online_data[userId]["group"]})
 			yield db.exp4u.remove({"group":self.online_data[userId]["group"]})
 			Exp4Connection.days[group] = 0
-			Exp4Connection.numPlayers[group] = 5 
+			Exp4Connection.numPlayers[group] = 5
 			Exp4Connection.clients.pop(group)
 			for uid in Exp4Connection.members[group]:
 				Exp4Connection.members[group][uid]['online'] = False
@@ -807,7 +824,8 @@ class ClearProjectRecord(BaseHandler):
 			Exp4Connection.timers[group] = None
 		except:
 			None
-		self.redirect("/main")
+		self.write('<script>alert("已成功清除所有实验信息");window.location="/main"</script>')
+		self.finish()
 		return
 
 # 设置游戏记录，以便演示
@@ -855,7 +873,8 @@ class  SetProjectRecord(BaseHandler):
 		sys_record["numPlayers"] = 1
 		yield db.exp4g.save(sys_record)
 
-		self.redirect("/main")
+		self.write('<script>alert("已成功设置所有实验信息");window.location="/main"</script>')
+		self.finish()
 		return
 
 
@@ -876,14 +895,14 @@ class APIGetHandler(BaseHandler):
 			return
 		userId = self.get_current_user()
 		group = self.online_data[userId]["group"]
-		
+
 		if gameId not in [1,2,3,4,5]:
 			return
 		if not self.isTestUser(userId):
-			if gameId in [1,2,3,4]:	
+			if gameId in [1,2,3,4]:
 				if not HwWebUtil.isValid(self.online_data[userId]["classNo"], 2):
 					return
-			elif gameId in [5]:	
+			elif gameId in [5]:
 				if not HwWebUtil.isValid(self.online_data[userId]["classNo"], 4):
 					return
 		# 分组游戏情况
@@ -1015,7 +1034,6 @@ class RouteAPIGetInfoHandler(BaseHandler):
 		else:
 			record["status"] = "NORMAL" #正常
 		if step == 3:
-			print topos[0]
 			record["finalScore"] = topos[0]["finalScore"]
 			record["averageRateScore"] = topos[0]["averageRateScore"]
 			record["averageLengthScore"] = topos[0]["averageLengthScore"]
@@ -1219,13 +1237,18 @@ class RouteAPIGetTopoHandler(BaseHandler):
 					link.append("%d-%d" %(outerIndex, (outerIndex + 1) % edgeNum + middleFirst))
 				if random.random() < randomThreshold:
 					link.append("%d-%d" %(outerIndex, (outerIndex + 9) % edgeNum + middleFirst))
+			# 里边正多边形有一个偏对角相连
+			x = random.random()*((edgeNum+1)/2)
+			y = x + (edgeNum-1)/2
+			link.append("%d-%d" %(x, y))
+
 			if HwWebUtil.isConnectedGraph(scale, link):
 				break
 		return link
 
 
 class RouteAPIClearRouteInTestModeHandler(BaseHandler):
-	
+
 	@tornado.web.authenticated
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
@@ -1450,6 +1473,7 @@ class Exp4Connection(SockJSConnection):
 				'id':self.maps[group][userId],'messages':userRecord['messages'],
 				'stage':userRecord['stage'],'cond':userRecord['cond'],
 				'resource':userRecord['resource']}, 'auth'
+
 				)
 			logger.info("Exp4:Client authenticated for %s" % userId)
 			sdb.exp4u.save(userRecord)
@@ -1536,7 +1560,6 @@ class Exp4Connection(SockJSConnection):
 
 	def isStart(self):
 		#print "numPlayers ", self.numPlayers[self.group]
-		
 		groupRecord = sdb.exp4g.find_one({"group":self.group})
 		if len(self.clients[self.group]) == groupRecord["numPlayers"]:
 			allStage2 = True
@@ -1852,7 +1875,7 @@ def involeQuartzTasks():
 		       	)
 
 settings = {
-	#"debug": True,
+	"debug": True,
 	"default_handler_class": UnfoundHandler,
 	"static_path": os.path.join(os.path.dirname(__file__), "static"),
 	"cookie_secret": "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
@@ -1873,8 +1896,8 @@ application = tornado.web.Application([
     (r"/admin", AdminHandler),
     (r"/review/([0-9]+)", ReviewHandler),
     (r"/project", ProjectMainHandler),
-    (r"/project/([0-9]+)/upload", ProjectUploadHandler),
-    (r"/project/([0-9]+)/download", ProjectDownloadHandler),
+    (r"/project/([0-9]+)/upload/([0-9]+)", ProjectUploadHandler),
+    (r"/project/([0-9]+)/download/([0-9]+)", ProjectDownloadHandler),
     (r"/project/([0-9]+)", ProjectHandler),
     (r"/project/zipdownload/([0-9]+)", ReportZipDownload),
     (r"/api/clearProjectRecord",ClearProjectRecord),

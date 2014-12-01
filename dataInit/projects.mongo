@@ -1,5 +1,5 @@
-[{"pro_id": 1,"status":0 ,"title": "图灵机实验"},
-{"pro_id": 2,"status":0 ,"title": "算法实验"},
-{"pro_id": 3,"status":0 ,"title": "计算机网络实验"},
-{"pro_id": 4,"status":0 ,"title": "系统思维实验"},
+[{"pro_id": 1,"status":1 ,"title": "图灵机实验", "releaseTime": "2014-12-01 12:00:00", "deadline": "2015-01-24 23:00:00"},
+{"pro_id": 2,"status":1 ,"title": "算法实验", "releaseTime": "2014-12-01 12:00:00", "deadline": "2015-01-24 23:00:00"},
+{"pro_id": 3,"status":1 ,"title": "计算机网络实验", "releaseTime": "2014-12-01 12:00:00", "deadline": "2015-01-24 23:00:00"},
+{"pro_id": 4,"status":1 ,"title": "系统思维实验", "releaseTime": "2014-12-01 12:00:00", "deadline": "2015-01-24 23:00:00"},
 ]
