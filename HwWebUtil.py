@@ -16,9 +16,10 @@ import tornado.web
 # 截至日过后，solution要么进入BLANK最终状态，要么直接进入REVIEW状态，要么进入SUBMIT再进入REVIEW
 QuizStatus = {"UNPUBLISH":0, "PUBLISH":1, "SAVE":2, "SUBMIT":3, "REVIEW":4, "BLANK":5}
 QuesStatus = {"UNDONE":0, "DONE":1}
-ProjectStatus = {"UNPUBLISH":0, "PUBLISH":1}
-ProjectFlag = {"END":-1, "UNDONE":0, "SUBMIT":1, "DEAD":2}
+ProjectStatus = {"UNPUBLISH":0, "PUBLISH":1, "END":2}
 
+# 实验上传的文件类型
+UploadType = {"PRESENTATION":0, "EXPREPORT":1}
 
 # UNDONE: the user hasn't done anything about the quiz before deadline
 # SAVE: save before the deadline

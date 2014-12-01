@@ -1,8 +1,8 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 {% from datetime import datetime %}
-{% from HwWebUtil import ProjectFlag %}
-
+{% from HwWebUtil import ProjectStatus %}
+{% from HwWebUtil import UploadType %}
 
 <head>
     <title>实验报告提交</title>
@@ -10,18 +10,36 @@
      <script>
         $(document).ready(function(c) {
             $("#header-title").text("实验报告提交");
-            {% if flag==ProjectFlag['END'] %}
-            	$("span#warn").text("截止日期已过，您没有按时提交报告。")
-                $("form#upload_form input[type=file]").attr("disabled","disabled");
-            	$("form#upload_form input[type=submit]").button({"disabled":true});
-            {% elif flag==ProjectFlag['SUBMIT'] %}
-            	$("div#history").html('<p>最近一次修改时间：{{up_record['uploadTime']}}</p><p><a href="/project/{{a_pro['pro_id']}}/download" data-ajax="false">{{up_record['userId']}}.{{up_record['file_suffix']}}</a></p><p>可以重新上传以覆盖</p>')
-            {% elif flag==ProjectFlag['DEAD'] %}
-            	$("div#history").html('<p>最近一次修改时间：{{up_record['uploadTime']}}</p><p><a href="/project/{{a_pro['pro_id']}}/download" data-ajax="false">{{up_record['userId']}}.{{up_record['file_suffix']}}</a></p><p>截止日期已过，无法重新上传</p>')
-            	$("form#upload_form input[type=file]").attr("disabled","disabled");
-            $("form#upload_form input[type=submit]").button({"disabled":true});
-            {% else %}
-            {% end %} 
+
+            {% if main != 1 %}
+                {% if p_up_record == None %}
+                    $("#presentation .history").html('<p>还未上传</p>')
+                {% else %}
+                    $("#presentation .history").html('<p>最近一次修改时间：{{p_up_record['uploadTime']}}</p><p><a href="/project/{{a_pro['pro_id']}}/download/{{p_up_record['type']}}" data-ajax="false">{{p_up_record['group']}}-presentation.{{p_up_record['file_suffix']}}</a></p>')
+                {% end %}
+                {% if r_up_record == None %}
+                    $("#report .history").html('<p>还未上传</p>')
+                {% else %}
+                    $("#report .history").html('<p>最近一次修改时间：{{r_up_record['uploadTime']}}</p><p><a href="/project/{{a_pro['pro_id']}}/download/{{r_up_record['type']}}" data-ajax="false">{{r_up_record['group']}}-report.{{r_up_record['file_suffix']}}</a></p>')
+                {% end %}
+
+                {% if flag==ProjectStatus['END'] %}
+                  $("span#warn").text("实验结束")
+                  $("form#upload_form input[type=file]").attr("disabled","disabled");
+                  $("form#upload_form input[type=button]").button({"disabled":true});
+                {% elif flag==ProjectStatus['PUBLISH'] %}
+                    $("#presentationButton").on("click", function(event){
+                        event.preventDefault()
+                        $("#upload_form").attr("action", "/project/{{a_pro['pro_id']}}/upload/{{UploadType['PRESENTATION']}}")
+                        $("#upload_form").submit()
+                    });
+                    $("#reportButton").on("click", function(event){
+                        event.preventDefault()
+                        $("#upload_form").attr("action", "/project/{{a_pro['pro_id']}}/upload/{{UploadType['EXPREPORT']}}")
+                        $("#upload_form").submit()
+                    });
+                {% end %} 
+            {% end %}
         });
         </script>
 </head>
@@ -37,18 +55,23 @@
                 	<tr><td>开始日期</td><td>{{a_pro["releaseTime"]}}</td></tr>
                 	<tr><td>截止日期</td><td>{{a_pro["deadline"]}}</td></tr>
             </table>
-        <div>
-        	<span>提交报告&nbsp; 备注：上传后文件名将会以学号命名</span>
+        	<div class="note">备注：实验的Presentation和Report都是以组为单位上传。上传后文件名将会以组号命名，上传后同组成员可再次上传，后续上传文件将覆盖前面上传过的。</div>
         	<div>
                 	<form id="upload_form" action="/project/{{a_pro['pro_id']}}/upload" method="post" enctype="multipart/form-data" data-ajax="false">
-                		<div id="history"></div>
                                         <div class="action">
-                            		<input type="file" name="uploadfile" data-inline="true" value="" data-clear-btn="true"/>
-                            		<input type="submit" value="上传" data-inline="true" data-icon="check"/>
+                                            <table><tr><td>Upload Presentation of Your Group</td><td>Upload Experiment Report of Your Group</td></tr>
+                                                <tr><td id="presentation">
+                                                <div class="history"></div>
+                                                <input type="file" name="presentation" data-inline="true"  data-clear-btn="true"/>
+                                                <input type="button" id="presentationButton" value="上传Presentation" data-inline="true" data-icon="check"/>
+                                            </td><td id="report">
+                                                <div class="history"></div>
+                                                <input type="file" name="report" data-inline="true" data-clear-btn="true"/>
+                                                <input type="button" id="reportButton" value="上传实验报告" data-inline="true" data-icon="check"/>
+                                            </td></tr></table>
                                         </div>
                 	</form>
         	</div>
-        </div>
         {% end %}
     </div>
 

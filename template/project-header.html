@@ -89,19 +89,14 @@ function checkOriginNewPass( origin_pass, new_pass, n ) {
         <ul id="project_menu" data-role="listview" data-corners="false">
           <li><a href="/main" data-ajax="false">&lt;&lt;返回</a></li>
         {% for pro in projects %}
-          {% set clickEvent = "" %}
-        {% if pro['status']  == ProjectStatus["UNPUBLISH"] %} 
-    {% set statusStr = "实验未开始" %}
-    {% set clickEvent = "javascript:alert('未发布');href='/project'" %}
-  {% elif pro['status']  == ProjectStatus["PUBLISH"]  and datetime.now() < datetime.strptime(pro["deadline"],"%Y-%m-%d %H:%M:%S")   %}
-    {% set statusStr = "可提交报告" %}
-  {% else %}
-    {% set statusStr = "已截止，无法提交" %}
-  {% end %}
-            <li><a href="/project/{{pro['pro_id']}}" title="实验{{pro['pro_id']}}" onclick=" {% raw clickEvent %}" data-ajax="false">实验{{pro['pro_id']}} 
-({{escape(statusStr)}})
-              &nbsp; </a>
-            </li>
+          {% if pro['status']  == ProjectStatus["UNPUBLISH"] %} 
+            {% set statusStr = "实验未开始" %}
+          {% elif pro['status']  == ProjectStatus["PUBLISH"]  and datetime.now() < datetime.strptime(pro["deadline"],"%Y-%m-%d %H:%M:%S")   %}
+           {% set statusStr = "实验阶段" %}
+          {% else %}
+            {% set statusStr = "实验已结束" %}
+          {% end %}
+            <li><a href="/project/{{pro['pro_id']}}" data-ajax="false">{{pro['title']}} ({{statusStr}})</a></li>
         {% end %}
         </ul >
   </div>
