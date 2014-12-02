@@ -13,14 +13,14 @@
 
             {% if main != 1 %}
                 {% if p_up_record == None %}
-                    $("#presentation .history").html('<p>还未上传</p>')
+                    $("#presentation .history").html('<p>还未上传，请按时上传，截止日期过后上传无效</p>')
                 {% else %}
-                    $("#presentation .history").html('<p>最近一次修改时间：{{p_up_record['uploadTime']}}</p><p><a href="/project/{{a_pro['pro_id']}}/download/{{p_up_record['type']}}" data-ajax="false">{{p_up_record['group']}}-presentation.{{p_up_record['file_suffix']}}</a></p>')
+                    $("#presentation .history").html('<p>最近一次修改时间：{{p_up_record['uploadTime']}}</p><p><a href="/project/{{a_pro['pro_id']}}/download/{{p_up_record['type']}}" data-ajax="false">{{p_up_record["year"]}}-{{p_up_record["pro_id"]}}-{{p_up_record['group']}}-presentation.{{p_up_record['file_suffix']}}</a></p>')
                 {% end %}
                 {% if r_up_record == None %}
-                    $("#report .history").html('<p>还未上传</p>')
+                    $("#report .history").html('<p>还未上传，请按时上传，截止日期过后上传无效</p>')
                 {% else %}
-                    $("#report .history").html('<p>最近一次修改时间：{{r_up_record['uploadTime']}}</p><p><a href="/project/{{a_pro['pro_id']}}/download/{{r_up_record['type']}}" data-ajax="false">{{r_up_record['group']}}-report.{{r_up_record['file_suffix']}}</a></p>')
+                    $("#report .history").html('<p>最近一次修改时间：{{r_up_record['uploadTime']}}</p><p><a href="/project/{{a_pro['pro_id']}}/download/{{r_up_record['type']}}" data-ajax="false">{{r_up_record["year"]}}-{{r_up_record["pro_id"]}}-{{r_up_record['group']}}-report.{{r_up_record['file_suffix']}}</a></p>')
                 {% end %}
 
                 {% if flag==ProjectStatus['END'] %}
@@ -50,23 +50,26 @@
     <div role="main" class="ui-content">
         {% if main != 1 %}
     	<span id="warn"></span>
-            <table border=1>
-                	<tr><td>标题</td><td>实验{{a_pro["pro_id"]}}:{{a_pro["title"]}}</td></tr>
-                	<tr><td>开始日期</td><td>{{a_pro["releaseTime"]}}</td></tr>
-                	<tr><td>截止日期</td><td>{{a_pro["deadline"]}}</td></tr>
+            <table class="uploadTable">
+                	<tr><td>标题</td><td>实验{{a_pro["pro_id"]}}：{{a_pro["title"]}}</td></tr>
+                	<tr><td>提交开始日期</td><td>{{a_pro["title"]}}第一次实验课</td></tr>
+                	<tr><td>Presentation截止日期</td><td>本班{{a_pro["title"]}}的第二次实验课（做Presentation）当天晚上23:00（即本实验开始的后一周）</td></tr>
+                            <tr><td>Report截止日期</td><td>本班{{a_pro["title"]}}的下一个实验开始的前一天晚上23:00（即本实验开始的后两周）</td></tr>
             </table>
-        	<div class="note">备注：实验的Presentation和Report都是以组为单位上传。上传后文件名将会以组号命名，上传后同组成员可再次上传，后续上传文件将覆盖前面上传过的。</div>
+        	<div class="note">备注：实验的Presentation和Report都是以组为单位上传。上传后文件名将会以组号命名，上传后同组成员可再次上传，后续上传文件将覆盖前面上传过的。<br/>
+                <p>请同学们在实验开始后按时提交，<b>提交日期过后本系统并不关闭，但是过期提交的不再接收</b>。</p>
+                <hr/></div>
         	<div>
                 	<form id="upload_form" action="/project/{{a_pro['pro_id']}}/upload" method="post" enctype="multipart/form-data" data-ajax="false">
                                         <div class="action">
-                                            <table><tr><td>Upload Presentation of Your Group</td><td>Upload Experiment Report of Your Group</td></tr>
+                                            <table class="uploadTable"><tr><td>Upload Presentation of Your Group</td><td>Upload Experiment Report of Your Group</td></tr>
                                                 <tr><td id="presentation">
                                                 <div class="history"></div>
-                                                <input type="file" name="presentation" data-inline="true"  data-clear-btn="true"/>
+                                                <input type="file" name="presentation" data-clear-btn="true"/>
                                                 <input type="button" id="presentationButton" value="上传Presentation" data-inline="true" data-icon="check"/>
                                             </td><td id="report">
                                                 <div class="history"></div>
-                                                <input type="file" name="report" data-inline="true" data-clear-btn="true"/>
+                                                <input type="file" name="report"  data-clear-btn="true"/>
                                                 <input type="button" id="reportButton" value="上传实验报告" data-inline="true" data-icon="check"/>
                                             </td></tr></table>
                                         </div>

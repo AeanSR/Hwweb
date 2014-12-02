@@ -56,7 +56,7 @@ class HwWebUtil:
 				for dateStr in heads[1:]:
 					startDate = dateStr.split("-")[0].strip()
 					endDate = dateStr.split("-")[1].strip()
-					scheduleTable["date"].append([datetime.strptime(startDate, "%Y/%m/%d"), datetime.strptime(endDate, "%Y/%m/%d")])
+					scheduleTable["date"].append([datetime.strptime(startDate, "%Y/%m/%d/%H/%M/%S"), datetime.strptime(endDate, "%Y/%m/%d/%H/%M/%S")])
 				scheduleTable["table"] = {}
 				line = f.readline().strip()
 	      			while line:

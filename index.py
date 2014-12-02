@@ -403,10 +403,10 @@ class ProjectUploadHandler(BaseHandler):
 		arg_name = None
 		if type_id == UploadType["PRESENTATION"]:
 			arg_name = "presentation"
-			filename = str(info["yearOfEntry"]) +"-"+ info["group"] + "-presentation.pdf"
+			filename = str(info["yearOfEntry"]) +"-" + str(pro_id) + "-" + info["group"] + "-presentation.pdf"
 		else:
 			arg_name = "report"
-			filename =  str(info["yearOfEntry"])  +"-"+ info["group"] + "-report.pdf"
+			filename =  str(info["yearOfEntry"])  +"-" + str(pro_id) + "-"+ info["group"] + "-report.pdf"
 
 		if self.request.files.get(arg_name, None):
 
@@ -472,10 +472,14 @@ class ProjectDownloadHandler(BaseHandler):
     		else:
     			upload_path=os.path.join(os.path.dirname(__file__),'report_files',str(pro_id))
     			if type_id == UploadType["PRESENTATION"]:
-				filename = str(info["yearOfEntry"]) +"-" + info["group"] + "-presentation." + up_record["file_suffix"]
+				filename = str(info["yearOfEntry"]) +"-" + str(pro_id) + "-" + info["group"] + "-presentation." + up_record["file_suffix"]
 			else:
-				filename =  str(info["yearOfEntry"]) +"-" + info["group"] + "-report." + up_record["file_suffix"]
+				filename =  str(info["yearOfEntry"]) +"-" + str(pro_id) + "-" + info["group"] + "-report." + up_record["file_suffix"]
     			filepath=os.path.join(upload_path,filename)
+    			if not os.path.exists(filepath):
+    				self.write('<script>alert("不存在此文件，请重新上传");window.history.back()</script>')
+    				self.finish()
+    				return
     			with open(filepath, "rb") as f:
     				self.set_header('Content-Disposition', 'attachment;filename='+filename)
     				self.set_header('Content-Type','application/pdf')
@@ -1677,7 +1681,7 @@ class LoginHandler(BaseHandler):
 		return
 
 class PasswordHandler(BaseHandler):
-	@tornado.web.authenticated
+	
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
@@ -1689,31 +1693,29 @@ class PasswordHandler(BaseHandler):
 		new_pass_again = self.get_argument("new_pass_again", None)
 		a_user = yield db.users.find_one({"userId":userId, "password":hashlib.md5(origin_pass + md5Salt).hexdigest()})
 		a_admin = yield db.admin.find_one({"userId":adminId, "password":hashlib.md5(origin_pass + md5Salt).hexdigest()})
-		if userId:
-			if a_user and new_pass==new_pass_again and re.match(regEx, new_pass):
-				if userId and a_user:
-					logger.info("student: %s is modifying password to %s" %(userId, new_pass))
-					a_user["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
-					yield db.users.save(a_user)
-					self.clear_current_user()
-					self.clear_current_admin()
-					self.write('<script>alert("修改成功，请重新登录系统");window.location="/login"</script>')
-					self.finish()
-					return
-				elif adminId and a_admin:
-					logger.info("administrator: %s is modifying password to %s" %(adminId, new_pass))
-					a_admin["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
-					yield db.admin.save(a_admin)
-					self.clear_current_user()
-					self.clear_current_admin()
-					self.write('<script>alert("修改成功，请重新登录系统");window.location="/login"</script>')
-					self.finish()
-					return
-			else:
-				logger.info("student: %s failed to modify password to %s" %(userId, new_pass))
-				self.write('<script>alert("原密码有误或新密码不符合输入规则，修改失败");window.history.back()</script>')
+		if userId and a_user and new_pass==new_pass_again and re.match(regEx, new_pass):
+				logger.info("student: %s is modifying password to %s" %(userId, new_pass))
+				a_user["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
+				yield db.users.save(a_user)
+				self.clear_current_user()
+				self.clear_current_admin()
+				self.write('<script>alert("修改成功，请重新登录系统");window.location="/login"</script>')
 				self.finish()
 				return
+		elif adminId and a_admin and new_pass==new_pass_again and re.match(regEx, new_pass):
+			logger.info("administrator: %s is modifying password to %s" %(adminId, new_pass))
+			a_admin["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
+			yield db.admin.save(a_admin)
+			self.clear_current_user()
+			self.clear_current_admin()
+			self.write('<script>alert("修改成功，请重新登录系统");window.location="/login"</script>')
+			self.finish()
+			return
+		else:
+			logger.info("student: %s failed to modify password to %s" %(userId, new_pass))
+			self.write('<script>alert("原密码有误或新密码不符合输入规则，修改失败");window.history.back()</script>')
+			self.finish()
+			return
 
 
 
@@ -1729,6 +1731,45 @@ class UnfoundHandler(BaseHandler):
 		logger.warn("user: %s is try to visit %s" %(self.get_current_user(), self.request.uri))
 	 	self.render("./template/404.template")
 	 	return
+
+class ResetPassword(BaseHandler):
+
+	@tornado.web.asynchronous
+	def get(self):
+		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+		self.write("<a href='/admin'>主页</a><br/><form action='/admin/resetPassword' method='post'><input type='text' name='userId'/> <input type='text' name='password'/> <input type='submit' value='重置密码'/> </form>")
+		self.finish()
+		return
+
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def post(self):
+		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+		userId = self.get_argument("userId", None)
+		new_pass = self.get_argument("password", None)
+		if userId and new_pass:
+			userId = userId.strip()
+			new_pass = new_pass.strip()
+			a_user = yield db.users.find_one({"userId":userId.lower()})
+			if a_user:
+				logger.info("administrator: %s is reseting %s's password to %s" %(self.get_current_admin(), userId.lower(), new_pass))
+				a_user["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
+				yield db.users.save(a_user)
+				self.write('<script>alert("修改成功");window.location="/admin"</script>')
+				self.finish()
+				return
+			else:
+				self.write('<script>alert("此学生不存在，重置失败");window.history.back()</script>')
+				self.finish()
+				return
+
+		self.write('<script>alert("参数错误，重置失败");window.history.back()</script>')
+		self.finish()
+		return
 
 
 class ExitHandler(BaseHandler):
@@ -1855,6 +1896,7 @@ application = tornado.web.Application([
     (r"/studentlist", StudentListHandler),
     (r"/studentlist/transcipt/([0-9]+)", TransciptHandler),
     (r"/admin", AdminHandler),
+    (r"/admin/resetPassword", ResetPassword),
     (r"/review/([0-9]+)", ReviewHandler),
     (r"/project", ProjectMainHandler),
     (r"/project/([0-9]+)/upload/([0-9]+)", ProjectUploadHandler),
