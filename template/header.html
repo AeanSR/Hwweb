@@ -9,6 +9,7 @@ $(function() {
       $('<li><a href="/api/setProjectRecord" data-ajax="false">设置游戏信息</a></li>').appendTo("#project_menu")
     }
     $("#project_menu").listview( "refresh");
+  });
   </script>
 <div id="nav-panel" data-role="panel">
     <ul data-role="listview" class="ui-listview-outer">
@@ -41,7 +42,7 @@ $(function() {
       <li data-role="collapsible" data-iconpos="right" data-shadow="false" data-corners="false">
         <h2 class="legend">Experiment</h2>
         <ul id="project_menu" data-role="listview" data-corners="false">
-          <li><a href="/project" data-ajax="false">提交大实验报告入口</a></li>
+          <li><a href="/project" data-ajax="false">实验日程表和实验报告提交入口</a></li>
           <li><a href="http://ucas-2014.tk:8889/exp2" target="_blank" data-ajax="false">实验二（算法）</a></li>
           <li><a href="http://ucas-2014.tk:8889/exp3" target="_blank" data-ajax="false">实验三（网络）</a></li>
           <li><a href="#">实验四（系统）</a></li>

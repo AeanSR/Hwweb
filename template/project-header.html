@@ -96,7 +96,7 @@ function checkOriginNewPass( origin_pass, new_pass, n ) {
           {% else %}
             {% set statusStr = "实验已结束" %}
           {% end %}
-            <li><a href="/project/{{pro['pro_id']}}" data-ajax="false">{{pro['title']}} ({{statusStr}})</a></li>
+            <li><a href="/project/{{pro['pro_id']}}" data-ajax="false">{{pro['title']}} ({{statusStr}}) &nbsp;报告提交</a></li>
         {% end %}
         </ul >
   </div>

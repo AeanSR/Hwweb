@@ -334,7 +334,13 @@ class ProjectMainHandler(BaseHandler):
     	def get(self):
     		pro_cursor = db.projects.find().sort("pro_id", pymongo.ASCENDING)
     		projects = yield pro_cursor.to_list(None)
-	 	self.render("./template/project.html", projects = projects, info = self.online_data[self.get_current_user()], main=1, flag=0)
+    		scheduleTable= copy.deepcopy(HwWebUtil.getSchedule())
+    		for exp_date in scheduleTable["date"]:
+    			for i in range(0, len(exp_date)) :
+    				exp_date[i] = exp_date[i].strftime("%Y-%m-%d %H:%M:%S")
+
+    		scheduleTable = json.dumps(scheduleTable)
+	 	self.render("./template/project-index.html", projects = projects, info = self.online_data[self.get_current_user()], scheduleTable=scheduleTable)
 	 	return
 
 class ProjectHandler(BaseHandler):
@@ -363,7 +369,7 @@ class ProjectHandler(BaseHandler):
     			flag = ProjectStatus["END"]
     		else:
     			flag = ProjectStatus["PUBLISH"]
-	 	self.render("./template/project.html", projects = projects,a_pro=a_pro, info = info, flag=flag, main=0, p_up_record=presentation_up_record, r_up_record=report_up_record)
+	 	self.render("./template/project.html", projects = projects,a_pro=a_pro, info = info, flag=flag,  p_up_record=presentation_up_record, r_up_record=report_up_record)
 	 	return
 
 class ProjectUploadHandler(BaseHandler):
@@ -1681,7 +1687,7 @@ class LoginHandler(BaseHandler):
 		return
 
 class PasswordHandler(BaseHandler):
-	
+
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):

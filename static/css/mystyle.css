@@ -95,13 +95,20 @@ div.action {
 	margin: 2em  0 2em  0;
 }
 
-table.uploadTable{
+table.uploadTable, table.schedule{
 	margin-top: 2em;
 	width:100%;
 	border-top: 1px solid #ddd;
 	border-left: 1px solid #ddd;
 }
-table.uploadTable td {
+table.uploadTable td ,table.schedule td{
 	border-bottom: 1px solid #ddd;
 	border-right: 1px solid #ddd;
+}
+table.schedule tr td{
+	text-align:center;
+}
+
+table.schedule tr:hover{
+	background-color: yellow;
 }

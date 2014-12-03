@@ -9,9 +9,7 @@
 {% include "./reference.html" %}
      <script>
         $(document).ready(function(c) {
-            $("#header-title").text("实验报告提交");
-
-            {% if main != 1 %}
+            $("#header-title").text("{{a_pro["title"]}}-报告提交");
                 {% if p_up_record == None %}
                     $("#presentation .history").html('<p>还未上传，请按时上传，截止日期过后上传无效</p>')
                 {% else %}
@@ -39,7 +37,6 @@
                         $("#upload_form").submit()
                     });
                 {% end %} 
-            {% end %}
         });
         </script>
 </head>
@@ -48,16 +45,13 @@
 {% include "./project-header.html" %}
 
     <div role="main" class="ui-content">
-        {% if main != 1 %}
     	<span id="warn"></span>
             <table class="uploadTable">
-                	<tr><td>标题</td><td>实验{{a_pro["pro_id"]}}：{{a_pro["title"]}}</td></tr>
-                	<tr><td>提交开始日期</td><td>{{a_pro["title"]}}第一次实验课</td></tr>
-                	<tr><td>Presentation截止日期</td><td>本班{{a_pro["title"]}}的第二次实验课（做Presentation）当天晚上23:00（即本实验开始的后一周）</td></tr>
-                            <tr><td>Report截止日期</td><td>本班{{a_pro["title"]}}的下一个实验开始的前一天晚上23:00（即本实验开始的后两周）</td></tr>
+                	<tr><td>标题</td><td>{{a_pro["title"]}}</td></tr>
+                	<tr><td>日程安排</td><td><a href="/project" data-ajax="false">点击此处查看详细日程表</a></td></tr>
             </table>
-        	<div class="note">备注：实验的Presentation和Report都是以组为单位上传。上传后文件名将会以组号命名，上传后同组成员可再次上传，后续上传文件将覆盖前面上传过的。<br/>
-                <p>请同学们在实验开始后按时提交，<b>提交日期过后本系统并不关闭，但是过期提交的不再接收</b>。</p>
+        	<div class="note">备注：实验的Presentation和Report都是以<b>组</b>为单位上传，上传的文件为<b>pdf格式</b>，请同学们将ppt或者doc格式另存为pdf格式后再上传。上传后文件名将会以组号命名，上传后同组成员可再次上传，后续上传文件将覆盖前面上传过的。<br/>
+                <p>请同学们在实验开始后按时提交，<b>提交日期过后本系统并不关闭，但是过期后提交的不计入分数</b>。</p>
                 <hr/></div>
         	<div>
                 	<form id="upload_form" action="/project/{{a_pro['pro_id']}}/upload" method="post" enctype="multipart/form-data" data-ajax="false">
@@ -75,7 +69,6 @@
                                         </div>
                 	</form>
         	</div>
-        {% end %}
     </div>
 
 
