@@ -392,6 +392,8 @@ class ProjectUploadHandler(BaseHandler):
     		info = self.online_data[self.get_current_user()]
     		a_pro = yield db.projects.find_one({"pro_id":pro_id,"status":ProjectStatus["PUBLISH"]})
 
+    		logger.info("user: %s of gruop %s try to upload file for exp %d in type %d" %(self.get_current_user(), info["group"], pro_id, type_id))
+
     		# 不存在此project或project已经截止
     		if not a_pro or not datetime.now() < datetime.strptime(a_pro['deadline'], '%Y-%m-%d %H:%M:%S')  :
     			self.redirect("/project")
@@ -430,7 +432,7 @@ class ProjectUploadHandler(BaseHandler):
 				self.finish()
 				return
 			else :
-
+				logger.info("user: %s of gruop %s succeed to upload file for exp %d in type %d" %(self.get_current_user(), info["group"], pro_id, type_id))
 				filepath=os.path.join(upload_path,filename)
 				if up_record and os.path.exists(filepath):
 					os.remove(filepath)
