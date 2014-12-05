@@ -1,0 +1,35 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <title>计算机导论 通知系统</title>
+{% include "../reference.html" %}
+</head>
+
+<body>
+<div id="container" data-role="page" data-theme="b">
+{% include "./header-admin.html" %}
+
+<div role="main" class="ui-content">
+<h3>通知管理</h3>
+<p><a href="/admin/notice/publish" data-ajax="false">添加通知</a></p>
+{% for notice in notices %}
+<div class="notice_content">
+	<div class="brief">
+	<span style="color:{{notice['importance']}}"> [{% raw notice['description'] %}] </span><span>通知人&nbsp;{% raw notice['creator'] %}</span>
+	</div>
+	<div class="detail">{% raw notice['content'] %}</div>
+	<p><a href="/admin/notice/delete/{{notice['id']}}" data-ajax="false">删除此通知</a></p>
+
+</div>
+{% end %}
+
+<p>&nbsp;</p>
+</div>
+
+
+{% include "../footer.html" %}
+</div>
+</body>
+
+</html>

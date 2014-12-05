@@ -511,7 +511,7 @@ class AdminHandler(BaseHandler):
     		notices = yield nt_cursor.to_list(None)
     		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1, "content":1}).sort("quiz_id", pymongo.ASCENDING)
     		quizs_index = yield quiz_cursor.to_list(None)
-	 	self.render("./template/admin.template", info = self.online_data[self.get_current_admin()],notices = notices, quizs_index=quizs_index)
+	 	self.render("./template/admin/admin-index.html", info = self.online_data[self.get_current_admin()],notices = notices, quizs_index=quizs_index)
 	 	return
 
 class TransciptHandler(BaseHandler):
@@ -665,7 +665,7 @@ class ReviewHandler(BaseHandler):
     		if not a_quiz or a_quiz["status"] == QuizStatus["UNPUBLISH"]:
     			nt_cursor = db.notices.find().sort("time", pymongo.DESCENDING)
     			notices = yield nt_cursor.to_list(None)
-    			self.render("./template/admin.template", info = self.online_data[self.get_current_admin()], notices = notices, quizs_index=quizs_index)
+    			self.render("./template/admin/admin-index.html", info = self.online_data[self.get_current_admin()], notices = notices, quizs_index=quizs_index)
     			return
     		# can't be reviewd because it's before the deadline, so just list the questions.
     		elif datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
@@ -1740,6 +1740,37 @@ class UnfoundHandler(BaseHandler):
 	 	self.render("./template/404.template")
 	 	return
 
+class NoticeManagerHandler(BaseHandler):
+
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+    	def get(self):
+    		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+
+    		nt_cursor = db.notices.find().sort("time", pymongo.DESCENDING)
+    		notices = yield nt_cursor.to_list(None)
+    		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1, "content":1}).sort("quiz_id", pymongo.ASCENDING)
+    		quizs_index = yield quiz_cursor.to_list(None)
+	 	self.render("./template/admin/notice-manager.html", info = self.online_data[self.get_current_admin()],notices = notices, quizs_index=quizs_index)
+	 	return
+
+
+class DeleteNotice(BaseHandler):
+
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def get(self, notice_id):
+		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+		notice_id = int(notice_id)
+		logger.info("administrator: %s is deleting a notice(id is %d)" %(self.get_current_admin(), notice_id))
+		yield db.notices.remove({"id":notice_id})
+		self.redirect("/admin/notice/list")
+		return
+
 class PublishNotice(BaseHandler):
 
 	@tornado.web.asynchronous
@@ -1768,9 +1799,14 @@ class PublishNotice(BaseHandler):
     				no_id = notices[0]["id"]+1
 			logger.info("administrator: %s is publishing a notice, description is %s" %(self.get_current_admin(), description))
 			db.notices.save({"id":no_id, "description":description, "creator":creator, "content":content, "importance":color, "time":datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
-			self.write('<script>alert("发布成功");window.location="/admin"</script>')
+			self.write('<script>alert("发布成功");window.location="/admin/notice/list"</script>')
 			self.finish()
 			return
+		else:
+			self.write('<script>alert("所有字段都不能为空，发布失败");window.history.back()</script>')
+			self.finish()
+			return
+
 
 class ResetPassword(BaseHandler):
 
@@ -1779,7 +1815,7 @@ class ResetPassword(BaseHandler):
 		if not self.get_current_admin():
 			self.redirect("/login")
 			return
-		self.write("<a href='/admin'>主页</a><br/><form action='/admin/resetPassword' method='post'><input type='text' name='userId'/> <input type='text' name='password'/> <input type='submit' value='重置密码'/> </form>")
+		self.write("<a href='/admin'>主页</a><br/><form action='/admin/resetPassword' method='post'><label>学号</label><input type='text' name='userId'/></br><label>密码</label> <input type='text' name='password'/> <input type='submit' value='重置密码'/> </form>")
 		self.finish()
 		return
 
@@ -1917,7 +1953,7 @@ def involeQuartzTasks():
 		       	)
 
 settings = {
-	#"debug": True,
+	"debug": True,
 	"default_handler_class": UnfoundHandler,
 	"static_path": os.path.join(os.path.dirname(__file__), "static"),
 	"cookie_secret": "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
@@ -1937,7 +1973,9 @@ application = tornado.web.Application([
     (r"/studentlist/transcipt/([0-9]+)", TransciptHandler),
     (r"/admin", AdminHandler),
     (r"/admin/resetPassword", ResetPassword),
-    (r"/admin/publishNotice", PublishNotice),
+    (r"/admin/notice/publish", PublishNotice),
+    (r"/admin/notice/delete/([0-9]+)", DeleteNotice),
+    (r"/admin/notice/list", NoticeManagerHandler),
     (r"/review/([0-9]+)", ReviewHandler),
     (r"/project", ProjectMainHandler),
     (r"/project/([0-9]+)/upload/([0-9]+)", ProjectUploadHandler),
