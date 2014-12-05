@@ -170,7 +170,7 @@ class MainHandler(BaseHandler):
     	def get(self):
     		# self.checkQuizAndUpdateStatus()
 
-    		nt_cursor = db.notices.find().sort("id", pymongo.DESCENDING)
+    		nt_cursor = db.notices.find().sort("time", pymongo.DESCENDING)
     		notices = yield nt_cursor.to_list(None)
     		quiz_cursor = db.quizs.find().sort("quiz_id", pymongo.ASCENDING)
     		quizs = yield quiz_cursor.to_list(None)
@@ -507,7 +507,7 @@ class AdminHandler(BaseHandler):
 			return
 
 		# self.checkQuizAndUpdateStatus()
-    		nt_cursor = db.notices.find().sort("id", pymongo.DESCENDING)
+    		nt_cursor = db.notices.find().sort("time", pymongo.DESCENDING)
     		notices = yield nt_cursor.to_list(None)
     		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1, "content":1}).sort("quiz_id", pymongo.ASCENDING)
     		quizs_index = yield quiz_cursor.to_list(None)
@@ -663,7 +663,7 @@ class ReviewHandler(BaseHandler):
     		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1}).sort("quiz_id", pymongo.ASCENDING)
     		quizs_index = yield quiz_cursor.to_list(None)
     		if not a_quiz or a_quiz["status"] == QuizStatus["UNPUBLISH"]:
-    			nt_cursor = db.notices.find().sort("id", pymongo.DESCENDING)
+    			nt_cursor = db.notices.find().sort("time", pymongo.DESCENDING)
     			notices = yield nt_cursor.to_list(None)
     			self.render("./template/admin.template", info = self.online_data[self.get_current_admin()], notices = notices, quizs_index=quizs_index)
     			return
@@ -1740,6 +1740,38 @@ class UnfoundHandler(BaseHandler):
 	 	self.render("./template/404.template")
 	 	return
 
+class PublishNotice(BaseHandler):
+
+	@tornado.web.asynchronous
+	def get(self):
+		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+		self.render("./template/admin/publish-notice.html")
+		return
+
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def post(self):
+		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+		description = self.get_argument("description", None)
+		creator = self.get_argument("creator", None)
+		content = self.get_argument("content", None)
+		color = self.get_argument("color", None)
+		if description and creator and content and color:
+			nt_cursor = db.notices.find({},{"id":1}).sort("time", pymongo.DESCENDING)
+    			notices = yield nt_cursor.to_list(None)
+    			no_id = 1
+    			if notices:
+    				no_id = notices[0]["id"]+1
+			logger.info("administrator: %s is publishing a notice, description is %s" %(self.get_current_admin(), description))
+			db.notices.save({"id":no_id, "description":description, "creator":creator, "content":content, "importance":color, "time":datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+			self.write('<script>alert("发布成功");window.location="/admin"</script>')
+			self.finish()
+			return
+
 class ResetPassword(BaseHandler):
 
 	@tornado.web.asynchronous
@@ -1905,6 +1937,7 @@ application = tornado.web.Application([
     (r"/studentlist/transcipt/([0-9]+)", TransciptHandler),
     (r"/admin", AdminHandler),
     (r"/admin/resetPassword", ResetPassword),
+    (r"/admin/publishNotice", PublishNotice),
     (r"/review/([0-9]+)", ReviewHandler),
     (r"/project", ProjectMainHandler),
     (r"/project/([0-9]+)/upload/([0-9]+)", ProjectUploadHandler),
