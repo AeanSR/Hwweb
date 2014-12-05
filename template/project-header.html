@@ -87,7 +87,8 @@ function checkOriginNewPass( origin_pass, new_pass, n ) {
   </script>
 <div id="nav-panel" data-role="panel">
         <ul id="project_menu" data-role="listview" data-corners="false">
-          <li><a href="/main" data-ajax="false">&lt;&lt;返回</a></li>
+          <li><a href="/main" data-ajax="false">&lt;&lt;返回首页</a></li>
+          <li><a href="/project" data-ajax="false">&lt;&lt;返回实验日程表</a></li>
         {% for pro in projects %}
           {% if pro['status']  == ProjectStatus["UNPUBLISH"] %} 
             {% set statusStr = "实验未开始" %}
