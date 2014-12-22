@@ -813,15 +813,20 @@ class ClearProjectRecord(BaseHandler):
 		yield db.games.remove({"group":group})
 		# 系统实验
 		try:
-			yield db.exp4g.remove({"group":self.online_data[userId]["group"]})
-			yield db.exp4u.remove({"group":self.online_data[userId]["group"]})
-			Exp4Connection.days[group] = 0
-			Exp4Connection.numPlayers[group] = 5
-			Exp4Connection.clients.pop(group)
-			for uid in Exp4Connection.members[group]:
-				Exp4Connection.members[group][uid]['online'] = False
-			tornado.ioloop.IOLoop.instance().remove_timeout(Exp4Connection.timers[group] )
-			Exp4Connection.timers[group] = None
+			yield db.exp4g.remove({"group":{"$regex":self.online_data[userId]["group"]+'*'}})
+			yield db.exp4u.remove({"group":{"$regex":self.online_data[userId]["group"]+'*'}})
+			if group+'-test' in Exp4Connection.clients:
+				Exp4Connection.clients.pop(group+'-test')
+				for uid in Exp4Connection.members[group+'-test']:
+					Exp4Connection.members[group+'-test'][uid]['online'] = False
+					tornado.ioloop.IOLoop.instance().remove_timeout(Exp4Connection.timers[group+'test'] )
+					Exp4Connection.timers[group+'test'] = None
+			if group+'-submit' in Exp4Connection.clients:
+				Exp4Connection.clients.pop(group+'-submit')
+				for uid in Exp4Connection.members[group+'-submit']:
+					Exp4Connection.members[group+'-submit'][uid]['online'] = False
+					tornado.ioloop.IOLoop.instance().remove_timeout(Exp4Connection.timers[group+'test'] )
+					Exp4Connection.timers[group+'submit'] = None
 		except:
 			None
 		self.write('<script>alert("已成功清除所有实验信息");window.location="/main"</script>')
@@ -869,10 +874,26 @@ class  SetProjectRecord(BaseHandler):
 		# 老鼠实验
 
 		# 系统实验
-		sys_record = yield db.exp4g.find_one({"group":self.online_data[userId]["group"]})
-		sys_record["numPlayers"] = 1
-		yield db.exp4g.save(sys_record)
-
+		sys_record = yield db.exp4g.find_one({"group":self.online_data[userId]["group"]+"-test"})
+		if sys_record:
+			sys_record["numPlayers"] = 1
+			yield db.exp4g.save(sys_record)
+		else:
+			sys_record = {"group":self.online_data[userId]["group"]+"-test",
+				"days":0,
+				"numPlayers":1			
+				}
+			yield db.exp4g.save(sys_record)
+		sys_record = yield db.exp4g.find_one({"group":self.online_data[userId]["group"]+"-submit"})
+		if sys_record:
+			sys_record["numPlayers"] = 1
+			yield db.exp4g.save(sys_record)
+		else:
+			sys_record = {"group":self.online_data[userId]["group"]+"-submit",
+				"days":0,
+				"numPlayers":1			
+				}
+			yield db.exp4g.save(sys_record)
 		self.write('<script>alert("已成功设置所有实验信息");window.location="/main"</script>')
 		self.finish()
 		return
@@ -1336,11 +1357,16 @@ def createUserlist(userlist, mapper):
 		if message:
 			uid = message['userId']
 			group = message['group']
-			if group not in userlist:
-				userlist[group] = {}
-			userlist[group][uid] = {}
-			userlist[group][uid]['online'] = False
-			userlist[group][uid]['name'] = message['name']
+			if group+'-test' not in userlist:
+				userlist[group+'-test'] = {}
+			if group+'-submit' not in userlist:
+				userlist[group+'-submit'] = {}
+			userlist[group+'-test'][uid] = {}
+			userlist[group+'-submit'][uid] = {}
+			userlist[group+'-test'][uid]['online'] = False
+			userlist[group+'-submit'][uid]['online'] = False
+			userlist[group+'-test'][uid]['name'] = message['name']
+			userlist[group+'-submit'][uid]['name'] = message['name']
 	for group in userlist:
 		i = 0
 		for uid in userlist[group]:
@@ -1368,7 +1394,7 @@ class Exp4Connection(SockJSConnection):
 	numPlayers = {}
 	numTraitor = 1
 	# 一天的实际时间
-	interval = 60
+	interval = 1200
 
 	def send_error(self, message, error_type=None):
 		"""
@@ -1430,31 +1456,40 @@ class Exp4Connection(SockJSConnection):
 		except ValueError:
 			self.send_error("Invalid JSON")
 			return
-
 		if message['data_type'] == 'login' and not self.authenticated:
 			try:
 				userId = message['data']['userId']
 				group = BaseHandler.online_data[userId]["group"]
+				submitMode = message['data']['submitMode']
+				if submitMode is True:
+					group = group + "-submit"
+				else:
+					group = group + "-test"
 			except:
 				self.send_error("Invalid user")
 				return
 			self.group = group
 			self.userId = userId
+			self.submitMode = submitMode
+			self.end = False
 			userRecord = sdb.exp4u.find_one({"group":group,"userId":userId})
 			groupRecord = sdb.exp4g.find_one({"group":group})
 			if not groupRecord:
 				groupRecord = {"group":group,
 					"days":0,
-					"numPlayers":5
-				}
+					"numPlayers":5				}
 			if not userRecord:
 				userRecord = {"group":group,
 					"userId":userId,
 					'traitor': None,
+					'traitorTimes': 0,
 					'messages':0,
 					'stage':0,
 					'cond':None,
-					'resource':{'troops':5000,'supply':5000,'weahter':0}
+					'ready':None,
+					'resource':{'troops':5000,'supply':5000,'weahter':0},
+					'score':80,
+					'scores':{}
 				}
 			if group not in self.clients:
 				self.clients[group] = {}
@@ -1466,13 +1501,14 @@ class Exp4Connection(SockJSConnection):
 				userRecord['traitor'] = isTraitor
 			self.clients[group][userId]['sock'] = self
 			self.clients[group][userId]['attack'] = None
+			self.clients[group][userId]['messages'] = 0
 			self.authenticated = True
 			self.members[group][userId]['online'] = True
 			self.broadcast_userlist(True)
 			self.send_message({'notify': 'success', 'isTraitor':userRecord['traitor'], 
 				'id':self.maps[group][userId],'messages':userRecord['messages'],
 				'stage':userRecord['stage'],'cond':userRecord['cond'],
-				'resource':userRecord['resource']}, 'auth'
+				'resource':userRecord['resource'],'ready':userRecord['ready']}, 'auth'
 
 				)
 			logger.info("Exp4:Client authenticated for %s" % userId)
@@ -1492,30 +1528,52 @@ class Exp4Connection(SockJSConnection):
 			# example: GM.sock.send(GM.getMsgJson(["2014n1000706041"], 'hello',"message"))
 			self.broadcast_message(self.maps[self.group][self.userId], message['to'],message['data'],"message")
 
-		elif message['data_type'] == 'report' and self.authenticated and self.timers[self.group] != None:
+		elif message['data_type'] == 'report' and self.authenticated and self.timers[self.group] != None and self.end ==False:
 			# Report the current ready status
 			# example: GM.sock.send(GM.getMsgJson(1, {ready:true},"report"))
-			self.clients[self.group][self.userId]['ready'] = message['data']['ready']
 			userRecord = sdb.exp4u.find_one({"group":self.group,"userId":self.userId})
+			userRecord['ready'] = message['data']['ready']
 			userRecord['resource']['troops'] = message['data']['troops']
 			userRecord['resource']['weahter'] = message['data']['weahter']
 			userRecord['resource']['supply'] = message['data']['supply']
 			sdb.exp4u.save(userRecord)
 
-		elif message['data_type'] == 'attack' and self.authenticated  and self.timers[self.group] != None:
+		elif message['data_type'] == 'attack' and self.authenticated  and self.timers[self.group] != None and self.end ==False:
 			if self.clients[self.group][self.userId]['attack'] == None:
-				self.clients[self.group][self.userId]['attack'] = message['data']
-				self.broadcast_message(self.maps[self.group][self.userId],[], message['data'],"attack")
+				self.clients[self.group][self.userId]['attack'] = message['data']['decide']
+				self.clients[self.group][self.userId]['messages'] = message['data']['messages']
+				self.broadcast_message(-1,[], message['data'],"attack")
+				groupRecord = sdb.exp4g.find_one({"group":self.group})
+				day = str(groupRecord["days"])
 				iswin = self.isWin()
 				if iswin == True:
 					# Game Win
 					self.broadcast_message("",[],{'event':'gameresult','win':True},'notify')
+					for id in self.clients[self.group]:
+						userRecord = sdb.exp4u.find_one({"group":self.group,"userId":id})
+						if userRecord["traitor"] == False:
+							userRecord["score"] = userRecord["score"] + 10
+							userRecord["scores"][day] = 10
+						else:
+							userRecord["score"] = userRecord["score"] - 40
+							userRecord["scores"][day] = -40
+						sdb.exp4u.save(userRecord)
 					self.resetTimer()
 					self.newDay()
 
 				elif iswin == False:
 					# Game Lose
 					self.broadcast_message("",[],{'event':'gameresult','win':False},'notify')
+					for id in self.clients[self.group]:
+						userRecord = sdb.exp4u.find_one({"group":self.group,"userId":id})
+						if userRecord["traitor"] == False:
+							userRecord["score"] = userRecord["score"] - 10
+							userRecord["scores"][day] = -10
+						else:
+							userRecord["score"] = userRecord["score"] + 40
+							userRecord["scores"][day] = 10
+						sdb.exp4u.save(userRecord)
+
 					self.resetTimer()
 					self.newDay()
 
@@ -1523,7 +1581,7 @@ class Exp4Connection(SockJSConnection):
 					# Game continue
 					None
 
-		elif message['data_type'] == 'register' and self.authenticated  and self.timers[self.group] != None:
+		elif message['data_type'] == 'register' and self.authenticated  and self.timers[self.group] != None and self.end ==False:
 			#self.clients[self.group][self.userId]['name'] = message['data']['generalname']
 			None
 		else:
@@ -1536,12 +1594,18 @@ class Exp4Connection(SockJSConnection):
 		Remove client from pool. Unlike Socket.IO connections are not
 		re-used on e.g. browser refresh.
 		"""
-		self.members[self.group][self.userId]['online'] = False
-		self.broadcast_userlist(False)
-		tornado.ioloop.IOLoop.instance().remove_timeout(self.timers[self.group] )
-		self.timers[self.group] = None
-		self.clients[self.group][self.userId]['sock'] = None
-		return super(Connection, self).on_close()
+		try:
+			if self.group in self.members:
+				self.members[self.group][self.userId]['online'] = False
+			self.broadcast_userlist(False)
+			if self.group in self.timers and self.timers[self.group] != None:
+				tornado.ioloop.IOLoop.instance().remove_timeout(self.timers[self.group] )
+				self.timers[self.group] = None
+			if self.group in self.clients:
+				self.clients[self.group][self.userId]['sock'] = None
+			return super(Exp4Connection, self).on_close()
+		except:
+			return
 
 	def getDest(self, to):
 		dest = set()
@@ -1568,15 +1632,18 @@ class Exp4Connection(SockJSConnection):
 				if userRecord['stage'] !=1:
 					allStage2 = False
 			if allStage2 == True:
+				if self.isEnd():
+					return
 				self.broadcast_message("",[],{'event':'start','interval':self.interval,'day':groupRecord["days"]},'notify')
 				self.resetTimer()
 				logger.info("Exp4: %s 's players are in position. Now game start." % self.group)
 
+
 	def isWin(self):
-		groupRecord = sdb.exp4u.find_one({"group":self.group})
+		groupRecord = sdb.exp4g.find_one({"group":self.group})
 		attack = set()
 		not_attack =set()
-		loyals =  groupRecord["numPlayers"][self.group] - self.numTraitor
+		loyals =  groupRecord["numPlayers"] - self.numTraitor
 		loyal = set()
 		for id in self.clients[self.group]:
 			#print 'a,', self.clients[self.group][id]['traitor'],  self.clients[self.group][id]['attack'] , id
@@ -1601,7 +1668,8 @@ class Exp4Connection(SockJSConnection):
 
 		R = 0
 		for id in loyal:
-			if self.clients[self.group][id]['ready']:
+			userRecord = sdb.exp4u.find_one({"group":self.group,"userId":id})
+			if userRecord['ready']:
 				R += 1
 		# 有效性：当Ｒ大于N时做出决定攻击，R<N情况拒绝攻击, R=N 随便
 		N = loyals - R
@@ -1621,23 +1689,41 @@ class Exp4Connection(SockJSConnection):
 			self.sync
 			)
 
-	def newDay(self):
+	def chooseTraiter(self):
 		groupRecord = sdb.exp4g.find_one({"group":self.group})
-		traitor= random.randint(0,groupRecord["numPlayers"]-1)
+		TimesList = {} 
+		for userId in self.clients[self.group]:
+			userRecord = sdb.exp4u.find_one({"group":self.group,"userId":userId})
+			TimesList[userId] = userRecord["traitorTimes"]
+		minTimes =  min(TimesList.values())
+		minTimesUserlist = []
+		for userId in TimesList:
+			if TimesList[userId] == minTimes:
+				minTimesUserlist.append(userId)
+		#print minTimesUserlist,TimesList
+		traitor = random.randint(0,len(minTimesUserlist)-1)
+		return minTimesUserlist[traitor]
+
+	def newDay(self):
+		if self.isEnd():
+			return
+		groupRecord = sdb.exp4g.find_one({"group":self.group})
+		#traitor= random.randint(0,groupRecord["numPlayers"]-1)
+		traitor = self.chooseTraiter()
 		groupRecord["days"] += 1
 		sdb.exp4g.save(groupRecord)
-		n = 0
-		for userId in self.clients[self.group] :
+		for userId in self.clients[self.group]:
 			userRecord = sdb.exp4u.find_one({"group":self.group,"userId":userId})
 			if self.clients[self.group][userId] and self.clients[self.group][userId]['sock']!=None:
 				self.clients[self.group][userId]['attack'] = None
-				if n!= traitor:
+				self.clients[self.group][userId]['messages'] = 0
+				if userId!= traitor:
 					userRecord['traitor'] = False
 				else:
 					userRecord['traitor'] = True
+					userRecord['traitorTimes'] += 1
 				self.clients[self.group][userId]['sock'].send_message({
 					'event':'sync', 'day':groupRecord["days"],'isTraitor':userRecord['traitor']}, "notify")
-				n += 1
 				sdb.exp4u.save(userRecord)
 
 	def sync(self):
@@ -1645,8 +1731,22 @@ class Exp4Connection(SockJSConnection):
 			timedelta(seconds=self.interval),
 			self.sync
 			)
+		for id in self.clients[self.group]:
+			userRecord = sdb.exp4u.find_one({"group":self.group,"userId":id})
+			userRecord["score"] = userRecord["score"] - 20
+			sdb.exp4u.save(userRecord)
 		self.newDay()
 		#self.broadcast_message("",[],{'event':'sync', 'day':self.days[self.group]},'notify')
+	def isEnd(self):
+		groupRecord = sdb.exp4g.find_one({"group":self.group})
+		if groupRecord["days"]>=4 and self.submitMode == True:
+			self.end = True
+			self.broadcast_message("",[],{'event':'end','scores':None},'notify')
+			return True
+		else:
+			self.end = False
+			return False
+
 
 class LoginHandler(BaseHandler):
 	def get(self):
@@ -1657,7 +1757,6 @@ class LoginHandler(BaseHandler):
 		#self.redirect("/admin")
 		#return
 		# delete when releasing
-
 		userId = self.get_secure_cookie("userId")
 		if userId:
 			if self.online_data and userId in self.online_data.keys():
