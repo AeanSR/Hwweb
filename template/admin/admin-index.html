@@ -1,0 +1,32 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <title>计算机导论 管理系统</title>
+{% include "../reference.html" %}
+</head>
+
+<body>
+<div id="container" data-role="page" data-theme="b">
+{% include "./header-admin.html" %}
+<div role="main" class="ui-content">
+
+<h3>最新通知</h3>
+{% for notice in notices %}
+<div class="notice_content">
+	<div class="brief">
+	<span style="color:{{notice['importance']}}"> [{% raw notice['description'] %}] </span><span>通知人&nbsp;{% raw notice['creator'] %}</span>
+	</div>
+	<div class="detail">{% raw notice['content'] %}</div>
+
+</div>
+{% end %}
+
+<p>&nbsp;</p>
+</div>
+{% include "../footer.html" %}
+</div>
+</body>
+
+</html>
+

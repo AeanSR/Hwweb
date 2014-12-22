@@ -1,0 +1,14 @@
+<p><a href="/admin/notice/list" data-ajax="false">&lt;&lt;返回通知管理</a></p>
+<form method="post" action="/admin/notice/publish">
+	<p>标题和内容可用&lt;b&gt; &lt;a href="#" data-ajax="false"&gt; link&lt;a&gt;标签，创建人格式为"助教(lichundian@gmail.com)"</p>
+	<lable>创建人</label><input type="text" name="creator" /></br>
+	<lable>通知标题</label><textarea rows="5" cols="20"name="description" /></textarea></br>
+	<lable>通知内容</label><textarea rows="5" cols="40"name="content" /></textarea></br>
+	<lable>标题颜色</label><select  name="color" >
+		<option value="red">red</option>
+		<option value="blue">blue</option>
+		<option value="black">black</option>
+		<option value="green">green</option>
+	</select></br>
+	<input type="submit" value="发布" />
+</form>

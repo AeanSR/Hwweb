@@ -6,7 +6,7 @@
 }
 
 #quiz_menu a, #project_menu a{
-	font-size: 0.6em;
+	font-size: 0.8em;
 }
 
 #nav-panel .legend>a{
@@ -60,6 +60,16 @@ div.ques_content {
 	margin:0.5em 0 0.5em 0;
 }
 
+
+table.ques_desc, table.ques_desc td {
+	border: 1px solid black;
+}
+
+table.ques_desc_dashed {
+	border:1px dashed black;
+
+}
+
 /*notice page*/
 .notice_content, .brief, .detail {
 	margin-top: 30px;
@@ -77,17 +87,28 @@ div.ques_content {
 
 /* upload and download*/
 div.action {
-	width:700px;
+	width:100%;
 }
 
-table.ques_desc, table.ques_desc td {
-	border: 1px solid black;
-}
-
-table.ques_desc_dashed {
-	border:1px dashed black;
-}
 
 .note {
 	margin: 2em  0 2em  0;
+}
+
+table.uploadTable, table.schedule{
+	margin-top: 2em;
+	width:100%;
+	border-top: 1px solid #ddd;
+	border-left: 1px solid #ddd;
+}
+table.uploadTable td ,table.schedule td{
+	border-bottom: 1px solid #ddd;
+	border-right: 1px solid #ddd;
+}
+table.schedule tr td{
+	text-align:center;
+}
+
+table.schedule tr:hover{
+	background-color: yellow;
 }

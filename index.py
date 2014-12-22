@@ -27,7 +27,7 @@ from HwWebUtil import QuesStatus
 from HwWebUtil import QuizFlag
 from HwWebUtil import QuizType
 from HwWebUtil import ProjectStatus
-from HwWebUtil import TopoStatus 
+from HwWebUtil import TopoStatus
 from HwWebUtil import UploadType
 
 # to do, filter the text input
@@ -171,7 +171,7 @@ class MainHandler(BaseHandler):
     	def get(self):
     		# self.checkQuizAndUpdateStatus()
 
-    		nt_cursor = db.notices.find().sort("id", pymongo.DESCENDING)
+    		nt_cursor = db.notices.find().sort("time", pymongo.DESCENDING)
     		notices = yield nt_cursor.to_list(None)
     		quiz_cursor = db.quizs.find().sort("quiz_id", pymongo.ASCENDING)
     		quizs = yield quiz_cursor.to_list(None)
@@ -335,7 +335,13 @@ class ProjectMainHandler(BaseHandler):
     	def get(self):
     		pro_cursor = db.projects.find().sort("pro_id", pymongo.ASCENDING)
     		projects = yield pro_cursor.to_list(None)
-	 	self.render("./template/project.html", projects = projects, info = self.online_data[self.get_current_user()], main=1, flag=0)
+    		scheduleTable= copy.deepcopy(HwWebUtil.getSchedule())
+    		for exp_date in scheduleTable["date"]:
+    			for i in range(0, len(exp_date)) :
+    				exp_date[i] = exp_date[i].strftime("%Y-%m-%d %H:%M:%S")
+
+    		scheduleTable = json.dumps(scheduleTable)
+	 	self.render("./template/project-index.html", projects = projects, info = self.online_data[self.get_current_user()], scheduleTable=scheduleTable)
 	 	return
 
 class ProjectHandler(BaseHandler):
@@ -364,7 +370,7 @@ class ProjectHandler(BaseHandler):
     			flag = ProjectStatus["END"]
     		else:
     			flag = ProjectStatus["PUBLISH"]
-	 	self.render("./template/project.html", projects = projects,a_pro=a_pro, info = info, flag=flag, main=0, p_up_record=presentation_up_record, r_up_record=report_up_record)
+	 	self.render("./template/project.html", projects = projects,a_pro=a_pro, info = info, flag=flag,  p_up_record=presentation_up_record, r_up_record=report_up_record)
 	 	return
 
 class ProjectUploadHandler(BaseHandler):
@@ -387,6 +393,8 @@ class ProjectUploadHandler(BaseHandler):
     		info = self.online_data[self.get_current_user()]
     		a_pro = yield db.projects.find_one({"pro_id":pro_id,"status":ProjectStatus["PUBLISH"]})
 
+    		logger.info("user: %s of gruop %s try to upload file for exp %d in type %d" %(self.get_current_user(), info["group"], pro_id, type_id))
+
     		# 不存在此project或project已经截止
     		if not a_pro or not datetime.now() < datetime.strptime(a_pro['deadline'], '%Y-%m-%d %H:%M:%S')  :
     			self.redirect("/project")
@@ -404,10 +412,10 @@ class ProjectUploadHandler(BaseHandler):
 		arg_name = None
 		if type_id == UploadType["PRESENTATION"]:
 			arg_name = "presentation"
-			filename = str(info["yearOfEntry"]) +"-"+ info["group"] + "-presentation.pdf"
+			filename = str(info["yearOfEntry"]) +"-" + str(pro_id) + "-" + info["group"] + "-presentation.pdf"
 		else:
 			arg_name = "report"
-			filename =  str(info["yearOfEntry"])  +"-"+ info["group"] + "-report.pdf"
+			filename =  str(info["yearOfEntry"])  +"-" + str(pro_id) + "-"+ info["group"] + "-report.pdf"
 
 		if self.request.files.get(arg_name, None):
 
@@ -425,7 +433,7 @@ class ProjectUploadHandler(BaseHandler):
 				self.finish()
 				return
 			else :
-				
+				logger.info("user: %s of gruop %s succeed to upload file for exp %d in type %d" %(self.get_current_user(), info["group"], pro_id, type_id))
 				filepath=os.path.join(upload_path,filename)
 				if up_record and os.path.exists(filepath):
 					os.remove(filepath)
@@ -465,7 +473,7 @@ class ProjectDownloadHandler(BaseHandler):
     			print "The argument does not contain numbers\n", e
     			self.render("./template/404.template")
     			return
-    		info = self.online_data[self.get_current_user()]	
+    		info = self.online_data[self.get_current_user()]
     		up_record = yield  db.user_uploads.find_one({"pro_id": pro_id, "group": info["group"], "type":type_id, "year":info["yearOfEntry"]})
     		if not up_record:
     			self.render("./template/404.template")
@@ -473,10 +481,14 @@ class ProjectDownloadHandler(BaseHandler):
     		else:
     			upload_path=os.path.join(os.path.dirname(__file__),'report_files',str(pro_id))
     			if type_id == UploadType["PRESENTATION"]:
-				filename = str(info["yearOfEntry"]) +"-" + info["group"] + "-presentation." + up_record["file_suffix"]
+				filename = str(info["yearOfEntry"]) +"-" + str(pro_id) + "-" + info["group"] + "-presentation." + up_record["file_suffix"]
 			else:
-				filename =  str(info["yearOfEntry"]) +"-" + info["group"] + "-report." + up_record["file_suffix"]
+				filename =  str(info["yearOfEntry"]) +"-" + str(pro_id) + "-" + info["group"] + "-report." + up_record["file_suffix"]
     			filepath=os.path.join(upload_path,filename)
+    			if not os.path.exists(filepath):
+    				self.write('<script>alert("不存在此文件，请重新上传");window.history.back()</script>')
+    				self.finish()
+    				return
     			with open(filepath, "rb") as f:
     				self.set_header('Content-Disposition', 'attachment;filename='+filename)
     				self.set_header('Content-Type','application/pdf')
@@ -496,11 +508,11 @@ class AdminHandler(BaseHandler):
 			return
 
 		# self.checkQuizAndUpdateStatus()
-    		nt_cursor = db.notices.find().sort("id", pymongo.DESCENDING)
+    		nt_cursor = db.notices.find().sort("time", pymongo.DESCENDING)
     		notices = yield nt_cursor.to_list(None)
     		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1, "content":1}).sort("quiz_id", pymongo.ASCENDING)
     		quizs_index = yield quiz_cursor.to_list(None)
-	 	self.render("./template/admin.template", info = self.online_data[self.get_current_admin()],notices = notices, quizs_index=quizs_index)
+	 	self.render("./template/admin/admin-index.html", info = self.online_data[self.get_current_admin()],notices = notices, quizs_index=quizs_index)
 	 	return
 
 class TransciptHandler(BaseHandler):
@@ -652,9 +664,9 @@ class ReviewHandler(BaseHandler):
     		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1}).sort("quiz_id", pymongo.ASCENDING)
     		quizs_index = yield quiz_cursor.to_list(None)
     		if not a_quiz or a_quiz["status"] == QuizStatus["UNPUBLISH"]:
-    			nt_cursor = db.notices.find().sort("id", pymongo.DESCENDING)
+    			nt_cursor = db.notices.find().sort("time", pymongo.DESCENDING)
     			notices = yield nt_cursor.to_list(None)
-    			self.render("./template/admin.template", info = self.online_data[self.get_current_admin()], notices = notices, quizs_index=quizs_index)
+    			self.render("./template/admin/admin-index.html", info = self.online_data[self.get_current_admin()], notices = notices, quizs_index=quizs_index)
     			return
     		# can't be reviewd because it's before the deadline, so just list the questions.
     		elif datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
@@ -1771,7 +1783,7 @@ class LoginHandler(BaseHandler):
 				return
 			else:
 				self.clear_cookie("adminId", domain=domain)
-		self.render("./template/login.template", error="")
+		self.render("./template/login.html", error="")
 		return
 
 	@tornado.web.asynchronous
@@ -1811,11 +1823,11 @@ class LoginHandler(BaseHandler):
 			return
 		else:
 			logger.warn("user: %s failed to log in" %userId)
-			self.render("./template/login.template", error="用户名或密码错误")
+			self.render("./template/login.html", error="用户名或密码错误")
 		return
 
 class PasswordHandler(BaseHandler):
-	@tornado.web.authenticated
+
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
@@ -1827,31 +1839,29 @@ class PasswordHandler(BaseHandler):
 		new_pass_again = self.get_argument("new_pass_again", None)
 		a_user = yield db.users.find_one({"userId":userId, "password":hashlib.md5(origin_pass + md5Salt).hexdigest()})
 		a_admin = yield db.admin.find_one({"userId":adminId, "password":hashlib.md5(origin_pass + md5Salt).hexdigest()})
-		if userId:
-			if a_user and new_pass==new_pass_again and re.match(regEx, new_pass):
-				if userId and a_user:
-					logger.info("student: %s is modifying password to %s" %(userId, new_pass))
-					a_user["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
-					yield db.users.save(a_user)
-					self.clear_current_user()
-					self.clear_current_admin()
-					self.write('<script>alert("修改成功，请重新登录系统");window.location="/login"</script>')
-					self.finish()
-					return
-				elif adminId and a_admin:
-					logger.info("administrator: %s is modifying password to %s" %(adminId, new_pass))
-					a_admin["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
-					yield db.admin.save(a_admin)
-					self.clear_current_user()
-					self.clear_current_admin()
-					self.write('<script>alert("修改成功，请重新登录系统");window.location="/login"</script>')
-					self.finish()
-					return
-			else:
-				logger.info("student: %s failed to modify password to %s" %(userId, new_pass))
-				self.write('<script>alert("原密码有误或新密码不符合输入规则，修改失败");window.history.back()</script>')
+		if userId and a_user and new_pass==new_pass_again and re.match(regEx, new_pass):
+				logger.info("student: %s is modifying password to %s" %(userId, new_pass))
+				a_user["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
+				yield db.users.save(a_user)
+				self.clear_current_user()
+				self.clear_current_admin()
+				self.write('<script>alert("修改成功，请重新登录系统");window.location="/login"</script>')
 				self.finish()
 				return
+		elif adminId and a_admin and new_pass==new_pass_again and re.match(regEx, new_pass):
+			logger.info("administrator: %s is modifying password to %s" %(adminId, new_pass))
+			a_admin["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
+			yield db.admin.save(a_admin)
+			self.clear_current_user()
+			self.clear_current_admin()
+			self.write('<script>alert("修改成功，请重新登录系统");window.location="/login"</script>')
+			self.finish()
+			return
+		else:
+			logger.info("student: %s failed to modify password to %s" %(userId, new_pass))
+			self.write('<script>alert("原密码有误或新密码不符合输入规则，修改失败");window.history.back()</script>')
+			self.finish()
+			return
 
 
 
@@ -1867,6 +1877,113 @@ class UnfoundHandler(BaseHandler):
 		logger.warn("user: %s is try to visit %s" %(self.get_current_user(), self.request.uri))
 	 	self.render("./template/404.template")
 	 	return
+
+class NoticeManagerHandler(BaseHandler):
+
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+    	def get(self):
+    		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+
+    		nt_cursor = db.notices.find().sort("time", pymongo.DESCENDING)
+    		notices = yield nt_cursor.to_list(None)
+    		quiz_cursor = db.quizs.find({},{"status":1, "quiz_id":1, "releaseTime":1, "deadline":1, "content":1}).sort("quiz_id", pymongo.ASCENDING)
+    		quizs_index = yield quiz_cursor.to_list(None)
+	 	self.render("./template/admin/notice-manager.html", info = self.online_data[self.get_current_admin()],notices = notices, quizs_index=quizs_index)
+	 	return
+
+
+class DeleteNotice(BaseHandler):
+
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def get(self, notice_id):
+		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+		notice_id = int(notice_id)
+		logger.info("administrator: %s is deleting a notice(id is %d)" %(self.get_current_admin(), notice_id))
+		yield db.notices.remove({"id":notice_id})
+		self.redirect("/admin/notice/list")
+		return
+
+class PublishNotice(BaseHandler):
+
+	@tornado.web.asynchronous
+	def get(self):
+		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+		self.render("./template/admin/publish-notice.html")
+		return
+
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def post(self):
+		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+		description = self.get_argument("description", None)
+		creator = self.get_argument("creator", None)
+		content = self.get_argument("content", None)
+		color = self.get_argument("color", None)
+		if description and creator and content and color:
+			nt_cursor = db.notices.find({},{"id":1}).sort("time", pymongo.DESCENDING)
+    			notices = yield nt_cursor.to_list(None)
+    			no_id = 1
+    			if notices:
+    				no_id = notices[0]["id"]+1
+			logger.info("administrator: %s is publishing a notice, description is %s" %(self.get_current_admin(), description))
+			db.notices.save({"id":no_id, "description":description, "creator":creator, "content":content, "importance":color, "time":datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+			self.write('<script>alert("发布成功");window.location="/admin/notice/list"</script>')
+			self.finish()
+			return
+		else:
+			self.write('<script>alert("所有字段都不能为空，发布失败");window.history.back()</script>')
+			self.finish()
+			return
+
+
+class ResetPassword(BaseHandler):
+
+	@tornado.web.asynchronous
+	def get(self):
+		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+		self.write("<a href='/admin'>主页</a><br/><form action='/admin/resetPassword' method='post'><label>学号</label><input type='text' name='userId'/></br><label>密码</label> <input type='text' name='password'/> <input type='submit' value='重置密码'/> </form>")
+		self.finish()
+		return
+
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def post(self):
+		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+		userId = self.get_argument("userId", None)
+		new_pass = self.get_argument("password", None)
+		if userId and new_pass:
+			userId = userId.strip()
+			new_pass = new_pass.strip()
+			a_user = yield db.users.find_one({"userId":userId.lower()})
+			if a_user:
+				logger.info("administrator: %s is reseting %s's password to %s" %(self.get_current_admin(), userId.lower(), new_pass))
+				a_user["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
+				yield db.users.save(a_user)
+				self.write('<script>alert("修改成功");window.location="/admin"</script>')
+				self.finish()
+				return
+			else:
+				self.write('<script>alert("此学生不存在，重置失败");window.history.back()</script>')
+				self.finish()
+				return
+
+		self.write('<script>alert("参数错误，重置失败");window.history.back()</script>')
+		self.finish()
+		return
 
 
 class ExitHandler(BaseHandler):
@@ -1974,7 +2091,7 @@ def involeQuartzTasks():
 		       	)
 
 settings = {
-	"debug": True,
+	#"debug": True,
 	"default_handler_class": UnfoundHandler,
 	"static_path": os.path.join(os.path.dirname(__file__), "static"),
 	"cookie_secret": "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
@@ -1993,6 +2110,10 @@ application = tornado.web.Application([
     (r"/studentlist", StudentListHandler),
     (r"/studentlist/transcipt/([0-9]+)", TransciptHandler),
     (r"/admin", AdminHandler),
+    (r"/admin/resetPassword", ResetPassword),
+    (r"/admin/notice/publish", PublishNotice),
+    (r"/admin/notice/delete/([0-9]+)", DeleteNotice),
+    (r"/admin/notice/list", NoticeManagerHandler),
     (r"/review/([0-9]+)", ReviewHandler),
     (r"/project", ProjectMainHandler),
     (r"/project/([0-9]+)/upload/([0-9]+)", ProjectUploadHandler),

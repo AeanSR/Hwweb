@@ -2,6 +2,7 @@
 # coding=utf-8
 
 from datetime import datetime
+from datetime import timedelta
 import os
 import tornado.ioloop
 import tornado.web
@@ -43,10 +44,8 @@ class HwWebUtil:
 		else:
 			return True
 
-
 	@staticmethod
-	def isValid(classNo, projectNo):
-		classNo = int(classNo)
+	def getSchedule():
 		scheduleTable = HwWebUtil.scheduleTable
 		if not scheduleTable:
 			schedleFile =os.path.join(os.path.dirname(__file__),'conf','schedule.csv')
@@ -54,15 +53,24 @@ class HwWebUtil:
 				heads = f.readline().split(",")
 				scheduleTable["date"] = []
 				for dateStr in heads[1:]:
-					startDate = dateStr.split("-")[0].strip()
-					endDate = dateStr.split("-")[1].strip()
-					scheduleTable["date"].append([datetime.strptime(startDate, "%Y/%m/%d"), datetime.strptime(endDate, "%Y/%m/%d")])
+					startDate = datetime.strptime(dateStr.split("-")[0].strip(), "%Y/%m/%d/%H/%M/%S") 
+					endDate = datetime.strptime(dateStr.split("-")[1].strip(), "%Y/%m/%d/%H/%M/%S") 
+					presentationDeadline = endDate.replace(hour=23)
+					reportDeadline = presentationDeadline + timedelta(days=6)
+					scheduleTable["date"].append([startDate, endDate, presentationDeadline, reportDeadline])
 				scheduleTable["table"] = {}
 				line = f.readline().strip()
 	      			while line:
 	      				nos = line.split(",")
 	      				scheduleTable["table"][int(nos[0])] = nos[1:]
 	      				line = f.readline().strip()
+	      	return scheduleTable
+
+	@staticmethod
+	def isValid(classNo, projectNo):
+		classNo = int(classNo)
+		scheduleTable = HwWebUtil.getSchedule()
+		
 	      	# 测试帐号都是0班级
 	      	if classNo == 0:
 	      		return True
