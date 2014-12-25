@@ -1498,7 +1498,11 @@ class Exp4Connection(SockJSConnection):
 					'traitorTimes': 0,
 					'messages':0,
 					'stage':0,
-					'cond':None,
+					'cond':{
+						"weahter":[ "==", "0" ],
+						"troops":[ "<=", 4000 ],
+						"supply":[ "<=", 4000 ] 
+						},
 					'ready':None,
 					'resource':{'troops':5000,'supply':5000,'weahter':0},
 					'score':80,
