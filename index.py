@@ -1489,7 +1489,8 @@ class Exp4Connection(SockJSConnection):
 			if not groupRecord:
 				groupRecord = {"group":group,
 					"days":0,
-					"numPlayers":5				}
+					"numPlayers":5			
+					}
 			if not userRecord:
 				userRecord = {"group":group,
 					"userId":userId,
@@ -1517,11 +1518,11 @@ class Exp4Connection(SockJSConnection):
 			self.authenticated = True
 			self.members[group][userId]['online'] = True
 			self.broadcast_userlist(True)
+
 			self.send_message({'notify': 'success', 'isTraitor':userRecord['traitor'], 
 				'id':self.maps[group][userId],'messages':userRecord['messages'],
 				'stage':userRecord['stage'],'cond':userRecord['cond'],
-				'resource':userRecord['resource'],'ready':userRecord['ready']}, 'auth'
-
+				'resource':userRecord['resource'],'ready':userRecord['ready'],'test':self.isTestUser(userId)}, 'auth'
 				)
 			logger.info("Exp4:Client authenticated for %s" % userId)
 			sdb.exp4u.save(userRecord)
@@ -1531,10 +1532,22 @@ class Exp4Connection(SockJSConnection):
 		elif message['data_type'] == 'nextstage' and self.authenticated:
 			userRecord = sdb.exp4u.find_one({"group":self.group,"userId":self.userId})
 			if userRecord['stage'] == 0:
-				userRecord['cond'] = message['data']['cond']
-				userRecord['stage'] += 1
-				sdb.exp4u.save(userRecord)
-				self.isStart()
+				if self.isTestUser(self.userId):
+					userRecord['cond'] = {
+						"weahter":[ "==", "0" ],
+						"troops":[ "<=", 4000 ],
+						"supply":[ "<=", 4000 ] 
+						}
+					userRecord['stage'] += 1
+					sdb.exp4u.save(userRecord)
+					self.isStart()
+				else:
+					if message['data']['cond']=="":
+						return
+					userRecord['cond'] = message['data']['cond']
+					userRecord['stage'] += 1
+					sdb.exp4u.save(userRecord)
+					self.isStart()
 
 		elif message['data_type'] == 'message' and self.authenticated and self.timers[self.group] != None:
 			# example: GM.sock.send(GM.getMsgJson(["2014n1000706041"], 'hello',"message"))
@@ -1758,7 +1771,12 @@ class Exp4Connection(SockJSConnection):
 		else:
 			self.end = False
 			return False
-
+	def isTestUser(self, userId):
+		regexEx = r'^ucas'
+		if re.match(regexEx, userId.lower()):
+			return True
+		else:
+			return False
 
 class LoginHandler(BaseHandler):
 	def get(self):
