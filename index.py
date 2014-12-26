@@ -824,9 +824,12 @@ class ClearProjectRecord(BaseHandler):
 		yield db.games.remove({"userId":userId})
 		yield db.games.remove({"group":group})
 		# 系统实验
+		group = self.online_data[userId]["group"]
 		try:
-			yield db.exp4g.remove({"group":{"$regex":self.online_data[userId]["group"]+'*'}})
-			yield db.exp4u.remove({"group":{"$regex":self.online_data[userId]["group"]+'*'}})
+			yield db.exp4g.remove({"group":group+'-submit'})
+			yield db.exp4g.remove({"group":group+'-test'})
+			yield db.exp4u.remove({"group":group+'-test'})
+			yield db.exp4u.remove({"group":group+'-submit'})
 			if group+'-test' in Exp4Connection.clients:
 				Exp4Connection.clients.pop(group+'-test')
 				for uid in Exp4Connection.members[group+'-test']:
