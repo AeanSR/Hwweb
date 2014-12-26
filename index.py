@@ -840,7 +840,7 @@ class ClearProjectRecord(BaseHandler):
 				Exp4Connection.clients.pop(group+'-submit')
 				for uid in Exp4Connection.members[group+'-submit']:
 					Exp4Connection.members[group+'-submit'][uid]['online'] = False
-					tornado.ioloop.IOLoop.instance().remove_timeout(Exp4Connection.timers[group+'test'] )
+					tornado.ioloop.IOLoop.instance().remove_timeout(Exp4Connection.timers[group+'submit'] )
 					Exp4Connection.timers[group+'submit'] = None
 		except:
 			None
