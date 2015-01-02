@@ -1737,13 +1737,13 @@ class Exp4Connection(SockJSConnection):
 		return minTimesUserlist[traitor]
 
 	def newDay(self):
-		if self.isEnd():
-			return
 		groupRecord = sdb.exp4g.find_one({"group":self.group})
 		#traitor= random.randint(0,groupRecord["numPlayers"]-1)
 		traitor = self.chooseTraiter()
 		groupRecord["days"] += 1
 		sdb.exp4g.save(groupRecord)
+		if self.isEnd():
+			return
 		for userId in self.clients[self.group]:
 			userRecord = sdb.exp4u.find_one({"group":self.group,"userId":userId})
 			if self.clients[self.group][userId] and self.clients[self.group][userId]['sock']!=None:
@@ -1771,7 +1771,7 @@ class Exp4Connection(SockJSConnection):
 		#self.broadcast_message("",[],{'event':'sync', 'day':self.days[self.group]},'notify')
 	def isEnd(self):
 		groupRecord = sdb.exp4g.find_one({"group":self.group})
-		if groupRecord["days"]>=4 and self.submitMode == True:
+		if groupRecord["days"]>4 and self.submitMode == True:
 			self.end = True
 			self.broadcast_message("",[],{'event':'end','scores':None},'notify')
 			return True
