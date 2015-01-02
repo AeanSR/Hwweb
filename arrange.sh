@@ -5,16 +5,16 @@ for j in `seq 1 4`; do
         cd report_files/$j; 
         for i in `seq 1 12`;do
             if [  `find ./ -name "2014-${j}-${i}-*-presentation.pdf" | wc -l` != 0 ];then
-                if [ ! -d ../final/presentation/$i/$j ];then
-                    mkdir -p ../final/presentation/$i/$j ;
+                if [ ! -d ../final/presentation/class-$i/exp-$j ];then
+                    mkdir -p ../final/presentation/class-$i/exp-$j ;
                 fi
-                cp 2014-$j-$i-*-presentation.pdf ../final/presentation/$i/$j;
+                cp 2014-$j-$i-*-presentation.pdf ../final/presentation/class-$i/exp-$j;
             fi 
             if [  `find ./ -name "2014-${j}-${i}-*-report.pdf" | wc -l` != 0 ];then
                 if [ ! -d ../final/report/$i/$j ];then
-                    mkdir -p ../final/report/$i/$j ;
+                    mkdir -p ../final/report/class-$i/exp-$j ;
                 fi
-                cp 2014-$j-$i-*-report.pdf ../final/report/$i/$j;
+                cp 2014-$j-$i-*-report.pdf ../final/report/class-$i/exp-$j;
             fi
         done
 

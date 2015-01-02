@@ -647,7 +647,7 @@ class StudentListHandler(BaseHandler):
 					flag = QuizFlag["FULL_SCORED"]
 				quiz_info.append({"quiz_id":a_quiz["quiz_id"], "all_score":user_quiz["all_score"], "flag":flag})
 			users_list.append({"userId":user["userId"],"name":user["name"], "quiz_info":quiz_info})
-		self.render("./template/studentlist.template", info = self.online_data[self.get_current_admin()], users_list=users_list, quizs_index=quizs_index, quizs=quizs, current_page=page,page_num=page_num,url=url)
+		self.render("./template/admin/studentlist.html", info = self.online_data[self.get_current_admin()], users_list=users_list, quizs_index=quizs_index, quizs=quizs, current_page=page,page_num=page_num,url=url)
 		return
 
 
