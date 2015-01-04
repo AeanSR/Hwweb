@@ -43,17 +43,17 @@
                         $("#all_score").css({"color":"red"})
                         {% for i in range(len(user_quiz["solutions"])) %}
                             var tmp = unescapeHtml("{{','.join(a_quiz['content'][i]['answer']) }}")
-                            // $("#answer_{{ user_quiz["solutions"][i]['id'] }}").text("标准答案：" + tmp + "(得分：{{user_quiz['solutions'][i]['score']}})");
+                            $("#answer_{{ user_quiz["solutions"][i]['id'] }}").text("标准答案：" + tmp + "(得分：{{user_quiz['solutions'][i]['score']}})");
                         {% end %}
                     {%elif flag == QuizFlag["SEMI_SCORED"] %}
                         $("#all_score").text("客观题得分: {{user_quiz['all_score']}}")
                         $("#all_score").css({"color":"red"})
                         {% for i in range(len(user_quiz["solutions"])) %}
                             {% if user_quiz['solutions'][i]["type"] != QuizType["ESSAYQUES"] %}
-                                // $("#answer_{{ user_quiz["solutions"][i]['id'] }}").text("标准答案：{{",".join(a_quiz['content'][i]['answer']) }}(得分：{{user_quiz['solutions'][i]['score']}})");
+                                $("#answer_{{ user_quiz["solutions"][i]['id'] }}").text("标准答案：{{",".join(a_quiz['content'][i]['answer']) }}(得分：{{user_quiz['solutions'][i]['score']}})");
                             {% else %}
                                 var tmp = unescapeHtml("{{','.join(a_quiz['content'][i]['answer']) }}")
-                                // $("#answer_{{ user_quiz["solutions"][i]['id'] }}").text("标准答案：" + tmp + "(得分：还未批改)");
+                                $("#answer_{{ user_quiz["solutions"][i]['id'] }}").text("标准答案：" + tmp + "(得分：还未批改)");
                             {% end %}
                         {% end %}
                     {% end %}
