@@ -2087,6 +2087,7 @@ def reviewQuiz(quiz_id):
 			else:
 				all_score = user_solution["all_score"]
 
+
 				# 兼容以前的数据逻辑
 				if user_solution['status'] == QuizStatus["SAVE"]:
 					user_solution['status'] = QuizStatus['SUBMIT']
@@ -2094,14 +2095,15 @@ def reviewQuiz(quiz_id):
 					all_score = 0
 
 				cnt = 0
-				for a_content in a_quiz["content"]:
-					score = 0
-					if a_content["type"] != QuizType["ESSAYQUES"] and set(a_content["answer"])  == set(user_solution["solutions"][cnt]["solution"]) :
-						score = a_content["score"]
-						all_score += score
-					user_solution["solutions"][cnt]["score"] = score
-					cnt += 1
-				user_solution["all_score"] = all_score
+				if user_solution["solutions"]:
+					for a_content in a_quiz["content"]:
+						score = 0
+						if a_content["type"] != QuizType["ESSAYQUES"] and set(a_content["answer"])  == set(user_solution["solutions"][cnt]["solution"]) :
+							score = a_content["score"]
+							all_score += score
+						user_solution["solutions"][cnt]["score"] = score
+						cnt += 1
+					user_solution["all_score"] = all_score
 				# change the status of user_solutions to "REVIEW"
 				# 如果全部为选择题，不仅进行自动打分操作，而且设置solu为REVIEW
 				if not essayQueses:
