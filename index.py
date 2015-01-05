@@ -896,7 +896,7 @@ class  SetProjectRecord(BaseHandler):
 		else:
 			sys_record = {"group":self.online_data[userId]["group"]+"-test",
 				"days":0,
-				"numPlayers":1			
+				"numPlayers":1
 				}
 			yield db.exp4g.save(sys_record)
 		sys_record = yield db.exp4g.find_one({"group":self.online_data[userId]["group"]+"-submit"})
@@ -906,7 +906,7 @@ class  SetProjectRecord(BaseHandler):
 		else:
 			sys_record = {"group":self.online_data[userId]["group"]+"-submit",
 				"days":0,
-				"numPlayers":1			
+				"numPlayers":1
 				}
 			yield db.exp4g.save(sys_record)
 		self.write('<script>alert("已成功设置所有实验信息");window.location="/main"</script>')
@@ -1509,7 +1509,8 @@ class Exp4Connection(SockJSConnection):
 					'ready':None,
 					'resource':{'troops':5000,'supply':5000,'weahter':0},
 					'score':80,
-					'scores':{}
+					'scores':{},
+					'history':{}
 				}
 			if group not in self.clients:
 				self.clients[group] = {}
@@ -1589,7 +1590,16 @@ class Exp4Connection(SockJSConnection):
 						else:
 							userRecord["score"] = userRecord["score"] - 40
 							userRecord["scores"][day] = -40
+						if "history" not in userRecord:
+							userRecord["history"] = {}
+						if day not in userRecord["history"]:
+							userRecord["history"][day] = {}
+						userRecord["history"][day]['traitor'] = userRecord["traitor"]
+						userRecord["history"][day]['ready'] = userRecord['ready']
+						userRecord["history"][day]['attack'] = self.clients[self.group][id]['attack']
 						sdb.exp4u.save(userRecord)
+
+
 					self.resetTimer()
 					self.newDay()
 
@@ -1604,6 +1614,13 @@ class Exp4Connection(SockJSConnection):
 						else:
 							userRecord["score"] = userRecord["score"] + 40
 							userRecord["scores"][day] = 10
+						if "history" not in userRecord:
+							userRecord["history"] = {}
+						if day not in userRecord["history"]:
+							userRecord["history"][day] = {}
+						userRecord["history"][day]['traitor'] = userRecord["traitor"]
+						userRecord["history"][day]['ready'] = userRecord['ready']
+						userRecord["history"][day]['attack'] = self.clients[self.group][id]['attack']
 						sdb.exp4u.save(userRecord)
 
 					self.resetTimer()
