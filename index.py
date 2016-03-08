@@ -39,7 +39,7 @@ from HwWebUtil import UploadType
 db = motor.MotorClient('localhost', 27017).hwweb
 sdb = pymongo.MongoClient('localhost', 27017).hwweb
 testdb = motor.MotorClient('localhost', 27017).test_hwweb
-domain = ".ucas-2014.tk"
+domain = ".ucas-2016.tk"
 expires_days = 7
 md5Salt='a~n!d@r#e$w%l^e&e'
 deployed=True
@@ -921,9 +921,9 @@ class APIGetHandler(BaseHandler):
 	def post(self):
 
 		if deployed:
-			self.set_header('Access-Control-Allow-Origin','http://ucas-2014.tk:8889')
+			self.set_header('Access-Control-Allow-Origin','http://ucas-2016.tk:8889')
 		else:
-			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk:8080')
+			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2016.tk:8080')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		try:
 			gameId = int(self.get_argument("gameId", 1))
@@ -969,9 +969,9 @@ class APIPutHandler(BaseHandler):
 	@tornado.gen.coroutine
 	def post(self):
 		if deployed:
-			self.set_header('Access-Control-Allow-Origin','http://ucas-2014.tk:8889')
+			self.set_header('Access-Control-Allow-Origin','http://ucas-2016.tk:8889')
 		else:
-			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2014.tk:8080')
+			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2016.tk:8080')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		try:
 			gameId = int(self.get_argument("gameId", 1))
@@ -1039,7 +1039,7 @@ class RouteAPIGetInfoHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://ucas-2014.tk:8889')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2016.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		if not self.canDoExperiment(3):
 			return
@@ -1085,7 +1085,7 @@ class RouteAPISubmitRouteHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://ucas-2014.tk:8889')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2016.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		if not self.canDoExperiment(3):
 			return
@@ -1134,7 +1134,7 @@ class RouteAPISubmitTopoHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://ucas-2014.tk:8889')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2016.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		if not self.canDoExperiment(3):
 			return
@@ -1181,7 +1181,7 @@ class RouteAPIGetTopoHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://ucas-2014.tk:8889')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2016.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		if not self.canDoExperiment(3):
 			return
@@ -1289,7 +1289,7 @@ class RouteAPIClearRouteInTestModeHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://ucas-2014.tk:8889')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2016.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		if not self.canDoExperiment(3):
 			return
@@ -1317,7 +1317,7 @@ class RouteAPISubmitRouteEvaluationHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://ucas-2014.tk:8889')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2016.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		if not self.canDoExperiment(3):
 			return
@@ -1849,7 +1849,7 @@ class LoginHandler(BaseHandler):
 			# testMode 下只能做支持实验测试，其他测试无法支持
 			if testMode:
 				logger.debug("test user: %s is logging in" %userId)
-				self.redirect("http://project.ucas-2014.tk")
+				self.redirect("http://project.ucas-2016.tk")
 				#self.render("./template/test_entrance.template")
 				return
 			else:
