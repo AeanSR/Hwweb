@@ -33,6 +33,7 @@ python get-pip.py
  - install the 3-party python requirements
 > $pip install 'tornado==4.0.1'
 $pip install 'motor==0.3.2'
+$pip install 'sockjs-tornado==1.0.2'
 
 ## Hwweb(Homework web system) deployment
 1. import the data to mongodb
