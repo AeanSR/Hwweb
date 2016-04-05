@@ -55,8 +55,13 @@ class HwWebUtil:
 				for dateStr in heads[1:]:
 					startDate = datetime.strptime(dateStr.split("-")[0].strip(), "%Y/%m/%d/%H/%M/%S") 
 					endDate = datetime.strptime(dateStr.split("-")[1].strip(), "%Y/%m/%d/%H/%M/%S") 
-					presentationDeadline = endDate.replace(hour=23)
-					reportDeadline = presentationDeadline + timedelta(days=6)
+					if str(endDate)[5:7] == '06':
+						presentationDeadline = endDate.replace(hour=23) + timedelta(days=20)
+						reportDeadline = presentationDeadline
+					else: 
+						presentationDeadline = endDate.replace(hour=23) + timedelta(days=13)
+						reportDeadline = presentationDeadline
+
 					scheduleTable["date"].append([startDate, endDate, presentationDeadline, reportDeadline])
 				scheduleTable["table"] = {}
 				line = f.readline().strip()
