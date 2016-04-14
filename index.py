@@ -1406,7 +1406,7 @@ class Exp4Connection(SockJSConnection):
 	timers = {}
 	# 存储days
 	days = {}
-	numPlayers = {}
+	numRecom = 5
 	numTraitor = 1
 	# 一天的实际时间
 	interval = 1200
@@ -1485,20 +1485,26 @@ class Exp4Connection(SockJSConnection):
 				return
 			self.group = group
 			self.userId = userId
+			# DONE
+			self.numPlayers = len(self.members[group])
+			self.numStandby = self.numPlayers - self.numRecom
+
 			self.submitMode = submitMode
 			self.end = False
 			userRecord = sdb.exp4u.find_one({"group":group,"userId":userId})
 			groupRecord = sdb.exp4g.find_one({"group":group})
 			if not groupRecord:
 				groupRecord = {"group":group,
-					"days":0,
-					"numPlayers":5			
+					"days":0,	
+					"numPlayers":self.numPlayers	
 					}
 			if not userRecord:
 				userRecord = {"group":group,
 					"userId":userId,
-					'traitor': None,
+					# DONE
+					'identity': None,
 					'traitorTimes': 0,
+					'standbyTimes': 0,
 					'messages':0,
 					'stage':0,
 					'cond':{
@@ -1516,10 +1522,15 @@ class Exp4Connection(SockJSConnection):
 				self.clients[group] = {}
 			if userId not in self.clients[group]:
 				self.clients[group][userId] = {}
-				isTraitor = False
-				if len(self.clients[group]) ==1:
-					isTraitor = True
-				userRecord['traitor'] = isTraitor
+				identity = "loyal"
+				if len(self.clients[group]) == 1:
+					identity = "traitor"
+					userRecord['traitorTimes'] += 1
+				elif len(self.clients[group]) <= 1 + self.numStandby:
+					identity = "standby"
+					userRecord['standbyTimes'] += 1
+				userRecord['identity'] = identity
+
 			self.clients[group][userId]['sock'] = self
 			self.clients[group][userId]['attack'] = None
 			self.clients[group][userId]['messages'] = 0
@@ -1527,7 +1538,7 @@ class Exp4Connection(SockJSConnection):
 			self.members[group][userId]['online'] = True
 			self.broadcast_userlist(True)
 
-			self.send_message({'notify': 'success', 'isTraitor':userRecord['traitor'], 
+			self.send_message({'notify': 'success', 'identity':userRecord['identity'], 'numPlayers':groupRecord['numPlayers'], 
 				'id':self.maps[group][userId],'messages':userRecord['messages'],
 				'stage':userRecord['stage'],'cond':userRecord['cond'],
 				'resource':userRecord['resource'],'ready':userRecord['ready'],'test':self.isTestUser(userId)}, 'auth'
@@ -1584,17 +1595,20 @@ class Exp4Connection(SockJSConnection):
 					self.broadcast_message("",[],{'event':'gameresult','win':True},'notify')
 					for id in self.clients[self.group]:
 						userRecord = sdb.exp4u.find_one({"group":self.group,"userId":id})
-						if userRecord["traitor"] == False:
+						if userRecord["identity"] == 'loyal':
 							userRecord["score"] = userRecord["score"] + 10
 							userRecord["scores"][day] = 10
-						else:
+						elif userRecord["identity"] == 'traitor':
 							userRecord["score"] = userRecord["score"] - 40
 							userRecord["scores"][day] = -40
+						else:
+							userRecord["score"] = userRecord["score"]
+							userRecord["scores"][day] = 0
 						if "history" not in userRecord:
 							userRecord["history"] = {}
 						if day not in userRecord["history"]:
 							userRecord["history"][day] = {}
-						userRecord["history"][day]['traitor'] = userRecord["traitor"]
+						userRecord["history"][day]['identity'] = userRecord["identity"]
 						userRecord["history"][day]['ready'] = userRecord['ready']
 						userRecord["history"][day]['attack'] = self.clients[self.group][id]['attack']
 						sdb.exp4u.save(userRecord)
@@ -1608,17 +1622,20 @@ class Exp4Connection(SockJSConnection):
 					self.broadcast_message("",[],{'event':'gameresult','win':False},'notify')
 					for id in self.clients[self.group]:
 						userRecord = sdb.exp4u.find_one({"group":self.group,"userId":id})
-						if userRecord["traitor"] == False:
+						if userRecord["identity"] == 'loyal':
 							userRecord["score"] = userRecord["score"] - 10
 							userRecord["scores"][day] = -10
-						else:
+						elif userRecord["identity"] == 'traitor':
 							userRecord["score"] = userRecord["score"] + 40
-							userRecord["scores"][day] = 10
+							userRecord["scores"][day] = 40
+						else:
+							userRecord["score"] = userRecord["score"]
+							userRecord["scores"][day] = 0
 						if "history" not in userRecord:
 							userRecord["history"] = {}
 						if day not in userRecord["history"]:
 							userRecord["history"][day] = {}
-						userRecord["history"][day]['traitor'] = userRecord["traitor"]
+						userRecord["history"][day]['identity'] = userRecord["identity"]
 						userRecord["history"][day]['ready'] = userRecord['ready']
 						userRecord["history"][day]['attack'] = self.clients[self.group][id]['attack']
 						sdb.exp4u.save(userRecord)
@@ -1673,17 +1690,27 @@ class Exp4Connection(SockJSConnection):
 
 	def isStart(self):
 		#print "numPlayers ", self.numPlayers[self.group]
-		groupRecord = sdb.exp4g.find_one({"group":self.group})
-		if len(self.clients[self.group]) == groupRecord["numPlayers"]:
+		groupRecord = sdb.exp4g.find_one({"group":self.group})	
+		allOnline = True
+		for uid in self.members[self.group]:
+			if self.members[self.group][uid]['online'] == False:
+				allOnline = False
+		if allOnline:
 			allStage2 = True
+			playersList = []
 			for id in self.clients[self.group]:
 				userRecord = sdb.exp4u.find_one({"group":self.group,"userId":id})
 				if userRecord['stage'] !=1:
 					allStage2 = False
+				if userRecord['identity'] != 'standby':
+					#playersList中存入对 应的序号，比如0,1,2,3,4
+					playersList.append(self.maps[self.group][id])
+			playersList.sort() #按照"0","1","2","3","4","5"排序
 			if allStage2 == True:
 				if self.isEnd():
 					return
-				self.broadcast_message("",[],{'event':'start','interval':self.interval,'day':groupRecord["days"]},'notify')
+				# DONE
+				self.broadcast_message("",[],{'event':'start','interval':self.interval,'day':groupRecord["days"],'playersList':playersList},'notify')
 				self.resetTimer()
 				logger.info("Exp4: %s 's players are in position. Now game start." % self.group)
 
@@ -1692,12 +1719,12 @@ class Exp4Connection(SockJSConnection):
 		groupRecord = sdb.exp4g.find_one({"group":self.group})
 		attack = set()
 		not_attack =set()
-		loyals =  groupRecord["numPlayers"] - self.numTraitor
+		loyals =  groupRecord["numPlayers"] - self.numTraitor - self.numStandby
 		loyal = set()
 		for id in self.clients[self.group]:
 			#print 'a,', self.clients[self.group][id]['traitor'],  self.clients[self.group][id]['attack'] , id
 			userRecord = sdb.exp4u.find_one({"group":self.group,"userId":id})
-			if userRecord['traitor'] == False:
+			if userRecord['identity'] == 'loyal':
 				loyal.add(id)
 				if self.clients[self.group][id]['attack'] == True:
 					attack.add(id)
@@ -1740,40 +1767,80 @@ class Exp4Connection(SockJSConnection):
 
 	def chooseTraiter(self):
 		groupRecord = sdb.exp4g.find_one({"group":self.group})
-		TimesList = {} 
+		days = groupRecord["days"]
+		numPlayers = groupRecord["numPlayers"]
+		traitorTimesList = {} 
+		standbyTimesList = {} 
 		for userId in self.clients[self.group]:
 			userRecord = sdb.exp4u.find_one({"group":self.group,"userId":userId})
-			TimesList[userId] = userRecord["traitorTimes"]
-		minTimes =  min(TimesList.values())
-		minTimesUserlist = []
-		for userId in TimesList:
-			if TimesList[userId] == minTimes:
-				minTimesUserlist.append(userId)
+			#记录每个userId当traitor和standby的次数
+			traitorTimesList[userId] = userRecord["traitorTimes"]
+			standbyTimesList[userId] = userRecord["standbyTimes"]
+		#找出最小的traitor和standby的次数	
+		minTraitorTimes = min(traitorTimesList.values())
+		minStandbyTimes = min(standbyTimesList.values())
+		minTraitorTimesUserlist = []
+		minStandbyTimesUserlist = []
+		#选出traitor和standby的次数为最小值得userId
+		for userId in traitorTimesList:
+			if traitorTimesList[userId] == minTraitorTimes:
+				minTraitorTimesUserlist.append(userId)
+		for userId in standbyTimesList:
+			if standbyTimesList[userId] == minStandbyTimes:
+				minStandbyTimesUserlist.append(userId)
 		#print minTimesUserlist,TimesList
-		traitor = random.randint(0,len(minTimesUserlist)-1)
-		return minTimesUserlist[traitor]
+		#当游戏人数大于5人时，只要traitor和standby有一个是随机选择的
+		#最后一轮有可能出现没当过traitor和没当过standby的userId为同一个
+		#所以倒数第二天进行一次判断，若有一个userId之前一直为loyal，则这一局强制将其设为traitor
+		if numPlayers > self.numRecom and len(minStandbyTimesUserlist)==2:
+			alwaysLoyal = list(set(minTraitorTimesUserlist).intersection(set(minStandbyTimesUserlist)))
+			if alwaysLoyal != []:
+				traitor = 0
+				minStandbyTimesUserlist.remove(alwaysLoyal[traitor])
+				standby = random.randint(0,len(minStandbyTimesUserlist)-1)
+				return [alwaysLoyal[traitor],minStandbyTimesUserlist[standby]]
+
+		#若不符合以上情况，正常随机进行
+		#在minTraitorTimesUserlist随机选出一个userId为traitor
+		traitor = random.randint(0,len(minTraitorTimesUserlist)-1)
+		#若该userId在minStandbyTimesUserlist出现，则删除
+		if minTraitorTimesUserlist[traitor] in minStandbyTimesUserlist:
+			minStandbyTimesUserlist.remove(minTraitorTimesUserlist[traitor])
+		#然后在minStandbyTimesUserlist中随机选出一个userId为standby
+		standby = random.randint(0,len(minStandbyTimesUserlist)-1)
+		return [minTraitorTimesUserlist[traitor],minStandbyTimesUserlist[standby]]
 
 	def newDay(self):
 		groupRecord = sdb.exp4g.find_one({"group":self.group})
 		#traitor= random.randint(0,groupRecord["numPlayers"]-1)
-		traitor = self.chooseTraiter()
 		groupRecord["days"] += 1
 		sdb.exp4g.save(groupRecord)
+		[traitorId,standbyId] = self.chooseTraiter()		
 		if self.isEnd():
 			return
+		playersList = []
+		for userId in self.clients[self.group]:
+			userRecord = sdb.exp4u.find_one({"group":self.group,"userId":userId})
+			if self.clients[self.group][userId]:
+				self.clients[self.group][userId]['attack'] = None
+				self.clients[self.group][userId]['messages'] = 0
+				if userId == traitorId:
+					userRecord['identity'] = 'traitor'
+					userRecord['traitorTimes'] += 1
+				elif self.numStandby > 0 and userId == standbyId:
+					userRecord['identity'] = 'standby'
+					userRecord['standbyTimes'] += 1
+				else:
+					userRecord['identity'] = 'loyal'
+				if userRecord['identity'] != 'standby':
+					playersList.append(self.maps[self.group][userId])
+				sdb.exp4u.save(userRecord)
+		playersList.sort() #按照"0","1","2","3","4","5"排序
 		for userId in self.clients[self.group]:
 			userRecord = sdb.exp4u.find_one({"group":self.group,"userId":userId})
 			if self.clients[self.group][userId] and self.clients[self.group][userId]['sock']!=None:
-				self.clients[self.group][userId]['attack'] = None
-				self.clients[self.group][userId]['messages'] = 0
-				if userId!= traitor:
-					userRecord['traitor'] = False
-				else:
-					userRecord['traitor'] = True
-					userRecord['traitorTimes'] += 1
 				self.clients[self.group][userId]['sock'].send_message({
-					'event':'sync', 'day':groupRecord["days"],'isTraitor':userRecord['traitor']}, "notify")
-				sdb.exp4u.save(userRecord)
+					'event':'sync', 'day':groupRecord["days"],'identity':userRecord['identity'],'playersList':playersList}, "notify")
 
 	def sync(self):
 		self.timers[self.group] = tornado.ioloop.IOLoop.instance().add_timeout(
@@ -1782,13 +1849,14 @@ class Exp4Connection(SockJSConnection):
 			)
 		for id in self.clients[self.group]:
 			userRecord = sdb.exp4u.find_one({"group":self.group,"userId":id})
-			userRecord["score"] = userRecord["score"] - 20
+			if userRecord['identity'] != 'standby':
+				userRecord["score"] = userRecord["score"] - 20
 			sdb.exp4u.save(userRecord)
 		self.newDay()
 		#self.broadcast_message("",[],{'event':'sync', 'day':self.days[self.group]},'notify')
 	def isEnd(self):
 		groupRecord = sdb.exp4g.find_one({"group":self.group})
-		if groupRecord["days"]>4 and self.submitMode == True:
+		if groupRecord["days"]>(self.numPlayers-1) and self.submitMode == True:
 			self.end = True
 			self.broadcast_message("",[],{'event':'end','scores':None},'notify')
 			return True
