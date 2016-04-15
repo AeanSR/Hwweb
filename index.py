@@ -1485,10 +1485,6 @@ class Exp4Connection(SockJSConnection):
 				return
 			self.group = group
 			self.userId = userId
-			# DONE
-			self.numPlayers = len(self.members[group])
-			self.numStandby = self.numPlayers - self.numRecom
-
 			self.submitMode = submitMode
 			self.end = False
 			userRecord = sdb.exp4u.find_one({"group":group,"userId":userId})
@@ -1496,8 +1492,11 @@ class Exp4Connection(SockJSConnection):
 			if not groupRecord:
 				groupRecord = {"group":group,
 					"days":0,	
-					"numPlayers":self.numPlayers	
+					"numPlayers":len(self.members[group])
 					}
+			self.numPlayers = groupRecord["numPlayers"]
+			self.numStandby = self.numPlayers - self.numRecom
+
 			if not userRecord:
 				userRecord = {"group":group,
 					"userId":userId,
@@ -1691,11 +1690,11 @@ class Exp4Connection(SockJSConnection):
 	def isStart(self):
 		#print "numPlayers ", self.numPlayers[self.group]
 		groupRecord = sdb.exp4g.find_one({"group":self.group})	
-		allOnline = True
+		onlineNum = 0
 		for uid in self.members[self.group]:
-			if self.members[self.group][uid]['online'] == False:
-				allOnline = False
-		if allOnline:
+			if self.members[self.group][uid]['online'] == True:
+				onlineNum += 1
+		if onlineNum == self.numPlayers:
 			allStage2 = True
 			playersList = []
 			for id in self.clients[self.group]:
@@ -1705,6 +1704,9 @@ class Exp4Connection(SockJSConnection):
 				if userRecord['identity'] != 'standby':
 					#playersList中存入对 应的序号，比如0,1,2,3,4
 					playersList.append(self.maps[self.group][id])
+			#5人组的测试账户，设置游戏信息时会将numPlayers置为1，但是发送列表中就只会显示一个人，此处强行设置为5人
+			if self.numPlayers == 1:
+				playersList = ["0","1","2","3","4"]
 			playersList.sort() #按照"0","1","2","3","4","5"排序
 			if allStage2 == True:
 				if self.isEnd():
@@ -1835,6 +1837,9 @@ class Exp4Connection(SockJSConnection):
 				if userRecord['identity'] != 'standby':
 					playersList.append(self.maps[self.group][userId])
 				sdb.exp4u.save(userRecord)
+		#5人组的测试账户，设置游戏信息时会将numPlayers置为1，但是发送列表中就只会显示一个人，此处强行设置为5人
+		if self.numPlayers == 1:
+				playersList = ["0","1","2","3","4"]
 		playersList.sort() #按照"0","1","2","3","4","5"排序
 		for userId in self.clients[self.group]:
 			userRecord = sdb.exp4u.find_one({"group":self.group,"userId":userId})
