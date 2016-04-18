@@ -1594,6 +1594,8 @@ class Exp4Connection(SockJSConnection):
 					self.broadcast_message("",[],{'event':'gameresult','win':True},'notify')
 					for id in self.clients[self.group]:
 						userRecord = sdb.exp4u.find_one({"group":self.group,"userId":id})
+						#record the messages.
+						userRecord["messages"] += self.clients[self.group][id]['messages']
 						if userRecord["identity"] == 'loyal':
 							userRecord["score"] = userRecord["score"] + 10
 							userRecord["scores"][day] = 10
@@ -1610,6 +1612,7 @@ class Exp4Connection(SockJSConnection):
 						userRecord["history"][day]['identity'] = userRecord["identity"]
 						userRecord["history"][day]['ready'] = userRecord['ready']
 						userRecord["history"][day]['attack'] = self.clients[self.group][id]['attack']
+						userRecord["history"][day]['messages'] = self.clients[self.group][id]['messages']
 						sdb.exp4u.save(userRecord)
 
 
