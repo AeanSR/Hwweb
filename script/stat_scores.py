@@ -26,16 +26,25 @@ for row in db.games.find({"group":{"$regex":"^[^0]"},"gameId":{"$lt":5}},{'bestS
     if row['gameId'] is 1:
         if score is -1:
             score = 16
+        if score< 8:
+            print row["group"] + " is cheating on exp4-1."
+            score=8
         score = (20 - score)/ (20.0 - 8.0) * 100 
         rowRecord['exp2-1'] = score
     elif row['gameId'] is 2:
         if score is -1:
             score = 8
+        if score< 4:
+            print row["group"] + " is cheating on exp4-2."
+            score = 4
         score = (13 - score)/ (13.0 - 4.0) * 100 
         rowRecord['exp2-2'] = score
     elif row['gameId'] is 3:
         if score is -1:
             score = 16
+        if score< 5:
+            print row["group"] + " is cheating on exp4-3."
+            score = 6
         score = (20 - score)/ (20.0 - 5.0) * 100 
         rowRecord['exp2-3'] = score
     elif row['gameId'] is 4:
@@ -51,7 +60,7 @@ for group in scoreTable:
     rowRecord['exp2'] = rowRecord['exp2-1']*0.25 + rowRecord['exp2-2']*0.25 + rowRecord['exp2-3']*0.25 + rowRecord['exp2-4']*0.25
     rowRecord['exp2'] = int(rowRecord['exp2'])
 # Exp3
-for row in db.routeTopo.find({"mode":0},{"_id":0, "finalScore":1, "group":1}).sort("group", pymongo.ASCENDING):
+for row in db.routeTopo.find({"mode":0,"group":{"$regex":"^[^0]"}},{"_id":0, "finalScore":1, "group":1}).sort("group", pymongo.ASCENDING):
     if "finalScore" in row:
         rowRecord = getAndCreateList(row["group"])
         rowRecord['exp3'] = row["finalScore"]
@@ -76,20 +85,22 @@ for group in sortedkeys:
     worksheet1.write(r,c, group)
     c = 1
     for col in cols:
-        worksheet1.write(r,c, scoreTable[group][col])
+        if col in scoreTable[group]:
+            worksheet1.write(r,c, scoreTable[group][col])
         c = c + 1
     r = r +1
 
 r = 0
 for group in sortedkeys:
-    for uid in scoreTable[group]['exp4-scores']:
-        c = 0
-        worksheet2.write(r,c, group)
-        c = 1
-        worksheet2.write(r,c, uid)
-        c = 2
-        worksheet2.write(r,c, db.users.find({"userId":uid})[0]['name'])
-        c = 3
-        worksheet2.write(r,c, scoreTable[group]['exp4-scores'][uid])
-        r = r +1
+    if "exp4-scores" in scoreTable[group]:
+        for uid in scoreTable[group]['exp4-scores']:
+            c = 0
+            worksheet2.write(r,c, group)
+            c = 1
+            worksheet2.write(r,c, uid)
+            c = 2
+            worksheet2.write(r,c, db.users.find({"userId":uid})[0]['name'])
+            c = 3
+            worksheet2.write(r,c, scoreTable[group]['exp4-scores'][uid])
+            r = r +1
 workbook.close()
