@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
-
+<meta charset="UTF-8">
 <head>
     <title>实验日程表</title>
 {% include "./reference.html" %}
@@ -35,8 +35,11 @@ $(document).ready(function(c) {
 			 case "3":
 			  exp_str = "网络实验"
 			  break;
-			default:
+			case "4":
 			  exp_str = "系统实验"
+			  break;
+			default:
+			  exp_str = "信息隐藏"
 			}
 			var tdTmp = $("<td>"+exp_str+"</td>")
 			tdTmp.appendTo(tmp)

@@ -29,7 +29,7 @@ from HwWebUtil import QuizType
 from HwWebUtil import ProjectStatus
 from HwWebUtil import TopoStatus
 from HwWebUtil import UploadType
-
+from HwWebUtil import Exp5Type
 # to do, filter the text input
 # to do, 多选题
 # to do, admin打包下载报告
@@ -45,6 +45,7 @@ md5Salt='a~n!d@r#e$w%l^e&e'
 deployed=True
 
 logpath = os.path.join(os.path.dirname(__file__),'log')
+print logpath
 if not os.path.exists(logpath):
 	os.makedirs(logpath)
 logging.config.fileConfig('conf/logging.conf')
@@ -327,7 +328,180 @@ class QuizHandler(BaseHandler):
 			logger.info("student: %s is viewing the homework-%d(status: %s)" %(self.get_current_user(), int(quiz_id), flag))
 			self.render("./template/quiz.html", a_quiz = a_quiz, info = self.online_data[self.get_current_user()],  quizs=quizs, user_quiz=user_quiz, flag=flag)
 			return
+class Exp5Handler(BaseHandler):
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+    	def get(self,pro_id):
+    		pro_cursor = db.exp5.find().sort("pro_id", pymongo.ASCENDING)
+    		exercise = yield pro_cursor.to_list(None)
+    		Exp5scheduleTable= copy.deepcopy(HwWebUtil.getExp5Schedule())
+    		for exp_date in Exp5scheduleTable["date"]:
+    			for i in range(0, len(exp_date)) :
+    				exp_date[i] = exp_date[i].strftime("%Y-%m-%d %H:%M:%S")
 
+    		Exp5scheduleTable = json.dumps(Exp5scheduleTable)
+
+    		try:
+    			pro_id = int(pro_id)
+    		except ValueError, e:
+    			print "The argument does not contain numbers\n", e
+    			self.render("./template/404.template")
+    			return
+    		info = self.online_data[self.get_current_user()]
+    		
+    		a_pro = yield db.exp5.find_one({"pro_id":pro_id, "status":ProjectStatus["PUBLISH"]})#套用了project的状态，没有改
+    		if not a_pro:
+    			self.redirect("/project")
+    			return
+    		userId = self.get_current_user()
+    		program_up_record = yield db.user_uploads.find_one({"pro_id": pro_id, "group": info["group"],"kind":"exp5", "type":Exp5Type["PROGRAM"],  "year":info["yearOfEntry"]})
+    		report_up_record = yield db.user_uploads.find_one({"pro_id": pro_id, "group": info["group"],"kind":"exp5", "type":Exp5Type["EXPREPORT"], "year":info["yearOfEntry"]})
+    		flag = 0
+    		if not datetime.now() < datetime.strptime(a_pro['deadline'], '%Y-%m-%d %H:%M:%S')  :
+    			flag = ProjectStatus["END"]
+    		else:
+    			flag = ProjectStatus["PUBLISH"]
+	 	self.render("./template/Exp5Upload.html", exercise = exercise,a_pro=a_pro, info = info, flag=flag,  p_up_record=program_up_record, r_up_record=report_up_record)
+	 	return
+	
+class Exp5UploadHandler(BaseHandler):
+
+	support_type=["application/pdf"]
+
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def post(self, pro_id, type_id):
+		try:
+    			pro_id = int(pro_id)
+    			type_id = int(type_id)
+    			print type_id
+    			
+    			if not type_id in Exp5Type.values():
+    				raise ValueError("type %d is not valid" % type_id)
+    		except ValueError, e:
+    			print "The argument does not contain numbers\n", e
+    			self.render("./template/404.template")
+    			return
+    		info = self.online_data[self.get_current_user()]
+    		print info
+    		a_pro = yield db.exp5.find_one({"pro_id":pro_id,"status":ProjectStatus["PUBLISH"]})
+
+    		logger.info("user: %s of gruop %s try to upload file for exp %d in type %d" %(self.get_current_user(), info["group"], pro_id, type_id))
+
+    		# 不存在此project或project已经截止
+    		if not a_pro or not datetime.now() < datetime.strptime(a_pro['deadline'], '%Y-%m-%d %H:%M:%S')  :
+    			self.redirect("/project")
+    			return
+
+
+    		up_record = yield  db.user_uploads.find_one({"pro_id": pro_id, "kind":"exp5","group": info["group"], "userId":info["userId"],"type":type_id, "year":info["yearOfEntry"]})
+
+		upload_path=os.path.join(os.path.dirname(__file__),'report_files/exp5',str(pro_id))
+		# 创建目录
+		if not os.path.exists(upload_path):
+			os.makedirs(upload_path)
+		print upload_path
+
+		filename = None
+		arg_name = None
+		if type_id == Exp5Type["PROGRAM"]:
+			arg_name = "program"
+			filename = str(info["yearOfEntry"]) +"-" + str(pro_id) + "-" + info["userId"] + "-program.py"
+		else:
+			arg_name = "report"
+			filename =  str(info["yearOfEntry"])  +"-" + str(pro_id) + "-"+ info["userId"] + "-report.pdf"
+
+		if self.request.files.get(arg_name, None):
+
+			uploadFile = self.request.files[arg_name][0]
+			file_size = len(uploadFile['body'])
+
+			# 检测MIME类型
+			if   (not re.match(r'^.*\.pdf$',uploadFile['filename'].lower() ) and type_id==1):
+				self.write('<script>alert("仅支持pdf格式,doc/ppt需要转化为pdf格式才能上传");window.location="/exp5/'+ str(pro_id)+'"</script>')
+				self.finish()
+				return
+			if  (not re.match(r'^.*\.py$',uploadFile['filename'].lower() ) and type_id==0):
+				self.write('<script>alert("仅支持py格式");window.location="/exp5/'+ str(pro_id)+'"</script>')
+				self.finish()
+				return
+			# 检测文件大小
+			if  file_size > 10 * 1024 * 1024:
+				self.write('<script>alert("请上传10M以下");window.location="/exp5/'+ str(pro_id)+'"</script>')
+				self.finish()
+				return
+			else :
+				logger.info("user: %s of gruop %s succeed to upload file for exp %d in type %d" %(self.get_current_user(), info["group"], pro_id, type_id))
+				filepath=os.path.join(upload_path,filename)
+				if up_record and os.path.exists(filepath):
+					os.remove(filepath)
+				elif not up_record:
+					up_record = {}
+					up_record["year"] = info["yearOfEntry"]
+					up_record["group"]=info["group"]
+					up_record["pro_id"]=pro_id
+					up_record["type"]=type_id
+					up_record["userId"]=info["userId"]
+					up_record["kind"]="exp5"
+					if type_id==0:
+                                                up_record["file_suffix"]="py"
+                                        else:
+                                                up_record["file_suffix"]="pdf"
+				up_record["uploadTime"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+				up_record["size"] = file_size
+				with open(filepath,'wb') as up:      #有些文件需要已二进制的形式存储，实际中可以更改
+					up.write(uploadFile['body'])
+				yield db.user_uploads.save(up_record)
+		else:
+			self.write('<script>alert("请选择文件");window.history.back()</script>')
+			self.finish()
+			return
+		self.redirect('/exp5/'+ str(pro_id))
+		return
+
+
+
+# 学生可以通过指定pro_id下载其对应的报告 Exp5
+class Exp5DownloadHandler(BaseHandler):
+	@tornado.web.authenticated
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+    	def get(self, pro_id, type_id):
+    		try:
+    			pro_id = int(pro_id)
+    			type_id = int(type_id)
+    			if not type_id in Exp5Type.values():
+    				raise ValueError("type %d is not valid" % type_id)
+    		except ValueError, e:
+    			print "The argument does not contain numbers\n", e
+    			self.render("./template/404.template")
+    			return
+    		info = self.online_data[self.get_current_user()]
+    		up_record = yield  db.user_uploads.find_one({"pro_id": pro_id,"kind":"exp5","group": info["group"],"userId":info["userId"], "type":type_id, "year":info["yearOfEntry"]})
+    		if not up_record:
+    			self.render("./template/404.template")
+    			return
+    		else:
+    			upload_path=os.path.join(os.path.dirname(__file__),'report_files/exp5',str(pro_id))
+    			if type_id == Exp5Type["PROGRAM"]:
+				filename = str(info["yearOfEntry"]) +"-" + str(pro_id) + "-" + info["userId"] + "-program." + up_record["file_suffix"]
+			else:
+				filename =  str(info["yearOfEntry"]) +"-" + str(pro_id) + "-" + info["userId"] + "-report." + up_record["file_suffix"]
+    			filepath=os.path.join(upload_path,filename)
+    			if not os.path.exists(filepath):
+    				self.write('<script>alert("不存在此文件，请重新上传");window.history.back()</script>')
+    				self.finish()
+    				return
+    			with open(filepath, "rb") as f:
+    				self.set_header('Content-Disposition', 'attachment;filename='+filename)
+    				self.set_header('Content-Type','application/pdf')
+      				self.write(f.read())
+      			self.finish()
+      			return
+
+	
 class ProjectMainHandler(BaseHandler):
 	@tornado.web.authenticated
 	@tornado.web.asynchronous
@@ -363,7 +537,7 @@ class ProjectHandler(BaseHandler):
     			self.redirect("/project")
     			return
     		userId = self.get_current_user()
-    		presentation_up_record = yield db.user_uploads.find_one({"pro_id": pro_id, "group": info["group"], "type":UploadType["PRESENTATION"],  "year":info["yearOfEntry"]})
+    		presentation_up_record = yield db.user_uploads.find_one({"pro_id": pro_id,"kind":"project","group": info["group"], "type":UploadType["PRESENTATION"],  "year":info["yearOfEntry"]})
     		report_up_record = yield db.user_uploads.find_one({"pro_id": pro_id, "group": info["group"], "type":UploadType["EXPREPORT"], "year":info["yearOfEntry"]})
     		flag = 0
     		if not datetime.now() < datetime.strptime(a_pro['deadline'], '%Y-%m-%d %H:%M:%S')  :
@@ -384,6 +558,7 @@ class ProjectUploadHandler(BaseHandler):
 		try:
     			pro_id = int(pro_id)
     			type_id = int(type_id)
+    			
     			if not type_id in UploadType.values():
     				raise ValueError("type %d is not valid" % type_id)
     		except ValueError, e:
@@ -401,12 +576,13 @@ class ProjectUploadHandler(BaseHandler):
     			return
 
 
-    		up_record = yield  db.user_uploads.find_one({"pro_id": pro_id, "group": info["group"], "type":type_id, "year":info["yearOfEntry"]})
+    		up_record = yield  db.user_uploads.find_one({"pro_id": pro_id, "kind":"project","group": info["group"], "type":type_id, "year":info["yearOfEntry"]})
 
 		upload_path=os.path.join(os.path.dirname(__file__),'report_files',str(pro_id))
 		# 创建目录
 		if not os.path.exists(upload_path):
 			os.makedirs(upload_path)
+		print upload_path
 
 		filename = None
 		arg_name = None
@@ -444,6 +620,7 @@ class ProjectUploadHandler(BaseHandler):
 					up_record["pro_id"]=pro_id
 					up_record["type"]=type_id
 					up_record["file_suffix"]="pdf"
+					up_record["kind"]="project"
 				up_record["uploadTime"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 				up_record["size"] = file_size
 				with open(filepath,'wb') as up:      #有些文件需要已二进制的形式存储，实际中可以更改
@@ -474,7 +651,7 @@ class ProjectDownloadHandler(BaseHandler):
     			self.render("./template/404.template")
     			return
     		info = self.online_data[self.get_current_user()]
-    		up_record = yield  db.user_uploads.find_one({"pro_id": pro_id, "group": info["group"], "type":type_id, "year":info["yearOfEntry"]})
+    		up_record = yield  db.user_uploads.find_one({"pro_id": pro_id, "kind":"project","group": info["group"], "type":type_id, "year":info["yearOfEntry"]})
     		if not up_record:
     			self.render("./template/404.template")
     			return
@@ -2235,6 +2412,9 @@ application = tornado.web.Application([
     (r"/admin/notice/delete/([0-9]+)", DeleteNotice),
     (r"/admin/notice/list", NoticeManagerHandler),
     (r"/review/([0-9]+)", ReviewHandler),
+    (r"/exp5/([0-9]+)",Exp5Handler), #new
+    (r"/exp5/([0-9]+)/upload/([0-9]+)", Exp5UploadHandler), #NEW
+   (r"/exp5/([0-9]+)/download/([0-9]+)", Exp5DownloadHandler), #new
     (r"/project", ProjectMainHandler),
     (r"/project/([0-9]+)/upload/([0-9]+)", ProjectUploadHandler),
     (r"/project/([0-9]+)/download/([0-9]+)", ProjectDownloadHandler),

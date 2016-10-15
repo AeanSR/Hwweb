@@ -1,5 +1,9 @@
-  <script>
+{% from datetime import datetime %}
+{% from HwWebUtil import ProjectStatus %}
+<script>
 $(function() {
+    var dialog, form,
+ 
       origin_pass = $( "#origin_pass" ),
       new_pass = $( "#new_pass" ),
       new_pass_again = $( "#new_pass_again" ),
@@ -81,20 +85,26 @@ function checkOriginNewPass( origin_pass, new_pass, n ) {
     });
   });
   </script>
-<div id="nav-info-modify"  data-role="panel" data-position="right">
-    <a href="/exit" data-ajax="false">退出登录</a>
-      <p class="validateTips">*每一项都必须填</p>
-   
-    <form action="/password" method="post" id="form_modify_pass" data-ajax="false">
+<div id="nav-panel" data-role="panel">
+        <ul id="exp5_menu" data-role="listview" data-corners="false">
+          <li><a href="/main" data-ajax="false">&lt;&lt;返回首页</a></li>
+          <li><a href="http://ucas-2016.tk:8889/exp5/" data-ajax="false">&lt;&lt;返回实验</a></li>
+        {% for pro in exercise %}
+          {% if pro['status']  == ProjectStatus["UNPUBLISH"] %} 
+            {% set statusStr = "实验未开始" %}
+          {% elif pro['status']  == ProjectStatus["PUBLISH"]  and datetime.now() < datetime.strptime(pro["deadline"],"%Y-%m-%d %H:%M:%S")   %}
+           {% set statusStr = "实验阶段" %}
+          {% else %}
+            {% set statusStr = "实验已结束" %}
+          {% end %}
+            <li><a href="/exp5/{{pro['pro_id']}}" data-ajax="false">{{pro['title']}} ({{statusStr}}) &nbsp;报告提交</a></li>
+        {% end %}
+        </ul >
+  </div>
+  {% include "./header-password.html" %}
 
-      <fieldset>
-        <label for="origin_pass">原密码</label>
-        <input type="password" name="origin_pass" id="origin_pass" value="" data-clear-btn="true">
-        <label for="new_pass">新密码</label>
-        <input type="password" name="new_pass" id="new_pass" value="" data-clear-btn="true">
-        <label for="new_pass_again">再次输入新密码</label>
-        <input type="password" name="new_pass_again" id="new_pass_again" value="" data-clear-btn="true">
-        <input type="submit" value="确认修改" id="info-modify-button" data-icon="check" data-iconpos="right">
-      </fieldset>
-    </form>
+  <div id="person_status" data-role="header">
+    <a href="#nav-panel" data-icon="bars">导航</a>
+    <h1 id="header-title">第一次作业</h1>
+    <a href="#nav-info-modify" data-icon="user" data-iconpos="right">{{info['name']}} &nbsp;&nbsp;{{info['userId'].upper()}}&nbsp;&nbsp;{{info['yearOfEntry']}}级&nbsp;&nbsp;{{info['classNo']}}班&nbsp;&nbsp;{{info['group']}}组&nbsp;&nbsp;</a>
   </div>

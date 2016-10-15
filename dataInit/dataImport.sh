@@ -17,3 +17,7 @@ mongoimport -h localhost --port 27017 -d hwweb -c quizs --jsonArray --file quizs
 #导入projects到hwweb数据库
 mongoimport -h localhost --port 27017 -d hwweb -c projects --jsonArray --file projects.mongo
 
+#导入exp5到hwweb数据库
+mongoimport -h localhost --port 27017 -d hwweb -c exp5 --jsonArray --file exp5.mongo
+
+

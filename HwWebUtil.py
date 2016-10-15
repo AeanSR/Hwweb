@@ -16,12 +16,14 @@ import tornado.web
 # note: solution的REVIEW条件：admin对其非客观题打分
 # 截至日过后，solution要么进入BLANK最终状态，要么直接进入REVIEW状态，要么进入SUBMIT再进入REVIEW
 QuizStatus = {"UNPUBLISH":0, "PUBLISH":1, "SAVE":2, "SUBMIT":3, "REVIEW":4, "BLANK":5}
+lessonStatus = {"UNPUBLISH":0, "PUBLISH":1, "SAVE":2, "SUBMIT":3, "REVIEW":4, "BLANK":5}
 QuesStatus = {"UNDONE":0, "DONE":1}
 ProjectStatus = {"UNPUBLISH":0, "PUBLISH":1, "END":2}
 
 # 实验上传的文件类型
 UploadType = {"PRESENTATION":0, "EXPREPORT":1}
-
+#实验五作业类型
+Exp5Type={"PROGRAM":0,"EXPREPORT":1,"PHOTO":2}
 # UNDONE: the user hasn't done anything about the quiz before deadline
 # SAVE: save before the deadline
 # SUB_NOTSCORED: submit before the deadline 
@@ -36,92 +38,113 @@ QuizType = {"SINCHOICE":1, "MULTICHOICE":2, "ESSAYQUES":3}
 TopoStatus = {"CHOOSING" : -1, "NEW" : 0, "ING":1, "DONE":2}
 
 class HwWebUtil:
-	scheduleTable = {}
-	@staticmethod
-	def canSaveOrSubmit(a_quiz, user_quiz, op_now):
-		if not a_quiz or a_quiz["status"] != QuizStatus["PUBLISH"] or op_now > datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S") or user_quiz and user_quiz["status"] != QuizStatus["SAVE"]:
-			return False
-		else:
-			return True
+        scheduleTable = {}
+        Exp5scheduleTable = {}
+        @staticmethod
+        def canSaveOrSubmit(a_quiz, user_quiz, op_now):
+                if not a_quiz or a_quiz["status"] != QuizStatus["PUBLISH"] or op_now > datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S") or user_quiz and user_quiz["status"] != QuizStatus["SAVE"]:
+                        return False
+                else:
+                        return True
+        @staticmethod
+        def getSchedule():
+                scheduleTable = HwWebUtil.scheduleTable
+                if not scheduleTable:
+                        schedleFile =os.path.join(os.path.dirname(__file__),'conf','schedule.csv')
+                        with open(schedleFile, "r") as f:
+                                heads = f.readline().split(",")
+                                scheduleTable["date"] = []
+                                for dateStr in heads[1:]:
+                                        startDate = datetime.strptime(dateStr.split("-")[0].strip(), "%Y/%m/%d/%H/%M/%S") 
+                                        endDate = datetime.strptime(dateStr.split("-")[1].strip(), "%Y/%m/%d/%H/%M/%S") 
+                                        if str(endDate)[5:7] == '06':
+                                                presentationDeadline = endDate.replace(hour=23) + timedelta(days=20)
+                                                reportDeadline = presentationDeadline
+                                        else: 
+                                                presentationDeadline = endDate.replace(hour=23) + timedelta(days=13)
+                                                reportDeadline = presentationDeadline
 
-	@staticmethod
-	def getSchedule():
-		scheduleTable = HwWebUtil.scheduleTable
-		if not scheduleTable:
-			schedleFile =os.path.join(os.path.dirname(__file__),'conf','schedule.csv')
-			with open(schedleFile, "r") as f:
-				heads = f.readline().split(",")
-				scheduleTable["date"] = []
-				for dateStr in heads[1:]:
-					startDate = datetime.strptime(dateStr.split("-")[0].strip(), "%Y/%m/%d/%H/%M/%S") 
-					endDate = datetime.strptime(dateStr.split("-")[1].strip(), "%Y/%m/%d/%H/%M/%S") 
-					if str(endDate)[5:7] == '06':
-						presentationDeadline = endDate.replace(hour=23) + timedelta(days=20)
-						reportDeadline = presentationDeadline
-					else: 
-						presentationDeadline = endDate.replace(hour=23) + timedelta(days=13)
-						reportDeadline = presentationDeadline
+                                        scheduleTable["date"].append([startDate, endDate, presentationDeadline, reportDeadline])
+                                scheduleTable["table"] = {}
+                                line = f.readline().strip()
+                                while line:
+                                        nos = line.split(",")
+                                        scheduleTable["table"][int(nos[0])] = nos[1:]
+                                        line = f.readline().strip()
+                return scheduleTable
 
-					scheduleTable["date"].append([startDate, endDate, presentationDeadline, reportDeadline])
-				scheduleTable["table"] = {}
-				line = f.readline().strip()
-	      			while line:
-	      				nos = line.split(",")
-	      				scheduleTable["table"][int(nos[0])] = nos[1:]
-	      				line = f.readline().strip()
-	      	return scheduleTable
 
-	@staticmethod
-	def isValid(classNo, projectNo):
-		classNo = int(classNo)
-		scheduleTable = HwWebUtil.getSchedule()
+        @staticmethod
+        def getExp5Schedule():
+                Exp5scheduleTable = HwWebUtil.Exp5scheduleTable
+                if not Exp5scheduleTable:
+                        Exp5schedleFile =os.path.join(os.path.dirname(__file__),'conf','exp5schedule.csv')
+                        with open(Exp5schedleFile, "r") as f:
+                                heads = f.readline().split(",")
+                                Exp5scheduleTable["date"] = []
+                                for dateStr in heads[1:]:
+                                        startDate = datetime.strptime(dateStr.split("-")[0].strip(), "%Y/%m/%d/%H/%M/%S") 
+                                        endDate = datetime.strptime(dateStr.split("-")[1].strip(), "%Y/%m/%d/%H/%M/%S") 
+                                        Exp5scheduleTable["date"].append([startDate, endDate])
+                                Exp5scheduleTable["table"] = {}
+                                line = f.readline().strip()
+                                while line:
+                                        nos = line.split(",")
+                                        Exp5scheduleTable["table"][int(nos[0])] = nos[1:]
+                                        line = f.readline().strip()
+                return Exp5scheduleTable
+	
+        @staticmethod
+        def isValid(classNo, projectNo):
+                classNo = int(classNo)
+                scheduleTable = HwWebUtil.getSchedule()
 		
 	      	# 测试帐号都是0班级
-	      	if classNo == 0:
-	      		return True
-	      	now = datetime.now()
-	      	project_time = 0
-	      	for i in range(0, len(scheduleTable["date"])):
-	      		if now > scheduleTable["date"][i][0] and now < scheduleTable["date"][i][1]:
-	      			project_time = i + 1
-	      			break
-	      	if project_time == 0 or int(scheduleTable["table"][classNo][project_time-1]) != projectNo:
-	      		return False
-	      	else:
-	      		return True
+                if classNo == 0:
+                        return True
+                now = datetime.now()
+                project_time = 0
+                for i in range(0, len(scheduleTable["date"])):
+                        if now > scheduleTable["date"][i][0] and now < scheduleTable["date"][i][1]:
+                                project_time = i + 1
+                                break
+                if project_time == 0 or int(scheduleTable["table"][classNo][project_time-1]) != projectNo:
+                        return False
+                else:
+                        return True
 
 
 
 	# 检测是否为连通图
-	@staticmethod
-	def isConnectedGraph(scale, links):
-		AdjList = [ [] for i in range(scale)]
-		for link in links:
-			x = int(link.split("-")[0])
-			y = int(link.split("-")[1])
-			AdjList[x].append(y)
-			AdjList[y].append(x)
-		count = HwWebUtil.BFS(AdjList, 0)
-		if count == scale:
-			return True
-		else:
-			return False
+        @staticmethod
+        def isConnectedGraph(scale, links):
+                AdjList = [ [] for i in range(scale)]
+                for link in links:
+                        x = int(link.split("-")[0])
+                        y = int(link.split("-")[1])
+                        AdjList[x].append(y)
+                        AdjList[y].append(x)
+                count = HwWebUtil.BFS(AdjList, 0)
+                if count == scale:
+                        return True
+                else:
+                        return False
 
 	# BFS，返回BFS树的节点数
-	@staticmethod
-	def BFS(AdjList, i):
-		scale = len(AdjList)
-		markArray = [ False for i in range(scale)]
-		count = 1
-		queue = []
-		markArray[i] = True
-		queue.append(i)
-		while len(queue) != 0:
-			u = queue[0]
-			del queue[0]
-			for v in AdjList[u]:
-				if not markArray[v]:
-					markArray[v] = True
-					count += 1
-					queue.append(v)
-		return count
+        @staticmethod
+        def BFS(AdjList, i):
+                scale = len(AdjList)
+                markArray = [ False for i in range(scale)]
+                count = 1
+                queue = []
+                markArray[i] = True
+                queue.append(i)
+                while len(queue) != 0:
+                        u = queue[0]
+                        del queue[0]
+                        for v in AdjList[u]:
+                                if not markArray[v]:
+                                        markArray[v] = True
+                                        count += 1
+                                        queue.append(v)
+                return count
