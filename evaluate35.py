@@ -29,8 +29,13 @@ def get_words(): #get test words randomly
 
 
 if __name__=='__main__':
-    
-    
+    path=os.path.abspath('.')
+    filepath=path[:-6]+'/ucas-exp/exp5/static/stu_hide_file/'+'Richard_M. Karp.txt'
+    file=open(filepath,'r')
+    file.seek(0)
+    RichardPaper_1=file.read(9999) #在第一万位符号后插入学号
+    print(RichardPaper_1[9998])
+    RichardPaper_2=file.read()
     while datetime.strptime(exp_date[len(exp_date)-1],"%Y-%m-%d %H:%M:%S")<datetime.now():
         pass;
     else:
@@ -41,19 +46,24 @@ if __name__=='__main__':
             hideInfo=get_words()
             StuWords=''
             try:
-    
                 subprocess.call(['python3', execisepath+filename,execisepath+'test.bmp','hide',picturepath+'word1.txt',picturepath+item["userId"]+'.bmp'],shell=False,timeout=30)  #run student's programme to creat a newbmp with hiding imformation
                 StuWords=subprocess.check_output(['python3', execisepath+filename,picturepath+item["userId"]+'.bmp','show'],shell=False,universal_newlines=True,timeout=30) #stu answer
                 mywords=subprocess.check_output(['python3',execisepath+'example.py',picturepath+item["userId"]+'.bmp','show'],shell=False,universal_newlines=True,timeout=30) #my answer
+                myRichardPaper=subprocess.check_output(['python3',execisepath+'example.py',execisepath+item["userId"]+'.bmp','show'],shell=False,universal_newlines=True,timeout=30) #my answer   
             except Exception as e:
                 sdb.user_uploads.update({"userId":item["userId"],"kind":"exp5","pro_id": 4},{'$set':{"score":"0"}})
                 print(e)
-    #I should use my progamme to test their bmp
             else:
-                if  (hideInfo!=StuWords[:-1]):
+                for i in range(0,32000):
+                    if  myRichardPaper[i]!=(RichardPaper_1+item["userId"]+RichardPaper_2)[i]:
+                        print(myRichardPaper[i],' ',(RichardPaper_1+item["userId"]+RichardPaper_2)[i])
+                if myRichardPaper[:-1]==RichardPaper_1+item["userId"]+RichardPaper_2: #使用程序测评图片
+                    print('1')
+                    sdb.user_uploads.update({"userId":item["userId"],"kind":"exp5","pro_id": 4},{'$set':{"score":"100"}})   
+                elif (hideInfo!=StuWords[:-1]):
                     sdb.user_uploads.update({"userId":item["userId"],"kind":"exp5","pro_id": 4},{'$set':{"score":"0"}})
                 elif StuWords!=mywords:
-                    sdb.user_uploads.update({"userId":item["userId"],"kind":"exp5","pro_id": 4},{'$set':{"score":"0"}})
+                    sdb.user_uploads.update({"userId":item["userId"],"kind":"exp5","pro_id": 4},{'$set':{"score":"60"}})
                 else:
-                    sdb.user_uploads.update({"userId":item["userId"],"kind":"exp5","pro_id": 4},{'$set':{"score":"0"}})
+                    sdb.user_uploads.update({"userId":item["userId"],"kind":"exp5","pro_id": 4},{'$set':{"score":"80"}})
      
