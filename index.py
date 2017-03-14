@@ -175,7 +175,7 @@ class MainHandler(BaseHandler):
     		notices = yield nt_cursor.to_list(None)
     		quiz_cursor = db.quizs.find().sort("quiz_id", pymongo.ASCENDING)
     		quizs = yield quiz_cursor.to_list(None)
-	 	self.render("./template/main.template" ,info = self.online_data[self.get_current_user()], notices = notices, quizs=quizs)
+	 	self.render("./template/main.html" ,info = self.online_data[self.get_current_user()], notices = notices, quizs=quizs)
 	 	return
 
 class QuizSaveHandler(BaseHandler):
@@ -353,7 +353,7 @@ class ProjectHandler(BaseHandler):
     			pro_id = int(pro_id)
     		except ValueError, e:
     			print "The argument does not contain numbers\n", e
-    			self.render("./template/404.template")
+    			self.render("./template/404.html")
     			return
     		info = self.online_data[self.get_current_user()]
     		pro_cursor = db.projects.find().sort("pro_id", pymongo.ASCENDING)
@@ -388,7 +388,7 @@ class ProjectUploadHandler(BaseHandler):
     				raise ValueError("type %d is not valid" % type_id)
     		except ValueError, e:
     			print "The argument does not contain numbers\n", e
-    			self.render("./template/404.template")
+    			self.render("./template/404.html")
     			return
     		info = self.online_data[self.get_current_user()]
     		a_pro = yield db.projects.find_one({"pro_id":pro_id,"status":ProjectStatus["PUBLISH"]})
@@ -471,12 +471,12 @@ class ProjectDownloadHandler(BaseHandler):
     				raise ValueError("type %d is not valid" % type_id)
     		except ValueError, e:
     			print "The argument does not contain numbers\n", e
-    			self.render("./template/404.template")
+    			self.render("./template/404.html")
     			return
     		info = self.online_data[self.get_current_user()]
     		up_record = yield  db.user_uploads.find_one({"pro_id": pro_id, "group": info["group"], "type":type_id, "year":info["yearOfEntry"]})
     		if not up_record:
-    			self.render("./template/404.template")
+    			self.render("./template/404.html")
     			return
     		else:
     			upload_path=os.path.join(os.path.dirname(__file__),'report_files',str(pro_id))
@@ -671,7 +671,6 @@ class ReviewHandler(BaseHandler):
     		# can't be reviewd because it's before the deadline, so just list the questions.
     		elif datetime.now() < datetime.strptime(a_quiz["deadline"], "%Y-%m-%d %H:%M:%S"):
     			self.redirect("/studentlist?quiz_id=" + quiz_id)
-    			#self.render("./template/quiz_view.template", info = self.online_data[self.get_current_admin()], a_quiz=a_quiz,quizs_index=quizs_index)
     			return
     		# it has been reviewd
     		elif a_quiz["status"] == QuizStatus["REVIEW"]:
@@ -708,7 +707,7 @@ class ReviewHandler(BaseHandler):
     				users_solutions.append({"userId":user["userId"], "solutions":solu_tmp,"all_score":a_user_solu["all_score"], "name":user["name"]})
     			# 将content只保存问答题
     			a_quiz["content"] = essayQueses
-	    		self.render("./template/quiz_review.template", info = self.online_data[self.get_current_admin()], a_quiz=a_quiz,quizs_index=quizs_index, users_solutions=users_solutions, current_page=page, page_num=page_num, url=url)
+	    		self.render("./template/quiz_review.html", info = self.online_data[self.get_current_admin()], a_quiz=a_quiz,quizs_index=quizs_index, users_solutions=users_solutions, current_page=page, page_num=page_num, url=url)
 	    		return
 	    	else:
 	    		# to do
@@ -724,7 +723,7 @@ class ReviewHandler(BaseHandler):
     			#	solu_tmp= filter(lambda x: x["type"] == QuizType["ESSAYQUES"],a_user_solu["solutions"])
     			#	user = yield db.users.find_one({"userId":a_user_solu["userId"]}, {"name":1, "_id":0,"userId":1})
     			#	users_solutions.append({"userId":user["userId"], "solutions":solu_tmp,"all_score":a_user_solu["all_score"], "name":user["name"]})
-	    		#	self.render("./template/quiz_review.template", a_quiz=a_quiz,quizs_index=quizs_index, users_solutions=users_solutions, current_page=page, page_num=page_num, url="/review/%d?"%a_quiz["quiz_id"])
+	    		#	self.render("./template/quiz_review.html", a_quiz=a_quiz,quizs_index=quizs_index, users_solutions=users_solutions, current_page=page, page_num=page_num, url="/review/%d?"%a_quiz["quiz_id"])
 	    		return
 
 	@tornado.web.asynchronous
@@ -739,14 +738,14 @@ class ReviewHandler(BaseHandler):
     			a_quiz = yield db.quizs.find_one({"quiz_id": int(quiz_id)})
     		except ValueError, e:
     			print "The argument does not contain numbers\n", e
-    			self.render("./template/404.template")
+    			self.render("./template/404.html")
     			return
     		if not a_quiz:
-    			self.render("./template/404.template")
+    			self.render("./template/404.html")
     			return
     		essayQueses = filter(lambda x:x["type"]==QuizType["ESSAYQUES"], a_quiz["content"])
     		if not essayQueses:
-    			self.render("./template/404.template")
+    			self.render("./template/404.html")
     			return
     		# eg: {4:10, 5:15} 即quiz_id的Quiz只有2个问答题，其中id=4的满分为10分，id=5的满分为15分
     		quesMap = {}
@@ -1465,7 +1464,7 @@ class Exp4Connection(SockJSConnection):
 		Handle authentication and notify the client if anything is not ok,
 		but don't give too many details
 		"""
-		
+
 		try:
 			message = json.loads(msg)
 		except ValueError:
@@ -1491,7 +1490,7 @@ class Exp4Connection(SockJSConnection):
 			groupRecord = sdb.exp4g.find_one({"group":group})
 			if not groupRecord:
 				groupRecord = {"group":group,
-					"days":0,	
+					"days":0,
 					"numPlayers":len(self.members[group])
 					}
 			self.numPlayers = groupRecord["numPlayers"]
@@ -1509,7 +1508,7 @@ class Exp4Connection(SockJSConnection):
 					'cond':{
 						"weahter":[ "==", "0" ],
 						"troops":[ "<=", 4000 ],
-						"supply":[ "<=", 4000 ] 
+						"supply":[ "<=", 4000 ]
 						},
 					'ready':None,
 					'resource':{'troops':5000,'supply':5000,'weahter':0},
@@ -1537,7 +1536,7 @@ class Exp4Connection(SockJSConnection):
 			self.members[group][userId]['online'] = True
 			self.broadcast_userlist(True)
 
-			self.send_message({'notify': 'success', 'identity':userRecord['identity'], 'numPlayers':groupRecord['numPlayers'], 
+			self.send_message({'notify': 'success', 'identity':userRecord['identity'], 'numPlayers':groupRecord['numPlayers'],
 				'id':self.maps[group][userId],'messages':userRecord['messages'],
 				'stage':userRecord['stage'],'cond':userRecord['cond'],
 				'resource':userRecord['resource'],'ready':userRecord['ready'],'test':self.isTestUser(userId)}, 'auth'
@@ -1554,7 +1553,7 @@ class Exp4Connection(SockJSConnection):
 					userRecord['cond'] = {
 						"weahter":[ "==", "0" ],
 						"troops":[ "<=", 4000 ],
-						"supply":[ "<=", 4000 ] 
+						"supply":[ "<=", 4000 ]
 						}
 					userRecord['stage'] += 1
 					sdb.exp4u.save(userRecord)
@@ -1692,7 +1691,7 @@ class Exp4Connection(SockJSConnection):
 
 	def isStart(self):
 		#print "numPlayers ", self.numPlayers[self.group]
-		groupRecord = sdb.exp4g.find_one({"group":self.group})	
+		groupRecord = sdb.exp4g.find_one({"group":self.group})
 		onlineNum = 0
 		for uid in self.members[self.group]:
 			if self.members[self.group][uid]['online'] == True:
@@ -1759,7 +1758,7 @@ class Exp4Connection(SockJSConnection):
 		else:
 			return False
 
-	
+
 	def resetTimer(self):
 		try:
 			tornado.ioloop.IOLoop.instance().remove_timeout(self.timers[self.group])
@@ -1774,14 +1773,14 @@ class Exp4Connection(SockJSConnection):
 		groupRecord = sdb.exp4g.find_one({"group":self.group})
 		days = groupRecord["days"]
 		numPlayers = groupRecord["numPlayers"]
-		traitorTimesList = {} 
-		standbyTimesList = {} 
+		traitorTimesList = {}
+		standbyTimesList = {}
 		for userId in self.clients[self.group]:
 			userRecord = sdb.exp4u.find_one({"group":self.group,"userId":userId})
 			#记录每个userId当traitor和standby的次数
 			traitorTimesList[userId] = userRecord["traitorTimes"]
 			standbyTimesList[userId] = userRecord["standbyTimes"]
-		#找出最小的traitor和standby的次数	
+		#找出最小的traitor和standby的次数
 		minTraitorTimes = min(traitorTimesList.values())
 		minStandbyTimes = min(standbyTimesList.values())
 		minTraitorTimesUserlist = []
@@ -1820,7 +1819,7 @@ class Exp4Connection(SockJSConnection):
 		#traitor= random.randint(0,groupRecord["numPlayers"]-1)
 		groupRecord["days"] += 1
 		sdb.exp4g.save(groupRecord)
-		[traitorId,standbyId] = self.chooseTraiter()		
+		[traitorId,standbyId] = self.chooseTraiter()
 		if self.isEnd():
 			return
 		playersList = []
@@ -1926,7 +1925,6 @@ class LoginHandler(BaseHandler):
 			if testMode:
 				logger.debug("test user: %s is logging in" %userId)
 				self.redirect("http://project.ucas-2016.tk")
-				#self.render("./template/test_entrance.template")
 				return
 			else:
 				logger.info("student: %s is logging in" %userId)
@@ -1987,13 +1985,13 @@ class UnfoundHandler(BaseHandler):
 	@tornado.web.authenticated
     	def get(self):
     		logger.warn("user: %s is try to visit %s"  %(self.get_current_user(), self.request.uri))
-	 	self.render("./template/404.template")
+	 	self.render("./template/404.html")
 	 	return
 
 	@tornado.web.authenticated
 	def post(self):
 		logger.warn("user: %s is try to visit %s" %(self.get_current_user(), self.request.uri))
-	 	self.render("./template/404.template")
+	 	self.render("./template/404.html")
 	 	return
 
 class NoticeManagerHandler(BaseHandler):
