@@ -43,7 +43,9 @@
                         $("#all_score").css({"color":"red"})
                         {% for i in range(len(user_quiz["solutions"])) %}
                             var tmp = unescapeHtml("{{','.join(a_quiz['content'][i]['answer']) }}")
-                            //$("#answer_{{ user_quiz["solutions"][i]['id'] }}").text("标准答案：" + tmp + "(得分：{{user_quiz['solutions'][i]['score']}})");
+                            var tmpexp = unescapeHtml("{{a_quiz['content'][i]['explanation'] }}")
+                            $("#answer_{{ user_quiz["solutions"][i]['id'] }}").text("标准答案：" + tmp + "(得分：{{user_quiz['solutions'][i]['score']}})");
+                            $("#explanation_{{ user_quiz["solutions"][i]['id'] }}").text("答案解释：" + tmpexp);
                         {% end %}
                     {%elif flag == QuizFlag["SEMI_SCORED"] %}
                         $("#all_score").text("客观题得分: {{user_quiz['all_score']}}")
@@ -67,7 +69,7 @@
             {% else %}
             {% end %}
             {% if flag == QuizFlag["UNDONE"] or flag == QuizFlag["SAVE"] %}
-                $("div#warn").text("现取消提交功能，作业最终提交答案为截止时的作业快照")   
+                $("div#warn").text("作业最终提交答案为截止时的作业快照")   
             {% elif flag == QuizFlag["SUB_NOTSCORED"]%}
                 $("div#warn").text("作业已提交，还未批改")      
         {% end %}
@@ -105,6 +107,7 @@
                             {% end %}
                                 </div>
                             <p height="15" id="answer_{{a_ques['id']}}"></p>
+                            <p height="15" id="explanation_{{a_ques['id']}}"></p>
                         </div>
                     {% else %}
                         <div class="quiz_essay"><div class="ques_head">{{a_ques['id']}}.&nbsp;{% raw a_ques["head"] %}</div>

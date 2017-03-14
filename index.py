@@ -39,7 +39,7 @@ from HwWebUtil import UploadType
 db = motor.MotorClient('localhost', 27017).hwweb
 sdb = pymongo.MongoClient('localhost', 27017).hwweb
 testdb = motor.MotorClient('localhost', 27017).test_hwweb
-domain = ".ucas-2016.tk"
+domain = ".ucas-2017.tk"
 expires_days = 7
 md5Salt='a~n!d@r#e$w%l^e&e'
 deployed=True
@@ -323,7 +323,6 @@ class QuizHandler(BaseHandler):
 			# user_quiz["status"] == QuizStatus["REVIEW"]
 			else:
 				flag = QuizFlag["FULL_SCORED"]
-
 			logger.info("student: %s is viewing the homework-%d(status: %s)" %(self.get_current_user(), int(quiz_id), flag))
 			self.render("./template/quiz.html", a_quiz = a_quiz, info = self.online_data[self.get_current_user()],  quizs=quizs, user_quiz=user_quiz, flag=flag)
 			return
@@ -920,9 +919,9 @@ class APIGetHandler(BaseHandler):
 	def post(self):
 
 		if deployed:
-			self.set_header('Access-Control-Allow-Origin','http://ucas-2016.tk:8889')
+			self.set_header('Access-Control-Allow-Origin','http://ucas-2017.tk:8889')
 		else:
-			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2016.tk:8080')
+			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2017.tk:8080')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		try:
 			gameId = int(self.get_argument("gameId", 1))
@@ -968,9 +967,9 @@ class APIPutHandler(BaseHandler):
 	@tornado.gen.coroutine
 	def post(self):
 		if deployed:
-			self.set_header('Access-Control-Allow-Origin','http://ucas-2016.tk:8889')
+			self.set_header('Access-Control-Allow-Origin','http://ucas-2017.tk:8889')
 		else:
-			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2016.tk:8080')
+			self.set_header('Access-Control-Allow-Origin','http://project.ucas-2017.tk:8080')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		try:
 			gameId = int(self.get_argument("gameId", 1))
@@ -1038,7 +1037,7 @@ class RouteAPIGetInfoHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://ucas-2016.tk:8889')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2017.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		if not self.canDoExperiment(3):
 			return
@@ -1084,7 +1083,7 @@ class RouteAPISubmitRouteHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://ucas-2016.tk:8889')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2017.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		if not self.canDoExperiment(3):
 			return
@@ -1133,7 +1132,7 @@ class RouteAPISubmitTopoHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://ucas-2016.tk:8889')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2017.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		if not self.canDoExperiment(3):
 			return
@@ -1180,7 +1179,7 @@ class RouteAPIGetTopoHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://ucas-2016.tk:8889')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2017.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		if not self.canDoExperiment(3):
 			return
@@ -1288,7 +1287,7 @@ class RouteAPIClearRouteInTestModeHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://ucas-2016.tk:8889')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2017.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		if not self.canDoExperiment(3):
 			return
@@ -1316,7 +1315,7 @@ class RouteAPISubmitRouteEvaluationHandler(BaseHandler):
 	@tornado.web.asynchronous
 	@tornado.gen.coroutine
 	def post(self):
-		self.set_header('Access-Control-Allow-Origin','http://ucas-2016.tk:8889')
+		self.set_header('Access-Control-Allow-Origin','http://ucas-2017.tk:8889')
 		self.set_header('Access-Control-Allow-Credentials','true')
 		if not self.canDoExperiment(3):
 			return
@@ -1924,7 +1923,7 @@ class LoginHandler(BaseHandler):
 			# testMode 下只能做支持实验测试，其他测试无法支持
 			if testMode:
 				logger.debug("test user: %s is logging in" %userId)
-				self.redirect("http://project.ucas-2016.tk")
+				self.redirect("http://project.ucas-2017.tk")
 				return
 			else:
 				logger.info("student: %s is logging in" %userId)
@@ -1956,14 +1955,14 @@ class PasswordHandler(BaseHandler):
 		a_user = yield db.users.find_one({"userId":userId, "password":hashlib.md5(origin_pass + md5Salt).hexdigest()})
 		a_admin = yield db.admin.find_one({"userId":adminId, "password":hashlib.md5(origin_pass + md5Salt).hexdigest()})
 		if userId and a_user and new_pass==new_pass_again and re.match(regEx, new_pass):
-				logger.info("student: %s is modifying password to %s" %(userId, new_pass))
-				a_user["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
-				yield db.users.save(a_user)
-				self.clear_current_user()
-				self.clear_current_admin()
-				self.write('<script>alert("修改成功，请重新登录系统");window.location="/login"</script>')
-				self.finish()
-				return
+			logger.info("student: %s is modifying password to %s" %(userId, new_pass))
+			a_user["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
+			yield db.users.save(a_user)
+			self.clear_current_user()
+			self.clear_current_admin()
+			self.write('<script>alert("修改成功，请重新登录系统");window.location="/login"</script>')
+			self.finish()
+			return
 		elif adminId and a_admin and new_pass==new_pass_again and re.match(regEx, new_pass):
 			logger.info("administrator: %s is modifying password to %s" %(adminId, new_pass))
 			a_admin["password"] = hashlib.md5(new_pass + md5Salt).hexdigest()
@@ -1976,6 +1975,34 @@ class PasswordHandler(BaseHandler):
 		else:
 			logger.info("student: %s failed to modify password to %s" %(userId, new_pass))
 			self.write('<script>alert("原密码有误或新密码不符合输入规则，修改失败");window.history.back()</script>')
+			self.finish()
+			return
+
+class GroupNameHandler(BaseHandler):
+
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def post(self):
+		regEx = r'^([0-8]){1}([-])([1-9]){1}$'
+		userId = self.get_current_user()
+		group_name = self.get_argument("group_name", None)
+		a_user = yield db.users.find_one({"userId":userId})
+		if userId and a_user and re.match(regEx, group_name) and group_name[0] == a_user["classNo"]:
+			logger.info("student: %s is setting group to %s" %(userId, group_name))
+			a_user["group"] = group_name
+			yield db.users.save(a_user)
+			self.clear_current_user()
+			self.write('<script>alert("设置成功，请重新登录系统");window.location="/login"</script>')
+			self.finish()
+			return
+		elif group_name[0] != a_user["classNo"]:
+			logger.info("student: %s failed to set group to %s" %(userId, group_name))
+			self.write('<script>alert("班级不符合，设置失败");window.history.back()</script>')
+			self.finish()
+			return
+		else:
+			logger.info("student: %s failed to set group to %s" %(userId, group_name))
+			self.write('<script>alert("组名格式错误，设置失败");window.history.back()</script>')
 			self.finish()
 			return
 
@@ -2101,6 +2128,44 @@ class ResetPassword(BaseHandler):
 		self.finish()
 		return
 
+class SetGroupName(BaseHandler):
+
+	@tornado.web.asynchronous
+	def get(self):
+		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+		self.write("<a href='/admin'>主页</a><br/><form action='/admin/setGroupName' method='post'><label>学号</label><input type='text' name='userId'/></br><label>组号</label> <input type='text' name='group'/> <input type='submit' value='设置组号'/> </form>")
+		self.finish()
+		return
+
+	@tornado.web.asynchronous
+	@tornado.gen.coroutine
+	def post(self):
+		if not self.get_current_admin():
+			self.redirect("/login")
+			return
+		userId = self.get_argument("userId", None)
+		new_group = self.get_argument("group", None)
+		if userId:
+			userId = userId.strip()
+			new_group = new_group.strip()
+			a_user = yield db.users.find_one({"userId":userId.lower()})
+			if a_user:
+				logger.info("administrator: %s is setting %s's group to %s" %(self.get_current_admin(), userId.lower(), new_group))
+				a_user["group"] = new_group
+				yield db.users.save(a_user)
+				self.write('<script>alert("设置成功");window.location="/admin"</script>')
+				self.finish()
+				return
+			else:
+				self.write('<script>alert("此学生不存在，设置失败");window.history.back()</script>')
+				self.finish()
+				return
+
+		self.write('<script>alert("参数错误，设置失败");window.history.back()</script>')
+		self.finish()
+		return
 
 class ExitHandler(BaseHandler):
 
@@ -2222,6 +2287,7 @@ application = tornado.web.Application([
     (r"/main", MainHandler),
     (r"/exit", ExitHandler),
     (r"/password", PasswordHandler),
+    (r"/groupname", GroupNameHandler),
     # (r"/quiz/([0-9]+)/submit", QuizSubmitHandler),
     (r"/quiz/([0-9]+)/save", QuizSaveHandler),
     (r"/quiz/([0-9]+)", QuizHandler),
@@ -2229,6 +2295,7 @@ application = tornado.web.Application([
     (r"/studentlist/transcipt/([0-9]+)", TransciptHandler),
     (r"/admin", AdminHandler),
     (r"/admin/resetPassword", ResetPassword),
+    (r"/admin/setGroupName", SetGroupName),
     (r"/admin/notice/publish", PublishNotice),
     (r"/admin/notice/delete/([0-9]+)", DeleteNotice),
     (r"/admin/notice/list", NoticeManagerHandler),
