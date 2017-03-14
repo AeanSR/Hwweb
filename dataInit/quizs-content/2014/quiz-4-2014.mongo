@@ -1,4 +1,4 @@
-{"quiz_id": 4, "description":"作业题为单选题，每题10分，总分100分。","status":1, "title": "第四次作业", "releaseTime": "2016-06-10 12:00:00", "deadline":"2016-06-23 23:00:00", "content":[  
+{"quiz_id": 4, "description":"作业题为单选题，每题10分，总分100分。","status":1, "title": "第四次作业", "releaseTime": "2017-06-10 12:00:00", "deadline":"2017-06-23 23:00:00", "content":[  
 {"id":1, "type":1, "head":"模块化方法倡导计算系统由多个模块组合而成。这意味着？(&nbsp;&nbsp;&nbsp;&nbsp;)", "choices":[{"value":"A", "text":"模块外的系统不应该看见和操作该模块内部，而应该通过接口使用该模块"}, {"value":"B", "text":"模块外的系统应该看见和操作该模块内部，以便最大可能地优化性能"}, {"value":"C", "text":"两者皆可，由系统设计者决定"}], "answer":["A"], "score":10},
 {"id":2, "type":1, "head":"关于抽象化方法的特点，以下说法最合适的是？(&nbsp;&nbsp;&nbsp;&nbsp;)", "choices":[{"value":"A", "text":"从多种应用需求中提炼出共性技术"}, {"value":"B", "text":"用同一个学术抽象支持所有应用，包括尚未出现的未来的新应用"}, {"value":"C", "text":"学术抽象应该具体明确、能在计算系统中实现"}, {"value":"D", "text":"三者全对"}], "answer":["D"], "score":10},
 {"id":3, "type":1, "head":"操作系统通过同一个学术抽象支持所有应用软件的运行。这个抽象是什么？(&nbsp;&nbsp;&nbsp;&nbsp;)", "choices":[{"value":"A", "text":"进程"}, {"value":"B", "text":"文件"}, {"value":"C", "text":"程序"}], "answer":["A"], "score":10},

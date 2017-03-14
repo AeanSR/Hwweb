@@ -1,5 +1,9 @@
 {% from datetime import datetime %}
 {% from HwWebUtil import QuizStatus %}
+<script>
+var global_admin_id = "{{info['adminId']}}";
+var global_group_name = global_admin_id;
+</script>
 <div id="nav-panel" data-role="panel">
     <ul data-role="listview" class="ui-listview-outer">
        <li data-iconpos="right" data-shadow="false" data-corners="false"><a href="/admin" data-ajax="false">管理员首页</a></li>
@@ -28,14 +32,15 @@
             </li>
         {% end %}
         <li><a href="/admin/resetPassword" data-ajax="false">重置学生密码入口</a></li>
+        <li><a href="/admin/setGroupName" data-ajax="false">设置学生组号入口</a></li>
         <li><a href="/admin/notice/list" data-ajax="false">通知管理</a></li>
         </ul >
       </li>
       <li data-role="collapsible" data-iconpos="right" data-shadow="false" data-corners="false">
         <h2 class="legend">Experiment</h2>
         <ul id="project_menu" data-role="listview" data-corners="false">
-          <li><a href="http://ucas-2016.tk:8889/exp2" target="_blank" data-ajax="false">实验二（算法）</a></li>
-          <li><a href="http://ucas-2016.tk:8889/exp3" target="_blank" data-ajax="false">实验三（网络）</a></li>
+          <li><a href="http://ucas-2017.tk:8889/exp2" target="_blank" data-ajax="false">实验二（算法）</a></li>
+          <li><a href="http://ucas-2017.tk:8889/exp3" target="_blank" data-ajax="false">实验三（网络）</a></li>
           <li><a href="#">实验四（系统）</a></li>
           </ul>
        </li>

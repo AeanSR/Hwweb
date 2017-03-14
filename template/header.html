@@ -10,6 +10,10 @@ $(function() {
     }
     $("#project_menu").listview( "refresh");
   });
+
+var global_group_name = "{{info['group']}}";
+var global_classNo = "{{info['classNo']}}";
+
   </script>
 <div id="nav-panel" data-role="panel">
     <ul data-role="listview" class="ui-listview-outer">
@@ -43,9 +47,6 @@ $(function() {
         <h2 class="legend">Experiment</h2>
         <ul id="project_menu" data-role="listview" data-corners="false">
           <li><a href="/project" data-ajax="false">实验日程表和实验报告提交入口</a></li>
-          <li><a href="http://ucas-2016.tk:8889/exp2" target="_blank" data-ajax="false">实验二（算法）</a></li>
-          <li><a href="http://ucas-2016.tk:8889/exp3" target="_blank" data-ajax="false">实验三（网络）</a></li>
-          <li><a href="http://ucas-2016.tk:8889/exp4" target="_blank" data-ajax="false">实验四（系统）</a></li>
           </ul>
        </li>
      </ul>
@@ -57,3 +58,18 @@ $(function() {
     <h1 id="header-title">第一次作业</h1>
     <a href="#nav-info-modify" data-icon="user" data-iconpos="right">{{info['name']}} &nbsp;&nbsp;{{info['userId'].upper()}}&nbsp;&nbsp;{{info['yearOfEntry']}}级&nbsp;&nbsp;{{info['classNo']}}班&nbsp;&nbsp;{{info['group']}}组&nbsp;&nbsp;</a>
   </div>
+
+<script>
+if(global_group_name=="") {
+	var tmp ='\
+        <li><a href="javascript:void(0);" target="_blank" data-ajax="false">正确输入组号后才可进入实验</a></li>'
+     	$("#project_menu").append(tmp);
+}
+else{
+	var tmp ='\
+        <li><a href="http://ucas-2017.tk:8889/exp2" target="_blank" data-ajax="false">实验二（算法）</a></li>\
+        <li><a href="http://ucas-2017.tk:8889/exp3" target="_blank" data-ajax="false">实验三（网络）</a></li>\
+	<li><a href="http://ucas-2017.tk:8889/exp4" target="_blank" data-ajax="false">实验四（系统）</a></li>'
+     	$("#project_menu").append(tmp);
+}
+</script>
