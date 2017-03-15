@@ -13,7 +13,6 @@
       tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
     });
 </script>
-<script type="text/javascript" src="http://cdn.bootcss.com/mathjax/2.6.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script>
         $(document).ready(function(c) {
             $("#header-title").text('Homework-{{a_quiz["quiz_id"]}}');
@@ -43,7 +42,7 @@
                         $("#all_score").css({"color":"red"})
                         {% for i in range(len(user_quiz["solutions"])) %}
                             var tmp = unescapeHtml("{{','.join(a_quiz['content'][i]['answer']) }}")
-                            var tmpexp = unescapeHtml("{{a_quiz['content'][i]['explanation'] }}")
+                            var tmpexp = unescapeHtml("{{a_quiz['content'][i]['explanation']}}")
                             $("#answer_{{ user_quiz["solutions"][i]['id'] }}").text("标准答案：" + tmp + "(得分：{{user_quiz['solutions'][i]['score']}})");
                             $("#explanation_{{ user_quiz["solutions"][i]['id'] }}").text("答案解释：" + tmpexp);
                         {% end %}
@@ -127,4 +126,4 @@
 </div> <!-- end of page -->
 </body>
 </html>
-
+<script type="text/javascript" src="http://cdn.bootcss.com/mathjax/2.6.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>

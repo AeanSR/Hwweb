@@ -324,6 +324,9 @@ class QuizHandler(BaseHandler):
 			else:
 				flag = QuizFlag["FULL_SCORED"]
 			logger.info("student: %s is viewing the homework-%d(status: %s)" %(self.get_current_user(), int(quiz_id), flag))
+			
+			for question in a_quiz['content']:
+				question['explanation'] = question['explanation'].replace("\\", "\\\\")
 			self.render("./template/quiz.html", a_quiz = a_quiz, info = self.online_data[self.get_current_user()],  quizs=quizs, user_quiz=user_quiz, flag=flag)
 			return
 
@@ -2004,7 +2007,7 @@ class GroupNameHandler(BaseHandler):
 			return
 		else:
 			logger.info("student: %s failed to set group to %s" %(userId, group_name))
-			self.write('<script>alert("组名格式错误，设置失败");window.history.back()</script>')
+			self.write('<script>alert("输入格式错误，设置失败");window.history.back()</script>')
 			self.finish()
 			return
 		
