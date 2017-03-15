@@ -141,6 +141,5 @@
 {"userId" : "ucas12-2", "status" : 5, "all_score" : 0, "solutions" : [ ], "quiz_id" : 2, "lastTime" : "2014-11-14 23:00:00" },
 {"userId" : "ucas12-3", "status" : 5, "all_score" : 0, "solutions" : [ ], "quiz_id" : 2, "lastTime" : "2014-11-14 23:00:00" },
 {"userId" : "ucas12-4", "status" : 5, "all_score" : 0, "solutions" : [ ], "quiz_id" : 2, "lastTime" : "2014-11-14 23:00:00" },
-{"userId" : "ucas12-5", "status" : 5, "all_score" : 0, "solutions" : [ ], "quiz_id" : 2, "lastTime" : "2014-11-14 23:00:00" },
-
+{"userId" : "ucas12-5", "status" : 5, "all_score" : 0, "solutions" : [ ], "quiz_id" : 2, "lastTime" : "2014-11-14 23:00:00" }
 ]

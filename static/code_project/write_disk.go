@@ -15,6 +15,7 @@ func main() {
 	// 0666: linux file permission
 	var path string = "hello.txt"
 	if err := ioutil.WriteFile(path, byte_content, 0666); err != nil {
+		// file write error
 		fmt.Fprintln(os.Stderr, err.Error())
 		return
 	}

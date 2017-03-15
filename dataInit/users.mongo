@@ -1,4 +1,5 @@
-[{"group":"","name":"李慕笛","grade":"大二","yearOfEntry":2016,"userId":"2015k8009929005","classNo":"1","password":"8347fb6fa35c4f40c9c17f03e414feeb"},
+[
+{"group":"","name":"李慕笛","grade":"大二","yearOfEntry":2016,"userId":"2015k8009929005","classNo":"1","password":"8347fb6fa35c4f40c9c17f03e414feeb"},
 {"group":"","name":"刘佳熙","grade":"大一","yearOfEntry":2016,"userId":"2016k8009907001","classNo":"1","password":"8347fb6fa35c4f40c9c17f03e414feeb"},
 {"group":"","name":"邢方舟","grade":"大一","yearOfEntry":2016,"userId":"2016k8009907002","classNo":"1","password":"8347fb6fa35c4f40c9c17f03e414feeb"},
 {"group":"","name":"赵旭瑞","grade":"大一","yearOfEntry":2016,"userId":"2016k8009907003","classNo":"1","password":"8347fb6fa35c4f40c9c17f03e414feeb"},
@@ -346,5 +347,5 @@
 {"group":"","name":"徐华健","grade":"大一","yearOfEntry":2016,"userId":"2016k8009929062","classNo":"8","password":"8347fb6fa35c4f40c9c17f03e414feeb"},
 {"group":"","name":"马钊钰","grade":"大一","yearOfEntry":2016,"userId":"2016k8009929063","classNo":"8","password":"8347fb6fa35c4f40c9c17f03e414feeb"},
 {"group":"","name":"冉茜","grade":"大一","yearOfEntry":2016,"userId":"2016k8009929064","classNo":"8","password":"8347fb6fa35c4f40c9c17f03e414feeb"},
-{"group":"","name":"单朗","grade":"大一","yearOfEntry":2016,"userId":"2016k8009929065","classNo":"8","password":"8347fb6fa35c4f40c9c17f03e414feeb"},
+{"group":"","name":"单朗","grade":"大一","yearOfEntry":2016,"userId":"2016k8009929065","classNo":"8","password":"8347fb6fa35c4f40c9c17f03e414feeb"}
 ]

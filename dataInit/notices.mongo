@@ -1,3 +1,4 @@
-[{"id":1, "creator": "助教(me@wangyifan.tech)", "description":"请及时修改初始密码，防止他人登录。","time":"2017-03-15 00:00:00", "content":"请及时修改登录密码,并检查姓名/学号/班级，如有问题请联系助教。", "importance":"red"},
-{"id":2, "creator": "助教(me@wangyifan.tech)", "description":"请输入分组编号，进行线上实验。","time":"2017-03-16 00:00:00", "content":"进入线上实验前请先输入分组编号。注意，组号只能输入一次，请保证输入正确，若输入有误请联系助教协助修改。", "importance":"red"},
+[
+{"id":1, "creator": "助教(me@wangyifan.tech)", "description":"请及时修改初始密码，防止他人登录。","time":"2017-03-15 00:00:00", "content":"请及时修改登录密码,并检查姓名/学号/班级，如有问题请联系助教。", "importance":"red"},
+{"id":2, "creator": "助教(me@wangyifan.tech)", "description":"请输入分组编号，进行线上实验。","time":"2017-03-16 00:00:00", "content":"进入线上实验前请先输入分组编号。注意，组号只能输入一次，请保证输入正确，若输入有误请联系助教协助修改。", "importance":"red"}
 ]

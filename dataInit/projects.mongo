@@ -1,5 +1,6 @@
-[{"pro_id": 1,"status":1 ,"title": "图灵机实验", "releaseTime": "2017-03-17 12:00:00", "deadline": "2017-07-10 23:00:00"},
+[
+{"pro_id": 1,"status":1 ,"title": "图灵机实验", "releaseTime": "2017-03-17 12:00:00", "deadline": "2017-07-10 23:00:00"},
 {"pro_id": 2,"status":1 ,"title": "算法实验", "releaseTime": "2017-03-17 12:00:00", "deadline": "2017-07-10 23:00:00"},
 {"pro_id": 3,"status":1 ,"title": "计算机网络实验", "releaseTime": "2017-03-17 12:00:00", "deadline": "2017-07-10 23:00:00"},
-{"pro_id": 4,"status":1 ,"title": "系统思维实验", "releaseTime": "2017-03-17: 12:00:00", "deadline": "2017-07-10 23:00:00"},
+{"pro_id": 4,"status":1 ,"title": "系统思维实验", "releaseTime": "2017-03-17: 12:00:00", "deadline": "2017-07-10 23:00:00"}
 ]

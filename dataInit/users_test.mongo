@@ -1,4 +1,5 @@
-[{"group": "0-1", "name": "Sai", "grade": "大一", "yearOfEntry": 2016, "userId": "ucas1-1", "classNo": "0", "password": "4d3b1e51b8db728db4116b2db253ee66"},
+[
+{"group": "0-1", "name": "Sai", "grade": "大一", "yearOfEntry": 2016, "userId": "ucas1-1", "classNo": "0", "password": "4d3b1e51b8db728db4116b2db253ee66"},
 {"group": "0-1", "name": "Sai", "grade": "大一", "yearOfEntry": 2016, "userId": "ucas1-2", "classNo": "0", "password": "4d3b1e51b8db728db4116b2db253ee66"},
 {"group": "0-1", "name": "Sai", "grade": "大一", "yearOfEntry": 2016, "userId": "ucas1-3", "classNo": "0", "password": "4d3b1e51b8db728db4116b2db253ee66"},
 {"group": "0-1", "name": "Sai", "grade": "大一", "yearOfEntry": 2016, "userId": "ucas1-4", "classNo": "0", "password": "4d3b1e51b8db728db4116b2db253ee66"},

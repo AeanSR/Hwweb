@@ -21,6 +21,8 @@ from datetime import timedelta
 import time
 
 from sockjs.tornado import SockJSRouter, SockJSConnection
+from code_project import *
+from base import BaseHandler
 from HwWebUtil import HwWebUtil
 from HwWebUtil import QuizStatus
 from HwWebUtil import QuesStatus
@@ -56,50 +58,6 @@ def strSolution(solu):
 	for s in solu["solutions"]:
 		strSolu += str(s['solution'])
 	return strSolu
-
-class BaseHandler(tornado.web.RequestHandler):
-	online_data = {}
-
-	# admin 登录
-	def get_current_admin(self):
-		adminId = self.get_secure_cookie("adminId")
-		if adminId and self.online_data and adminId in self.online_data.keys():
-			return adminId
-		else:
-			return None
-
-	# admin 注销
-	def clear_current_admin(self):
-		adminId = self.get_secure_cookie("adminId")
-		if not adminId:
-			return
-		elif self.online_data and adminId in self.online_data.keys():
-			del self.online_data[adminId]
-		self.clear_cookie("adminId", domain=domain)
-
-	# 普通学生登录
-	def get_current_user(self):
-		userId = self.get_secure_cookie("userId")
-		if userId and self.online_data and userId in self.online_data.keys():
-			return userId
-		else:
-			return None
-
-	# 普通学生注销
-	def clear_current_user(self):
-
-		userId = self.get_secure_cookie("userId")
-		if not userId:
-			return
-		elif self.online_data and userId in self.online_data.keys():
-			del self.online_data[userId]
-		self.clear_cookie("userId", domain=domain)
-
-	def write_error(self, status_code, **kwargs):
-		self.write("You caused a %d error." % status_code)
-		if "exc_info" in kwargs.keys():
-			print kwargs["exc_info"]
-		self.flush()
 
 	# # 如果存在全是客观题，状态为publish，且已过deadline的quiz，置其状态为review
 	# # 所有有Quiz状态信息的都要首先调用这个函数
@@ -2317,7 +2275,11 @@ application = tornado.web.Application([
     (r"/api/route/submitTopo",RouteAPISubmitTopoHandler),
     (r"/api/route/submitRoute",RouteAPISubmitRouteHandler),
     (r"/api/route/submitRouteEvaluation",RouteAPISubmitRouteEvaluationHandler),
-    (r"/api/route/clearRouteRecordInTestMode",RouteAPIClearRouteInTestModeHandler)
+    (r"/api/route/clearRouteRecordInTestMode",RouteAPIClearRouteInTestModeHandler),
+    (r"/code_project",CodeMainHandler), # code project home
+    (r"/code_project/download/picture",CodeOriginPictureHandler), # get the exp bmp file
+    (r"/code_project/upload/code",CodeSubmitCodeHandler), # submit code
+    (r"/code_project/upload/hidden_picture",CodeSubmitPictureHandler), # submit code
     ] + SockRouter.urls, **settings )
 
 # 每次加入新的作业或者修改作业的截止日期都必须要重启一次系统，因为需要把自动该作业的任务加入到定时任务中去
