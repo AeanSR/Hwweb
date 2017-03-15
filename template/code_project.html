@@ -1,0 +1,69 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <title>计算机导论 作业系统</title>
+{% include "./reference.html" %}
+<script type="text/javascript">
+$(function(){
+	$("#header-title").text("信息隐藏实验");
+});
+</script>
+</head>
+
+<body>
+<div id="container" data-role="page" data-theme="b">
+{% include "./header.html" %}
+<div role="main" class="ui-content">
+  <h1 id="toc_0">信息隐藏实验</h1>
+
+  <h2 id="toc_1">实验环境准备</h2>
+
+  <ul>
+    <li>VirtualBox下载 <a href="/static/download/VirtualBox-5.1.16-113841-Win.exe">Windows版本(123MB)</a>， <a href="/static/download/VirtualBox-5.1.16-113841-OSX.dmg">Mac版本(94MB)</a></li>
+    <li><a href="/static/download/Computer_Intro.ova">Ubuntu虚拟文件下载(2.42G)</a>。用户名sai，密码sai。</li>
+    <li>编译代码<a href="/static/code_project/hello_world.go"><code>~/workspace/go/src/project/hello_world.go</code></a>，然后运行</li>
+  </ul>
+
+  <h2 id="toc_2">四个子任务</h2>
+
+  <h3 id="toc_3">数字和字符的操作（无需提交）</h3>
+
+  <p>实现和测试代码即可</p>
+
+  <h3 id="toc_4">算法复杂度估计（无需提交）</h3>
+
+  <p>按照该任务要求修改代码<a href="/static/code_project/algo_complexity.go"><code>~/workspace/go/src/project/algo_complexity.go</code></a>，并测试程序</p>
+
+  <h3 id="toc_5">网络读取文件（无需提交）</h3>
+
+  <ul>
+    <li>阅读实验中的<a href="/static/code_project/remote_txt.go"><code>~/workspace/go/src/project/remote_txt.go</code></a>和<a href="/static/code_project/write_disk.go"><code>~/workspace/go/src/project/write_disk.go</code></a></li>
+    <li>代码2中访问的文件的URL如下<a href="http://www.ucas-2017.tk/static/code_project/Richard_Karp.txt">http://www.ucas-2017.tk/static/code_project/Richard_Karp.txt</a></li>
+    <li>该任务要求获取的bmp文件URL如下<a href="http://www.ucas-2017.tk/static/code_project/origin_test.bmp">http://www.ucas-2017.tk/static/code_project/origin_test.bmp</a></li>
+  </ul>
+
+  <h3 id="toc_6">信息隐藏（需提交）</h3>
+
+  <ol>
+    <li>修改代码<a href="/static/code_project/hide_info.go"><code>~/workspace/go/src/project/hide_info.go</code></a>完成实验任务</li>
+    <li>供测试和正式实验的文本文件为同一个文件<a href="http://www.ucas-2017.tk/static/code_project/Richard_Karp.txt">http://www.ucas-2017.tk/static/code_project/Richard_Karp.txt</a></li>
+    <li>供测试的原BMP图片<a href="http://www.ucas-2017.tk/static/code_project/origin_test.bmp">http://www.ucas-2017.tk/static/code_project/origin_test.bmp</a></li>
+    <li>供正式实验的原BMP图片和测试图片不一样，每个同学之间也不一样。<a href="/code_project/picture">点击获取</a></li>
+  </ol>
+
+  <h2 id="toc_7">信息隐藏任务提交</h2>
+
+  <ul>
+    <li>提交代码(hide_info.go)</li>
+    <li>提交[4]隐藏[2]后图片文件</li>
+    <li>提交实验报告(pdf)</li>
+  </ul>
+
+<p>&nbsp;</p>
+</div>
+{% include "./footer.html" %}
+</div>
+</body>
+
+</html>
