@@ -2,6 +2,7 @@ package main
 
 import (
 	"./util"
+	"crypto/md5"
 	"fmt"
 	"log"
 	"os"
@@ -12,7 +13,7 @@ import (
 
 // Build all original and modified bmp files of various students' ids
 // based on the source bmp.
-func build_bmp(src_img_path, path_prefix, hide_file_path string, ids []string, export_dir string) {
+func build_bmp(src_img_path, hide_file_path, path_prefix string, ids []string, export_dir string) {
 	if _, err := os.Stat(export_dir); os.IsNotExist(err) {
 		log.Printf("export dir %s doen't exist\n", export_dir)
 	}
@@ -23,19 +24,15 @@ func build_bmp(src_img_path, path_prefix, hide_file_path string, ids []string, e
 		return
 	} else {
 		for _, id := range ids {
-			var id_tmp int
-			if len(id) > 5 {
-				id = id[len(id)-5:]
-			} else if 0 == len(id) {
+			if 0 == len(id) {
 				continue
 			}
-			id_tmp, err = strconv.Atoi(id)
-			if err != nil {
-				log.Printf("id: %s is not correct \n", id)
-				continue
-			}
-			id_int32 := int32(id_tmp)
+			id_md5_value := md5.Sum([]byte(id))
+			id_md5_str_slice_7 := string(id_md5_value[:7])
+			tmp, _ := strconv.ParseInt(id_md5_str_slice_7, 16, 32)
+			id_int32 := int32(tmp)
 			new_bmp_header := insert_int_in_bmpinfo_header(bmpinfo_header, id_int32)
+			fmt.Println(id, id_int32)
 			original_img := path.Join(export_dir, path_prefix+id+".bmp")
 			result_img := path.Join(export_dir, "m_"+path_prefix+id+".bmp")
 			if _, err := os.Stat(original_img); os.IsExist(err) {
@@ -70,7 +67,7 @@ func build_bmp_from_idfile(src_img_path, hide_file_path, dest_img_prefix, ids_fi
 
 func _print_tool_usage() {
 	fmt.Fprintf(os.Stderr, "* build args: src_img_path "+
-		"hide_file_path dest_img_prefix user_id_file export_dir\n")
+		"hide_file_path dest_img_prefix(ucas_) user_id_file export_dir\n")
 }
 
 func main() {
