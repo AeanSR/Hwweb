@@ -8,7 +8,7 @@ $(function() {
       $('<li><a href="/api/clearProjectRecord" data-ajax="false">清除游戏信息</a></li>').appendTo("#project_menu")
       $('<li><a href="/api/setProjectRecord" data-ajax="false">设置游戏信息</a></li>').appendTo("#project_menu")
     }
-    $("#project_menu").listview( "refresh");
+    $("#project_menu").listview("refresh");
   });
 
 var global_group_name = "{{info['group']}}";
@@ -47,7 +47,7 @@ var global_classNo = "{{info['classNo']}}";
         <h2 class="legend">Experiment</h2>
         <ul id="project_menu" data-role="listview" data-corners="false">
           <li><a href="/project" data-ajax="false">实验日程表和实验报告提交入口</a></li>
-          <li><a href="/code_project" target="_blank" data-ajax="false">信息隐藏</a></li>
+          <li><a href="/code_project" data-ajax="false">信息隐藏实验</a></li>
           </ul>
        </li>
      </ul>

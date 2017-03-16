@@ -24,7 +24,7 @@ UploadType = {"PRESENTATION":0, "EXPREPORT":1}
 
 # UNDONE: the user hasn't done anything about the quiz before deadline
 # SAVE: save before the deadline
-# SUB_NOTSCORED: submit before the deadline 
+# SUB_NOTSCORED: submit before the deadline
 # SEMI_SCORED: save or submit but the subjective questions haven't been reviewed
 # FULL_SCORED: save or submit and the subjective questions have been reviewed
 # BLANK: the user hasn't done anything about the quiz after deadline, the system add a blank record for his solution
@@ -53,12 +53,12 @@ class HwWebUtil:
 				heads = f.readline().split(",")
 				scheduleTable["date"] = []
 				for dateStr in heads[1:]:
-					startDate = datetime.strptime(dateStr.split("-")[0].strip(), "%Y/%m/%d/%H/%M/%S") 
-					endDate = datetime.strptime(dateStr.split("-")[1].strip(), "%Y/%m/%d/%H/%M/%S") 
+					startDate = datetime.strptime(dateStr.split("-")[0].strip(), "%Y/%m/%d/%H/%M/%S")
+					endDate = datetime.strptime(dateStr.split("-")[1].strip(), "%Y/%m/%d/%H/%M/%S")
 					if str(endDate)[5:7] == '06':
 						presentationDeadline = endDate.replace(hour=23) + timedelta(days=20)
 						reportDeadline = presentationDeadline
-					else: 
+					else:
 						presentationDeadline = endDate.replace(hour=23) + timedelta(days=13)
 						reportDeadline = presentationDeadline
 
@@ -75,7 +75,7 @@ class HwWebUtil:
 	def isValid(classNo, projectNo):
 		classNo = int(classNo)
 		scheduleTable = HwWebUtil.getSchedule()
-		
+
 	      	# 测试帐号都是0班级
 	      	if classNo == 0:
 	      		return True

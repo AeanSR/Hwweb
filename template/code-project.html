@@ -1,0 +1,128 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <title>信息隐藏</title>
+{% include "./reference.html" %}
+{% from HwWebUtil import ProjectStatus %}
+{% from code_project import CodeUploadType,CODE_TYPE,BMP_TYPE,EXPREPORT_TYPE %}
+<script>
+  $(document).ready(function(c) {
+    {% if report_up_record == None %}
+        $("#report .history").html('<p>还未上传，请按时上传，截止日期过后上传无效</p>')
+    {% else %}
+        $("#report .history").html('<p>最近一次修改时间：{{report_up_record['uploadTime']}}</p><p><a href="/code_project/download/{{report_up_record['type']}}" data-ajax="false">{{report_up_record['year']}}-{{report_up_record['userId']}}-report.pdf</a></p>')
+    {% end %}
+
+    {% if code_up_record == None %}
+        $("#code .history").html('<p>还未上传，请按时上传，截止日期过后上传无效</p>')
+    {% else %}
+        $("#code .history").html('<p>最近一次修改时间：{{code_up_record['uploadTime']}}</p><p><a href="/code_project/download/{{code_up_record['type']}}" data-ajax="false">hide_{{code_up_record['userId']}}.go</a></p>')
+    {% end %}
+
+    {% if bmp_up_record == None %}
+        $("#bmp .history").html('<p>还未上传，请按时上传，截止日期过后上传无效</p>')
+    {% else %}
+        $("#bmp .history").html('<p>最近一次修改时间：{{bmp_up_record['uploadTime']}}</p><p><a href="/code_project/download/{{bmp_up_record['type']}}" data-ajax="false">m_ucas_{{bmp_up_record['userId']}}.bmp</a></p>')
+    {% end %}
+
+    {% if flag == ProjectStatus['END'] %}
+      $("span#warn").text("实验结束")
+      $("form#upload_form input[type=file]").attr("disabled","disabled");
+      $("form#upload_form input[type=button]").button({"disabled":true});
+    {% elif flag == ProjectStatus['PUBLISH'] %}
+        $("#codeButton").on("click", function(event){
+            event.preventDefault()
+            $("#upload_form").attr("action", "/code_project/upload/{{CodeUploadType[CODE_TYPE]}}")
+            $("#upload_form").submit()
+        });
+        $("#bmpfileButton").on("click", function(event){
+            event.preventDefault()
+            $("#upload_form").attr("action", "/code_project/upload/{{CodeUploadType[BMP_TYPE]}}")
+            $("#upload_form").submit()
+        });
+        $("#reportButton").on("click", function(event){
+            event.preventDefault()
+            $("#upload_form").attr("action", "/code_project/upload/{{CodeUploadType[EXPREPORT_TYPE]}}")
+            $("#upload_form").submit()
+        });
+    {% end %} 
+  });
+
+</script>
+</head>
+<body>
+<div id="container" data-role="page" data-theme="b">
+{% include "./code-project-header.html" %}
+
+<div role="main" class="ui-content">
+<h2 id="toc_1">实验环境准备</h2>
+
+<ul>
+  <li>VirtualBox下载 <a data-ajax="false" href="http://download.virtualbox.org/virtualbox/5.1.16/VirtualBox-5.1.16-113841-Win.exe">Windows版本(123MB)</a>， <a data-ajax="false" href="http://download.virtualbox.org/virtualbox/5.1.16/VirtualBox-5.1.16-113841-OSX.dmg">Mac版本(94MB)</a></li>
+  <li><a data-ajax="false" href="/static/download/Computer_Intro.ova">Ubuntu虚拟文件下载(2.42G)</a>。用户名sai，密码sai。</li>
+  <li>编译代码<a data-ajax="false" href="/static/code_project/hello_world.go"><code>~/workspace/go/src/project/hello_world.go</code></a>，然后运行</li>
+</ul>
+
+<h2 id="toc_2">四个子任务</h2>
+
+<h3 id="toc_3">1. 数字和字符的操作（无需提交）</h3>
+
+<p>实现将自己的名字的字符串转化为数字字符串的代码，并测试正确性。示例代码见<a data-ajax="false" href="/static/code_project/name_to_number.go"><code>~/workspace/go/src/project/name_to_number.go</code></a></p>
+
+<h3 id="toc_4">2. 算法复杂度估计（无需提交）</h3>
+
+<p>按照该任务要求修改代码<a data-ajax="false" href="/static/code_project/algo_complexity.go"><code>~/workspace/go/src/project/algo_complexity.go</code></a>，并测试程序</p>
+
+<h3 id="toc_5">3. 网络读取文件（无需提交）</h3>
+
+<ul>
+  <li>阅读和测试实验中的代码<a data-ajax="false" href="/static/code_project/remote_txt.go"><code>~/workspace/go/src/project/remote_txt.go</code></a>和<a data-ajax="false" href="/static/code_project/write_disk.go"><code>~/workspace/go/src/project/write_disk.go</code></a></li>
+  <li><code>remote_txt.go</code>中访问的文件的URL如下<a data-ajax="false" href="/static/code_project/Richard_Karp.txt">http://www.ucas-2017.tk/static/code_project/Richard_Karp.txt</a></li>
+  <li>该任务要求获取的ucas.bmp文件URL如下<a data-ajax="false" href="/static/code_project/ucas.bmp">http://www.ucas-2017.tk/static/code_project/ucas.bmp</a></li>
+</ul>
+
+<h3 id="toc_6">4. 信息隐藏（需提交）</h3>
+
+<ol>
+  <li>修改代码<a data-ajax="false" href="/static/code_project/hide.go"><code>~/workspace/go/src/project/hide.go</code></a>完成实验任务</li>
+  <li>供测试和正式实验的文本文件为同一个文件<a data-ajax="false" href="/static/code_project/Richard_Karp.txt">http://www.ucas-2017.tk/static/code_project/Richard_Karp.txt</a></li>
+  <li>供测试的原BMP图片<a data-ajax="false" href="/static/code_project/ucas.bmp">http://www.ucas-2017.tk/static/code_project/ucas.bmp</a></li>
+  <li>供正式实验的原BMP图片和测试图片不一样，每个同学之间也不一样，请同学们保存为ucas_&lt;学号&gt;.bmp的形式加以区分。<a data-ajax="false" href="/code_project/fetchpic">点击获取</a></li>
+</ol>
+
+<h2 id="toc_7">信息隐藏任务提交</h2>
+
+
+<div>
+  <form id="upload_form" action="/code_project/upload" method="post" enctype="multipart/form-data" data-ajax="false">
+    <div class="action">
+      <table class="uploadTable"><tr><td>hide.go</td><td>正式实验中隐藏信息的图片m_ucas_&lt;学号&gt;.bmp</td><td>Experiment report</td></tr>
+      <tr>
+        <td id="code">
+            <div class="history"></div>
+            <input type="file" name="code" data-clear-btn="true"/>
+            <input type="button" id="codeButton" value="上传源代码" data-inline="true" data-icon="check"/>
+        </td>
+        <td id="bmp">
+            <div class="history"></div>
+            <input type="file" name="bmp" data-clear-btn="true"/>
+            <input type="button" id="bmpfileButton" value="上传图片" data-inline="true" data-icon="check"/>
+        </td>
+        <td id="report">
+            <div class="history"></div>
+            <input type="file" name="report"  data-clear-btn="true"/>
+            <input type="button" id="reportButton" value="上传实验报告" data-inline="true" data-icon="check"/>
+        </td>
+    </tr></table>
+    </div>
+  </form>
+</div>
+
+<p>&nbsp;</p>
+</div>
+{% include "./footer.html" %}
+</div>
+</body>
+
+</html>

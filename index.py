@@ -4,7 +4,6 @@ import os
 import re
 import tornado.ioloop
 import tornado.web
-import motor
 import json
 import sys
 import copy
@@ -16,42 +15,19 @@ import pymongo
 import logging
 import logging.config
 
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 import time
 
 from sockjs.tornado import SockJSRouter, SockJSConnection
 from code_project import *
-from base import BaseHandler
-from HwWebUtil import HwWebUtil
-from HwWebUtil import QuizStatus
-from HwWebUtil import QuesStatus
-from HwWebUtil import QuizFlag
-from HwWebUtil import QuizType
-from HwWebUtil import ProjectStatus
-from HwWebUtil import TopoStatus
-from HwWebUtil import UploadType
+from base import *
+from HwWebUtil import HwWebUtil, QuizStatus, QuesStatus, QuizFlag, ProjectStatus, TopoStatus, UploadType
 
 # to do, filter the text input
 # to do, 多选题
 # to do, admin打包下载报告
 # to do, admin上传题目
 # to do, 用上a_ques 数据的id字段，将所有使用cnt/count的换成id
-
-db = motor.MotorClient('localhost', 27017).hwweb
-sdb = pymongo.MongoClient('localhost', 27017).hwweb
-testdb = motor.MotorClient('localhost', 27017).test_hwweb
-domain = ".ucas-2017.tk"
-expires_days = 7
-md5Salt='a~n!d@r#e$w%l^e&e'
-deployed=True
-
-logpath = os.path.join(os.path.dirname(__file__),'log')
-if not os.path.exists(logpath):
-	os.makedirs(logpath)
-logging.config.fileConfig('conf/logging.conf')
-logger = logging.getLogger("index")
-
 
 def strSolution(solu):
 	strSolu = ""
@@ -282,7 +258,7 @@ class QuizHandler(BaseHandler):
 			else:
 				flag = QuizFlag["FULL_SCORED"]
 			logger.info("student: %s is viewing the homework-%d(status: %s)" %(self.get_current_user(), int(quiz_id), flag))
-			
+
 			for question in a_quiz['content']:
 				question['explanation'] = question['explanation'].replace("\\", "\\\\")
 			self.render("./template/quiz.html", a_quiz = a_quiz, info = self.online_data[self.get_current_user()],  quizs=quizs, user_quiz=user_quiz, flag=flag)
@@ -363,7 +339,7 @@ class ProjectUploadHandler(BaseHandler):
 
     		up_record = yield  db.user_uploads.find_one({"pro_id": pro_id, "group": info["group"], "type":type_id, "year":info["yearOfEntry"]})
 
-		upload_path=os.path.join(os.path.dirname(__file__),'report_files',str(pro_id))
+		upload_path=os.path.join(os.path.dirname(__file__), upload_dir, 'report_files',str(pro_id))
 		# 创建目录
 		if not os.path.exists(upload_path):
 			os.makedirs(upload_path)
@@ -439,7 +415,7 @@ class ProjectDownloadHandler(BaseHandler):
     			self.render("./template/404.html")
     			return
     		else:
-    			upload_path=os.path.join(os.path.dirname(__file__),'report_files',str(pro_id))
+    			upload_path=os.path.join(os.path.dirname(__file__),upload_dir,'report_files',str(pro_id))
     			if type_id == UploadType["PRESENTATION"]:
 				filename = str(info["yearOfEntry"]) +"-" + str(pro_id) + "-" + info["group"] + "-presentation." + up_record["file_suffix"]
 			else:
@@ -513,13 +489,13 @@ class ReportZipDownload(BaseHandler):
 		if not self.get_current_admin():
 			self.redirect("/login")
 			return
-		report_dir = os.path.join(os.path.dirname(__file__), 'report_files/' + quiz_id)
+		report_dir = os.path.join(os.path.dirname(__file__), upload_dir, 'report_files/' + quiz_id)
 		if not os.path.exists(report_dir):
 			self.write('<script>alert("学生未上传报告，无法下载");window.history.back()</script>')
 			self.finish()
 			return
 		zipfilename = 'report_' + quiz_id + '.zip'
-		zipfilepath = os.path.join(os.path.dirname(__file__), 'report_files/' + zipfilename)
+		zipfilepath = os.path.join(os.path.dirname(__file__), upload_dir, 'report_files/' + zipfilename)
 		if os.path.exists(zipfilepath):
 			os.remove(zipfilepath)
 		f = zipfile.ZipFile(zipfilepath, 'w', zipfile.ZIP_DEFLATED)
@@ -2237,13 +2213,14 @@ def involeQuartzTasks():
 settings = {
 	#"debug": True,
 	"default_handler_class": UnfoundHandler,
-	"static_path": os.path.join(os.path.dirname(__file__), "static"),
+	#"static_path": os.path.join(os.path.dirname(__file__), "static"),
 	"cookie_secret": "61oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
  	"login_url": "/login",
 }
 SockRouter = SockJSRouter(Exp4Connection, '/api/exp4')
 application = tornado.web.Application([
     (r"/", tornado.web.RedirectHandler, {"url":"/main", "permanent":False}),
+    (r'/static/(.*)', StaticFileHandler),
     (r"/login", LoginHandler),
     (r"/main", MainHandler),
     (r"/exit", ExitHandler),
@@ -2276,10 +2253,10 @@ application = tornado.web.Application([
     (r"/api/route/submitRoute",RouteAPISubmitRouteHandler),
     (r"/api/route/submitRouteEvaluation",RouteAPISubmitRouteEvaluationHandler),
     (r"/api/route/clearRouteRecordInTestMode",RouteAPIClearRouteInTestModeHandler),
-    (r"/code_project",CodeMainHandler), # code project home
-    (r"/code_project/download/picture",CodeOriginPictureHandler), # get the exp bmp file
-    (r"/code_project/upload/code",CodeSubmitCodeHandler), # submit code
-    (r"/code_project/upload/hidden_picture",CodeSubmitPictureHandler), # submit code
+    (r"/code_project",CodeProjectMainHandler), # code project home
+    (r"/code_project/fetchpic",CodeProjectFetchPicHandler), # get exp bmp file for every single user
+    (r"/code_project/download/([0-2])",CodeProjectDownloadHandler), # download the uploaded files
+    (r"/code_project/upload/([0-2])",CodeProjectUploadHandler), # upload the files
     ] + SockRouter.urls, **settings )
 
 # 每次加入新的作业或者修改作业的截止日期都必须要重启一次系统，因为需要把自动该作业的任务加入到定时任务中去
