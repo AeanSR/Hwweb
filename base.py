@@ -8,6 +8,8 @@ import pymongo
 import logging
 import logging.config
 
+from HwWebUtil import HwWebUtil, QuizStatus, QuesStatus, QuizFlag, ProjectStatus, TopoStatus, UploadType, QuizType
+
 db = motor.MotorClient('localhost', 27017).hwweb
 sdb = pymongo.MongoClient('localhost', 27017).hwweb
 testdb = motor.MotorClient('localhost', 27017).test_hwweb
