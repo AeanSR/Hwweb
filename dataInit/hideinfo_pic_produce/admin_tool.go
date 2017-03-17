@@ -8,7 +8,6 @@ import (
 	"os"
 	"path"
 	"regexp"
-	"strconv"
 )
 
 // Build all original and modified bmp files of various students' ids
@@ -28,11 +27,14 @@ func build_bmp(src_img_path, hide_file_path, path_prefix string, ids []string, e
 				continue
 			}
 			id_md5_value := md5.Sum([]byte(id))
-			id_md5_str_slice_7 := string(id_md5_value[:7])
-			tmp, _ := strconv.ParseInt(id_md5_str_slice_7, 16, 32)
-			id_int32 := int32(tmp)
-			new_bmp_header := insert_int_in_bmpinfo_header(bmpinfo_header, id_int32)
-			fmt.Println(id, id_int32)
+			id_md5_slice_4 := id_md5_value[:4]
+			var id_uint32 uint32 = 0
+			for _, v := range id_md5_slice_4 {
+				id_uint32 *= 256
+				id_uint32 += uint32(v)
+			}
+			fmt.Fprintln(os.Stderr, id, id_md5_slice_4, id_uint32)
+			new_bmp_header := insert_int_in_bmpinfo_header(bmpinfo_header, id_uint32)
 			original_img := path.Join(export_dir, path_prefix+id+".bmp")
 			result_img := path.Join(export_dir, "m_"+path_prefix+id+".bmp")
 			if _, err := os.Stat(original_img); os.IsExist(err) {
@@ -49,7 +51,7 @@ func build_bmp(src_img_path, hide_file_path, path_prefix string, ids []string, e
 }
 
 // insert an integer into the unexploit field, actually the image size field.
-func insert_int_in_bmpinfo_header(bmpinfo_header []byte, data int32) []byte {
+func insert_int_in_bmpinfo_header(bmpinfo_header []byte, data uint32) []byte {
 	new_header := make([]byte, len(bmpinfo_header))
 	copy(new_header, bmpinfo_header)
 	for i := 20; i < 24; i++ {
