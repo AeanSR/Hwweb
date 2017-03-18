@@ -57,10 +57,11 @@ class CodeProjectFetchPicHandler(BaseHandler):
             with open(filepath, "rb") as f:
                 self.write(f.read())
             self.finish()
+            return
         else:
             self.write('<script>alert("找不到图片，请联系管理员");window.location="/code_project"</script>')
-        self.finish()
-        return
+            self.finish()
+            return
 
 class CodeProjectUploadHandler(BaseHandler):
 
