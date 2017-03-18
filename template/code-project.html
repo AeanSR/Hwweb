@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
-    <title>信息隐藏</title>
+    <title>信息隐藏编程实验</title>
 {% include "./reference.html" %}
 {% from HwWebUtil import ProjectStatus %}
 {% from code_project import CodeUploadType,CODE_TYPE,BMP_TYPE,EXPREPORT_TYPE %}
@@ -50,18 +50,104 @@
   });
 
 </script>
+<link href="/static/css/markdown.css" rel="stylesheet" type="text/css" media="all" />
 </head>
 <body>
 <div id="container" data-role="page" data-theme="b">
 {% include "./code-project-header.html" %}
 
 <div role="main" class="ui-content">
+  <h2 id="toc_1">实验目的和原理</h2>
+
+  <p>本实验通过四个编程子任务，最终实现信息隐藏和恢复的程序，达成如下目的:<br/>
+  1. 初步了解程序语言的数据类型、控制流、函数等基本概念，通过编程能实现简单的 数字处理、复杂度测量和 I/O 操作，进而完成较复杂的信息隐藏的任务。<br/>
+  2. 初步了解 Linux 平台上 GO 程序的编辑、编译和命令行运行。<br/>
+  3. 通过上述动手动脑编程练习，更加具体地理解“操作数字符号的信息变换”、逻辑思<br/>
+  维、算法思维、网络思维、系统思维。<br/>
+  本实验在 VirtualBox 虚拟机下安装 Ubuntu 16.04 x64 系统，在 Ubuntu 下使用 Golang 1.8 进行编程实践，运用 Golang 基本语句完成多项任务的编程，结合实践来巩固学生对于本书 的知识掌握，从直观上了解和认知计算机思维。<br/>
+  在进行信息隐藏任务前，有 3 个简单的任务让学生们熟悉编程语言和运行环境，分别是: (1)数字符号的操作，(2)时间复杂度和空间复杂度测量，以及(3)磁盘和网络的I/O操作。它们对应第一章的数字符号部分、第三章的算法思维和第四章的网络思维，编程过程让 学生们体会到第二章的计算模型和逻辑思维。最终学生们要完成信息隐藏的任务较为复杂， 需要将前面的三个思维和模块化的系统思维结合起来，完成百行代码左右的编程实践。<br/>
+  为了简化同学们对于关键知识的掌握，避免过多纠缠程序语言上的细节问题，在前面三个子任务中，我们会进行简单的程序语言介绍;在信息隐藏的任务中，我们提供了程序框架， 学生们只需要在核心区域完成所需的程序片段。</p>
+
 <h2 id="toc_1">实验环境准备</h2>
 
+<h3 id="toc_2">安装和熟悉实验环境</h2>
 <ul>
   <li>下载与你操作系统对应的VirtualBox,然后进行安装。 <a data-ajax="false" href="http://download.virtualbox.org/virtualbox/5.1.16/VirtualBox-5.1.16-113841-Win.exe">Windows版本(123MB)</a>， <a data-ajax="false" href="http://download.virtualbox.org/virtualbox/5.1.16/VirtualBox-5.1.16-113841-OSX.dmg">Mac版本(94MB)</a></li>
   <li><a data-ajax="false" href="http://pan.baidu.com/s/1boBL5Af" target="_blank">Ubuntu虚拟文件下载(2.23G)</a>，为了下载方便，可以由同学代表进行拷贝和分发。系统用户名sai，密码sai。打开Virtualbox，点击管理-&gt;导入虚拟电脑，导入此文件后，点击启动。如果启动失败，可能需要在BIOS（开机时按F2或者F12）中点击Security-&gt;Virtualization-&gt;Enable，设置后重启即可。</li>
-  <li>进入系统后，打开终端，<code>cd workspace/go/src/project</code>，然后编译代码<code>go build <a data-ajax="false" href="/static/code_project/hello_world.go"><code>hello_world.go</code></a>，最后运行程序<code>./hello_world</code>。</li>
+  <li>进入系统后，打开终端（左上角第三个图标），<code>cd workspace/go/src/project</code>，然后编译代码<code>go build <a data-ajax="false" href="/static/code_project/hello_world.go"><code>hello_world.go</code></a>，最后运行程序<code>./hello_world</code>。下面为终端示例。</li>
+</ul>
+<pre><code>zxu@ucas:~$ ls
+examples.desktop  workspace  公共的  模板  视频  图片  文档  下载  音乐  桌面
+zxu@ucas:~$ cd workspace/go/src/project/
+zxu@ucas:~/workspace/go/src/project$ ls
+algo_complexity.go  hide.go            remote_txt.go  write_disk.go
+hello_world.go      name_to_number.go  ucas.bmp
+zxu@ucas:~/workspace/go/src/project$ cat hello_world.go
+package main
+
+import &quot;fmt&quot;
+
+func main() {
+          fmt.Println(&quot;Hello World!&quot;)
+}
+zxu@ucas:~/workspace/go/src/project$ go build hello_world.go
+zxu@ucas:~/workspace/go/src/project$ ./hello_world
+Hello World!
+zxu@ucas:~/workspace/go/src/project$
+</code></pre>
+
+<h3 id="toc_3">编程环境使用</h3>
+<p>该系统下我们要使用两款软件，分别是终端和gedit。</p>
+
+<ul>
+  <li>终端提供了此实验的基本工作环境，在终端下我们通过执行命令来指挥计算机工作，以下将是我们会使用的命令的列表。</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>命令</th>
+      <th>作用</th>
+      <th>备注</th>
+    </tr>
+  </thead>
+
+  <tbody>
+  <tr>
+    <td>ls</td>
+    <td>查看目录中的内容</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>cd</td>
+    <td>更换当前目录</td>
+    <td>cd .. 更换到上一层目录</td>
+  </tr>
+  <tr>
+    <td>cat</td>
+    <td>将文件内容打印到标准输出(standard output)</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>go build</td>
+    <td>将 Golang 的源代码编译成可执行的文件</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>display</td>
+    <td>显示图片文件</td>
+    <td>Ctrl-Q 组合键关闭图片，回到终端窗口</td>
+  </tr>
+  <tr>
+    <td>gedit</td>
+    <td>打开针对当前文本文件的编辑器</td>
+    <td>Ctrl-S 组合键保存文本更改 Ctrl-Q 组合键关闭编辑器，回到终端窗口，建议关闭前先保存</td>
+  </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>gedit是我们对golang源代码进行编辑的软件，通过终端中输入<code>gedit &lt;file&gt;</code>，在弹出窗口中进行代码的编辑，编辑完成后在键盘按下Ctrl-S保存修改，然后在键盘按下Ctrl-Q组合键关闭编辑器，回到终端。</li>
 </ul>
 
 <h2 id="toc_1">Golang语言学习参考资料</h2>
