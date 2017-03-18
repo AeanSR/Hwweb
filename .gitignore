@@ -1,2 +1,8 @@
 *.pyc
 .DS_Store
+
+dataInit/hideinfo_bmp_produce/Richard_Karp.txt
+dataInit/hideinfo_bmp_produce/ucas.bmp
+dataInit/hideinfo_bmp_produce/userId.csv
+static/bmp_library/
+log

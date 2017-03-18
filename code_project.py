@@ -42,11 +42,23 @@ class CodeProjectMainHandler(BaseHandler):
         return
 
 class CodeProjectFetchPicHandler(BaseHandler):
+
     @tornado.web.authenticated
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def get(self):
-        self.write('<script>alert("暂未开通，开通后通知大家");window.location="/code_project"</script>')
+        info = self.online_data[self.get_current_user()]
+        filename = "ucas_" + info['userId'] + ".bmp"
+        bmp_path = os.path.join(os.path.dirname(__file__), "static/bmp_library")
+        filepath = os.path.join(bmp_path, filename)
+        if os.path.exists(filepath):
+            self.set_header('Content-Disposition', 'attachment;filename=' + filename)
+            self.set_header('Content-Type',"image/bmp")
+            with open(filepath, "rb") as f:
+                self.write(f.read())
+            self.finish()
+        else:
+            self.write('<script>alert("找不到图片，请联系管理员");window.location="/code_project"</script>')
         self.finish()
         return
 
@@ -174,9 +186,9 @@ class CodeProjectDownloadHandler(BaseHandler):
                 self.write('<script>alert("不存在此文件，请重新上传");window.history.back()</script>')
                 self.finish()
                 return
+            self.set_header('Content-Disposition', 'attachment;filename='+filename)
+            self.set_header('Content-Type',CodeUploadTypeMap[arg_name][1])
             with open(filepath, "rb") as f:
-                self.set_header('Content-Disposition', 'attachment;filename='+filename)
-                self.set_header('Content-Type',CodeUploadTypeMap[arg_name][1])
                 self.write(f.read())
             self.finish()
             return
