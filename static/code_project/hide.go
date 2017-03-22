@@ -74,17 +74,17 @@ func GetPartsOfBmp(img_path string) ([]byte, []byte, []byte) {
 }
 
 // Hide information into the pixel array
-// @param hide_data. The data to be hidden
+// @param hide_data. The text to be hidden
 // @param pixel_array. The original pixel array
-// @return the modified pixel data, which hides info.
-func HideInfo(hide_data []byte, pixel_array []byte) []byte {
+// @return the modified pixel data, which hides text.
+func HideText(hide_data []byte, pixel_array []byte) []byte {
 	// TODO Your code here
 }
 
-// Restore the hidden data from the pixel array.
+// Restore the hidden text from the pixel array.
 // @param pixel_array. Pixel array in bmp file.
-// @return. The hidden data in byte array.
-func ShowInfo(pixel_array []byte) []byte {
+// @return. The hidden text in byte array.
+func ShowText(pixel_array []byte) []byte {
 	// TODO Your code here
 }
 
@@ -92,15 +92,15 @@ func HideProcedure(src_img_path string, hide_file_path string, dest_img_path str
 	fmt.Printf("Hide %v into %v -> %v\n", hide_file_path, src_img_path, dest_img_path)
 	file_header, bmpinfo_header, pixel_array := GetPartsOfBmp(src_img_path)
 	hide_data := ReadAllFromFile(hide_file_path)
-	new_pixel_array := HideInfo(hide_data, pixel_array)
+	new_pixel_array := HideText(hide_data, pixel_array)
 	ProduceImg(dest_img_path, file_header, bmpinfo_header, new_pixel_array)
 }
 
 func ShowProcedure(src_img_path string, data_path string) {
-	fmt.Printf("Show hidden info from %v, then write it to %v\n",
+	fmt.Printf("Show hidden text from %v, then write it to %v\n",
 		src_img_path, data_path)
 	_, _, pixel_array := GetPartsOfBmp(src_img_path)
-	info := ShowInfo(pixel_array)
+	info := ShowText(pixel_array)
 	WriteAllToFile(info, data_path)
 
 }
