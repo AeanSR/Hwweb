@@ -140,6 +140,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
 
 class StaticFileHandler(BaseHandler):
+    FileCache = {}
     DefaultContentType = "text/plain"
     ContentTypeMap = {
             "html": "text/html",
@@ -155,8 +156,12 @@ class StaticFileHandler(BaseHandler):
     def get(self, relative_path):
         path = os.path.join(os.path.dirname(__file__), "static", relative_path)
         if os.path.isfile(path):
-            with open(path, 'r') as f:
-                read_data = f.read()
+            if path in StaticFileHandler.FileCache:
+                read_data = StaticFileHandler.FileCache[path]
+            else:
+                with open(path, 'r') as f:
+                    read_data = f.read()
+                StaticFileHandler.FileCache[path] = read_data
             suffix = path[path.rfind(".")+1:]
             if suffix in StaticFileHandler.ContentTypeMap:
                 contentType = StaticFileHandler.ContentTypeMap[suffix]
