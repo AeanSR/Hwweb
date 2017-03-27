@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	if httpresp, err := http.Get("http://www.ucas-2017.tk/static/code_project/Richard_Karp.txt"); err != nil || httpresp.StatusCode != http.StatusOK {
+	if httpresp, err := http.Get("http://csintro.ucas.ac.cn/static/code_project/Richard_Karp.txt"); err != nil || httpresp.StatusCode != http.StatusOK {
 		if err != nil {
 			// HTTP protocol error
 			fmt.Fprintln(os.Stderr, err.Error())

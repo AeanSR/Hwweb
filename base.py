@@ -20,7 +20,7 @@ from HwWebUtil import HwWebUtil, QuizStatus, QuesStatus, QuizFlag, ProjectStatus
 db = motor.MotorClient('localhost', 27017).hwweb
 sdb = pymongo.MongoClient('localhost', 27017).hwweb
 testdb = motor.MotorClient('localhost', 27017).test_hwweb
-domain = ".ucas-2017.tk"
+domain = ".csintro.ucas.ac.cn"
 expires_days = 7
 md5Salt='a~n!d@r#e$w%l^e&e'
 deployed=True

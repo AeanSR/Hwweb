@@ -794,9 +794,9 @@ class APIGetHandler(BaseHandler):
     def post(self):
 
         if deployed:
-            self.set_header('Access-Control-Allow-Origin','http://ucas-2017.tk:8889')
+            self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn:8889')
         else:
-            self.set_header('Access-Control-Allow-Origin','http://project.ucas-2017.tk:8080')
+            self.set_header('Access-Control-Allow-Origin','http://project.csintro.ucas.ac.cn:8080')
         self.set_header('Access-Control-Allow-Credentials','true')
         try:
             gameId = int(self.get_argument("gameId", 1))
@@ -842,9 +842,9 @@ class APIPutHandler(BaseHandler):
     @tornado.gen.coroutine
     def post(self):
         if deployed:
-            self.set_header('Access-Control-Allow-Origin','http://ucas-2017.tk:8889')
+            self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn:8889')
         else:
-            self.set_header('Access-Control-Allow-Origin','http://project.ucas-2017.tk:8080')
+            self.set_header('Access-Control-Allow-Origin','http://project.csintro.ucas.ac.cn:8080')
         self.set_header('Access-Control-Allow-Credentials','true')
         try:
             gameId = int(self.get_argument("gameId", 1))
@@ -912,7 +912,7 @@ class RouteAPIGetInfoHandler(BaseHandler):
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def post(self):
-        self.set_header('Access-Control-Allow-Origin','http://ucas-2017.tk:8889')
+        self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn:8889')
         self.set_header('Access-Control-Allow-Credentials','true')
         if not self.canDoExperiment(3):
             return
@@ -958,7 +958,7 @@ class RouteAPISubmitRouteHandler(BaseHandler):
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def post(self):
-        self.set_header('Access-Control-Allow-Origin','http://ucas-2017.tk:8889')
+        self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn:8889')
         self.set_header('Access-Control-Allow-Credentials','true')
         if not self.canDoExperiment(3):
             return
@@ -1007,7 +1007,7 @@ class RouteAPISubmitTopoHandler(BaseHandler):
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def post(self):
-        self.set_header('Access-Control-Allow-Origin','http://ucas-2017.tk:8889')
+        self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn:8889')
         self.set_header('Access-Control-Allow-Credentials','true')
         if not self.canDoExperiment(3):
             return
@@ -1054,7 +1054,7 @@ class RouteAPIGetTopoHandler(BaseHandler):
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def post(self):
-        self.set_header('Access-Control-Allow-Origin','http://ucas-2017.tk:8889')
+        self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn:8889')
         self.set_header('Access-Control-Allow-Credentials','true')
         if not self.canDoExperiment(3):
             return
@@ -1162,7 +1162,7 @@ class RouteAPIClearRouteInTestModeHandler(BaseHandler):
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def post(self):
-        self.set_header('Access-Control-Allow-Origin','http://ucas-2017.tk:8889')
+        self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn:8889')
         self.set_header('Access-Control-Allow-Credentials','true')
         if not self.canDoExperiment(3):
             return
@@ -1190,7 +1190,7 @@ class RouteAPISubmitRouteEvaluationHandler(BaseHandler):
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def post(self):
-        self.set_header('Access-Control-Allow-Origin','http://ucas-2017.tk:8889')
+        self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn:8889')
         self.set_header('Access-Control-Allow-Credentials','true')
         if not self.canDoExperiment(3):
             return
@@ -1798,7 +1798,7 @@ class LoginHandler(BaseHandler):
             # testMode 下只能做支持实验测试，其他测试无法支持
             if testMode:
                 logger.debug("test user: %s is logging in" %userId)
-                self.redirect("http://project.ucas-2017.tk")
+                self.redirect("http://project.csintro.ucas.ac.cn")
                 return
             else:
                 logger.info("student: %s is logging in" %userId)
