@@ -1760,6 +1760,12 @@ class LoginHandler(BaseHandler):
         #self.redirect("/admin")
         #return
         # delete when releasing
+
+        # compatible code
+        if pre_match.search(self.request.host) is not None:
+            self.redirect(new_main_page)
+            return
+
         userId = self.get_secure_cookie("userId")
         if userId:
             if self.online_data and userId in self.online_data.keys():

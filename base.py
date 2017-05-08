@@ -33,6 +33,10 @@ if not os.path.exists(logpath):
 logging.config.fileConfig('conf/logging.conf')
 logger = logging.getLogger("index")
 
+# compatible code
+pre_match = re.compile("ucas-2017.tk")
+new_main_page = "http://csintro.ucas.ac.cn"
+
 class BaseHandler(tornado.web.RequestHandler):
     online_data = {}
     # admin 登录
