@@ -73,7 +73,7 @@ class CodeProjectUploadHandler(BaseHandler):
         try:
             type_id = int(type_id)
             if not type_id in CodeUploadType.values():
-                    raise ValueError("type %d is not valid" % type_id)
+                raise ValueError("type %d is not valid" % type_id)
         except ValueError, e:
             print "The argument does not contain correct numbers\n", e
             self.render("./template/404.html")
@@ -83,7 +83,7 @@ class CodeProjectUploadHandler(BaseHandler):
 
         logger.info("user: %s try to upload file for exp %d in type %d" %(self.get_current_user(), CodeProjectId, type_id))
 
-        up_record = yield db.user_code_uploads.find_one({"type":type_id, "year":info["yearOfEntry"]})
+        up_record = yield db.user_code_uploads.find_one({"userId": info["userId"], "type":type_id, "year":info["yearOfEntry"]})
 
         normal_upload_path=os.path.join(os.path.dirname(__file__),upload_dir, 'report_files',str(CodeProjectId))
         code_upload_path=os.path.join(os.path.dirname(__file__),upload_dir, 'code_files')
@@ -128,9 +128,8 @@ class CodeProjectUploadHandler(BaseHandler):
                 return
             else :
                 filepath=os.path.join(upload_paths[arg_name], filename)
-                logger.info("user: %s of gruop %s succeed to upload file for exp %d in type %d, file: %s" %(self.get_current_user(), info["userId"], CodeProjectId, type_id, filepath))
                 if up_record and os.path.exists(filepath):
-                        os.remove(filepath)
+                    os.remove(filepath)
                 elif not up_record:
                     up_record = {}
                     up_record["year"] = info["yearOfEntry"]
@@ -141,14 +140,15 @@ class CodeProjectUploadHandler(BaseHandler):
                 up_record["uploadTime"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 up_record["size"] = file_size
                 with open(filepath,'wb') as up:
-                        up.write(uploadFile['body'])
+                    up.write(uploadFile['body'])
+                logger.info("user: %s of gruop %s succeed to upload file for exp %d in type %d, file: %s" %(self.get_current_user(), info["userId"], CodeProjectId, type_id, filepath))
                 yield db.user_code_uploads.save(up_record)
+                self.redirect('/code_project')
+                return
         else:
             self.write('<script>alert("请选择文件");window.history.back()</script>')
             self.finish()
             return
-        self.redirect('/code_project')
-        return
 
 class CodeProjectDownloadHandler(BaseHandler):
     @tornado.web.authenticated
