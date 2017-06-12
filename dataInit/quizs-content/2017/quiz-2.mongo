@@ -32,7 +32,7 @@
         "C"
       ],
       "score": 10,
-      "explanation": "这是第1题的解释。"
+      "explanation": "$ 2n^3 + n \\ln n $是$ \\Omega (n^2) $的，$ n^2 + 3 $是 $ O(n^2 \\log n) $的，$ n^{\\log n} $是$ \\Omega (n^{100}) $的。"
     },
     {
       "id": 2,
@@ -60,12 +60,12 @@
         "D"
       ],
       "score": 10,
-      "explanation": "这是第2题的解释。"
+      "explanation": "对所有表达式求对数。$ \\ln ((\\log n)^n) = n \\ln \\log n$，$ \\ln (n^{100}) = 100 \\ln n$，$ \\ln (n^{\\log n}) = \\log n \\ln n$，$ \\frac { \\log n}{2} \\ln \\frac { \\log n}{2} = \\ln ({(\\frac { \\log n}{2})}^{ \\frac { \\log n}{2}}) < \\ln ((\\log n)!) < \\ln ({( \\log n)}^{ \\log n}) = \\log n \\ln \\log n$。因为对充分大的$n$，$n \\ln \\log n > \\log n \\ln n > \\log n \\ln \\log n > \\frac { \\log n}{2} \\ln \\frac { \\log n}{2} > 100 \\ln n$，故选D。"
     },
     {
       "id": 3,
       "type": 1,
-      "head": "截止到 2013 年 6月，世界上运算速度最快的超级计算机是由中国研制的天河二号，它每秒能完成 5 亿亿次运算！如果我们使用该计算机来近似计算有 1000 个节点的斯坦纳树问题（Steiner tree problem），该问题目前最好的算法的时间复杂度为$ n ^ {\\log_{2}n} $(n 表示斯坦纳树的节点个数)，最坏情况下我们大约需要算多长的时间(&nbsp;&nbsp;&nbsp;&nbsp;)",
+      "head": "截止到 2013 年 6月，世界上运算速度最快的超级计算机是由中国研制的天河二号，它每秒能完成 5 亿亿次运算！如果我们使用该计算机来近似计算有 1000 个节点的斯坦纳树问题（Steinertree problem），该问题目前最好的算法的时间复杂度为$ n ^ {\\log_{2}n} $(n 表示斯坦纳树的节点个数)，最坏情况下我们大约需要算多长的时间(&nbsp;&nbsp;&nbsp;&nbsp;)",
       "choices": [
         {
           "value": "A",
@@ -88,7 +88,7 @@
         "D"
       ],
       "score": 10,
-      "explanation": "这是第3题的解释。"
+      "explanation": "${1000}^{ \\log _2 1000} \\approx {1000}^{10} = {10}^{20}$。一年大概有$31536000$即约$ 3 \\times {10}^7$秒，每秒$5$亿亿次即$5 \\times {10}^{16}$次运算，一年能算$15 \\times {10}^{22}$次运算。则需约${10}^{20}/(15 \\times {10}^{22}) \\approx 6 \\times {10}^5$年。"
     },
     {
       "id": 4,
@@ -116,12 +116,12 @@
         "B"
       ],
       "score": 10,
-      "explanation": "这是第4题的解释。"
+      "explanation": "最坏情况快速排序和冒泡排序的时间复杂度都是$O(n^2)$。"
     },
     {
       "id": 5,
       "type": 1,
-      "head": "给定一个排好序的数组，数组有$n$个元素，要查找某一个元素$x$是否在这个数组中，所需要的运行时间是(&nbsp;&nbsp;&nbsp;&nbsp;)",
+      "head": "给定一个排好序的数组，数组有$n$个元素，要查找某一个元素$x$是否在这个数组中，所需要的运行时间是$(&nbsp;&nbsp;&nbsp;&nbsp;)",
       "choices": [
         {
           "value": "A",
@@ -144,7 +144,7 @@
         "B"
       ],
       "score": 10,
-      "explanation": "这是第5题的解释。"
+      "explanation": "数组排好序，使用二分查找，只需要$ \\Theta ( \\log n)$的时间。"
     },
     {
       "id": 6,
@@ -172,7 +172,7 @@
         "B"
       ],
       "score": 10,
-      "explanation": "这是第6题的解释。"
+      "explanation": "因为$T(n)=3T( \\frac {n}{2} ) + n^2$，则$T(n) - 4n^2 = 3T(\\frac {n}{2}) -12(\\frac{n}{2})^2$。定义$G(n) = T(n) -4n^2$，有$ \\left\\{ \\begin{array}{l l} G(1) = -3 \\\\ G(n)=3G( n/2 ) \\end{array} \\right. $ 则$G(n) = -3^{1 + \\log_{2}n} $。因此，$T(n) = 4n^2 - 3^{1 + \\log_{2}n}$。"
     },
     {
       "id": 7,
@@ -200,7 +200,7 @@
         "B"
       ],
       "score": 10,
-      "explanation": "这是第7题的解释。"
+      "explanation": "可以把比赛抽象为$64$个数的比较问题，并用败者树实现。一棵完全二叉树有$64$个叶子节点时，内部节点总共有$63$个，树高为$7$。故选最大元素需要$63$次比较。选次大元素，只需要更新某条路径上的节点值，需要的比较次数是树高$7 - 2 = 5$。故选最大元素和次大元素需要$68$次比较。"
     },
     {
       "id": 8,
@@ -228,12 +228,12 @@
         "A"
       ],
       "score": 10,
-      "explanation": "这是第8题的解释。"
+      "explanation": "$NP$是非确定性图灵机多项式时间可以识别的语言类，也是可以多项式时间验证的语言类。问题一如果给定中的某个数，要判定这个数是否和为 0，显然可以多项式时间验证。问题二判定和是否互素可以用辗转相除法，因此属于$P$，也就属于$NP$。"
     },
     {
       "id": 9,
       "type": 1,
-      "head": "P和NP的关系是以下哪一种？(&nbsp;&nbsp;&nbsp;&nbsp;) 其中矩形代表所有图灵可计算的问题。<table align='center' class='ques_desc_noneborder'><tr><td><img src='/static/content/homework/homework_2_9_A.png' /></td><td><img src='/static/content/homework/homework_2_9_B.png' /></td></tr><tr><td><img src='/static/content/homework/homework_2_9_C.png' /></td><td><img src='/static/content/homework/homework_2_9_D.png' /></td></tr></table>",
+      "head": "P和NP的关系是以下哪一种？(&nbsp;&nbsp;&nbsp;&nbsp;) 其中矩形代表所有图灵机可以计算的问题。<table align='center' class='ques_desc_noneborder'><tr><td><img src='/static/content/homework/homework_2_9_A.png' /></td><td><img src='/static/content/homework/homework_2_9_B.png' /></td></tr><tr><td><img src='/static/content/homework/homework_2_9_C.png' /></td><td><img src='/static/content/homework/homework_2_9_D.png' /></td></tr></table>",
       "choices": [
         {
           "value": "A",
@@ -256,7 +256,7 @@
         "C"
       ],
       "score": 10,
-      "explanation": "这是第9题的解释。"
+      "explanation": "$P$是确定性图灵机多项式时间可以识别的语言类，$NP$是非确定性图灵机多项式时间可以识别的语言类。依据定义可知$P \\subseteq NP $。且存在可计算问题不在$NP$中，如需要指数空间的问题。"
     },
     {
       "id": 10,
@@ -284,7 +284,7 @@
         "C"
       ],
       "score": 10,
-      "explanation": "这是第10题的解释。"
+      "explanation": "经典的$n$个圆盘的汉诺塔问题需要的步数为$2^{n} - 1$。本题一种移动步骤如下：2号从第二根柱子移动到第三个柱子，1号从第一个柱子移动到第三根柱子，3号从第三根柱子移动到第二根柱子，1,2号保持顺序从第三根柱子移动到第二根柱子，5号从第一根柱子移动到第三根柱子，1,2,3,4号保持顺序从第二根柱子移动到第三根柱子。总共需要的步数为$1 + 1 + 1 + 2^{2} - 1 + 1 + 2^{4} - 1 = 22$。不难验证这种移动方案是最优的。首先，5号圆盘从一号柱子移动到三号柱子是不可避免的，此时1,2,3,4号圆盘一定按顺序排列在二号柱子上。继续往前推导，4号圆盘在二号柱子上，3号圆盘移动到4号圆盘上是不可避免的，此时，1,2号圆盘一定按顺序排列在另外一根柱子上。继续往前推导，2号从4号圆盘上移开和1号圆盘移动到2号圆盘上都是不可避免的。因此，22步的移法是最优的。"
     }
   ]
 }

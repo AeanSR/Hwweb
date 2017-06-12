@@ -14,7 +14,7 @@ CODE_TYPE = "code"
 BMP_TYPE = "bmp"
 
 CodeUploadType = {EXPREPORT_TYPE:0, CODE_TYPE:1, BMP_TYPE: 2}
-UploadSupportType=["application/pdf", "text/plain", "image/bmp", "application/octet-stream"]
+UploadSupportType=["application/pdf", "text/plain", "image/bmp", "application/octet-stream", "text/x-go"]
 CodeUploadTypeMap = {EXPREPORT_TYPE:("pdf","application/pdf"),
     BMP_TYPE:("bmp","image/bmp"),
     CODE_TYPE:("go","text/plain")}
