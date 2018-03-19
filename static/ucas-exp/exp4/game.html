@@ -1,0 +1,206 @@
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="renderer" content="webkit">
+		<meta name="viewport" content="user-scalable=1.0,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="format-detection" content="telephone=no">
+		<title>实验4:三国战役</title>
+		<script type="text/javascript" src="js/jquery-1.11.1.min.js" charset="utf-8"></script>
+		<script type="text/javascript" src="http://cdn.bootcss.com/jqueryui/1.11.1/jquery-ui.min.js"></script>
+		<link rel="stylesheet" href="css/jquery.mobile-1.4.3.min.css" />
+		<link rel="stylesheet" href="http://cdn.bootcss.com/jqueryui/1.11.1/jquery-ui.min.css" />
+		<link rel="stylesheet" href="css/style.css" />
+		<script type="text/javascript" src="http://apps.bdimg.com/libs/jquerymobile/1.4.3/jquery.mobile-1.4.3.min.js" charset="utf-8"></script>
+		<script src="js/sockjs.min.js"></script>
+		<script src="js/ajax.js"></script>
+		<script type="text/javascript" src="http://cdn.bootcss.com/paper.js/0.9.20/paper-full.min.js"  charset="utf-8"></script>
+		<script type="text/javascript" src="js/byzantine.js" charset="utf-8"></script>
+
+		<script type="text/paperscript" canvas="canvas" src="js/render.pjs" id="script" ></script>
+
+	</head>
+	<body>
+		<div data-role="page" id = "main-page">
+			<div data-role="header">
+				<a href="#nav-panel" data-icon="bars" data-iconpos="notext">菜单</a>
+				<h1 id="titles">系统角度实验:三国战役</h1>
+				<a href="#" data-icon="user" data-iconpos="left" id="login_info">未登录</a>
+			</div>
+			<div data-role="content" id="container">
+				<div class="Left">
+					<div class="ui-body ui-body-b ui-corner-all"  id="Main">						
+						<div class="canvas">
+							<canvas resize="true" id="canvas"></canvas>
+						</div>
+					</div>
+					<div class="ui-body ui-body-b ui-corner-all"  id="Console">
+						<div class="ui-grid-a" style="width:100%;">
+							<div class="ui-block-a" style="width:80%;">
+								<div id="log" class="ui-body ui-body-a ui-corner-all" style="width: 100%; height:90%; overflow:auto;background-color:#A4CAE1;"></div>							
+							</div>
+							<div class="ui-block-b" style="width:5%;"></div>
+							<div class="ui-block-c" style="width:15%;display:none;" id='console-stage1'>
+								<a href="#" data-role="button" data-corners="false" id="make">构建完成</a>
+								<a href="#" data-role="button" data-corners="false" id="clean">重新构建</a>
+								<a href="#" data-role="button" data-corners="false" style="display:none" id="jump">跳过构建</a>
+							</div>
+							<div class="ui-block-c" style="width:15%;display:none;" id='console-stage2'>
+									<a href="#send-panel" data-role="button" data-corners="false" id="send">释放信鸽</a>
+									<a href="#" data-role="button" data-corners="false" id="attack">实施攻击</a>
+									<a href="#" data-role="button" data-corners="false" id="notattack">拒绝攻击</a>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="ui-body ui-body-b ui-corner-all"  id="ControlBoard">
+					<p>玩家列表</p>
+					<div id="userlist">
+						<ul>
+						</ul>
+					</div>
+					<div style="display:none" id='control-stage1'>
+						<p>功能介绍</p>
+						<span id="module-info">把鼠标移动到相应部件上显示详细信息，蓝色部件可以通过连接点进行连接，绿色部件不可连接，只能放入另一个部件中。</span>
+					</div>
+					<div style="display:none" id='control-stage2'>
+						<p>军队状态</p>
+						<div class="middle-text-large" id="ready-status">待命</div>
+						<p>当前资源</p>
+						<div class="middle-text-large" id="resource-status">未知</div>						
+						<p>身份  <span id="hides" >[点击这里显示/隐藏]</span></p>
+						<div class="middle-text-large" id="traitor-status">未知</div>
+						<p>当前天数</p>
+						<div class="middle-text-large" id="current-day">0</div>
+						<p>释放信鸽</p>
+						<div class="middle-text-large" id="current-messages">0</div>
+						<p>距进入下一天还有</p>
+						<div class="middle-text-large" id="rest-time">0</div>
+					</div>
+
+
+				</div>
+			</div>
+			<div data-role="popup" id="error-popup" data-overlay-theme="b" data-theme="b" data-dismissible="false" style="max-width:400px;">
+				<div data-role="header" data-theme="b">
+				<h1>出错啦!</h1>
+				</div>
+				<div role="main" class="ui-content">
+				        <h3 class="ui-title" id="error-notice">您必须先登陆作业系统才能进行该游戏.</h3>
+				    </div>
+			</div>
+			<div data-role="popup" id="pause-popup" data-overlay-theme="b" data-theme="b" data-dismissible="false" style="max-width:400px;">
+				<div data-role="header" data-theme="b">
+				<h1>请等待！</h1>
+				</div>
+				<div role="main" class="ui-content">
+				        <h3 class="ui-title" id="error-notice">待所有玩家都在线且完成构建阶段后方可进行游戏，目前游戏暂停, 请稍等片刻, 人员到齐后，本网页会自动更新。</h3>
+						<a href="index.html" data-ajax="false" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" data-transition="flow">不等了，返回首页</a>
+
+				    </div>
+			</div>
+			<div data-role="popup" id="standby-popup" data-overlay-theme="b" data-theme="b" data-dismissible="false" style="max-width:400px;">
+				<div data-role="header" data-theme="b">
+				<h1>请等待！</h1>
+				</div>
+				<div role="main" class="ui-content">
+				        <h3 class="ui-title" id="error-notice">本局身份为旁观者，不能进行操作，请等待下局开始。</h3>
+				</div>
+			</div>
+			<div data-role="popup" id="end-popup" data-overlay-theme="b" data-theme="b" data-dismissible="false" style="max-width:400px;">
+				<div data-role="header" data-theme="b">
+				<h1>注意！</h1>
+				</div>
+				<div role="main" class="ui-content">
+				        <h3 class="ui-title" id="error-notice">
+					提交模式次数已经使用完毕，实验结束。</h3>
+						<a href="index.html" data-ajax="false" class="ui-btn ui-corner-all ui-shadow ui-btn-inline ui-btn-b" data-transition="flow">返回首页</a>
+				</div>
+			</div>
+
+
+			<div data-role="panel" data-position-fixed="true" data-display="push" data-ajax="false" data-theme="b" id="condition-panel">
+				<p>当同时满足以下条件时军队状态转为就绪(如下方空白，表明你没有使用对应的接口)：</p>
+				<div class="group">
+				<fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">
+					<a href="#" class="ui-btn ui-corner-all">粮食</a>
+				    <select id="food-op">
+				        <option value="smaller">不大于</option>
+				        <option value="larger">大于</option>
+				    </select>
+			<!-- 	    <input type="text" id="food-val" value="" data-inline="true" data-wrapper-class="controlgroup-textinput ui-btn" /> -->
+				</fieldset>
+				    <input type="range" name="slider-1" id="food-val" value="4000" data-inline="true" data-mini="true" style="width:50px;" min="3000" max="5000">
+				</div>
+				<div class="group">
+				<fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">
+					<a href="#" class="ui-btn ui-corner-all">兵力</a>
+				    <select id="troops-op">
+				        <option value="smaller">不大于</option>
+				        <option value="larger">大于</option>
+				    </select>
+	<!-- 			    <input type="text" id="troops-val" value="" data-inline="true" data-wrapper-class="controlgroup-textinput ui-btn" /> -->
+				</fieldset>
+				  	<input type="range" id="troops-val" value="4000" data-inline="ture" data-mini="true" style="width:50px;" min="3000" max="5000">
+				</div>
+				<div class="group">
+				<fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">
+					<a href="#" class="ui-btn ui-corner-all">天气</a>
+					<a href="#" class="ui-btn ui-corner-all">等于</a>
+				    <select id="weather-val">
+				        <option value="0">晴天</option>
+				        <option value="1">雨天</option>
+				        <option value="2">阴天</option>
+				    </select>
+				</fieldset>
+				</div>
+				<a href="#" data-rel="close" data-role="button" data-corners="false" id="confirm-condition">确定</a>
+			</div>
+
+			<div data-role="panel" data-position-fixed="true" data-display="push" data-ajax="false" data-theme="b" id="send-panel">
+				<p>您要传信给：</p>
+				<fieldset data-role="controlgroup" id="receivers">
+				</fieldset>
+				<p>请选择性的告知他们以下军队的状态：</p>
+				<div id="send-content">
+				</div>
+				<a href="#" data-rel="close" data-role="button" data-corners="false" id="confirm-send">确定</a>
+			</div>
+			<div data-role="panel" data-position-fixed="true" data-display="push" data-ajax="false" data-theme="b" id="nav-panel">
+				<ul data-role="listview">
+					<li data-icon="delete"><a href="#" data-rel="close">关闭菜单</a></li>
+					<li><a href="index.html" data-ajax="false">实验介绍</a></li>
+					<li><a href="game.html?test" data-ajax="false"><span style='color:green'>测试模式</span></a></li>
+					<li><a href="game.html?submit" data-ajax="false"><span style='color:red'>提交模式</span></a></li>
+
+				</ul>
+			</div><!-- /panel -->
+
+			
+			<div style="visibility:hidden;width:0;height:0;">
+				<img src="imgs/attack.png" id='img-attack'>
+				<img src="imgs/shield.png" id='img-shield'>
+				<img src="imgs/crown.png" id='img-crown'>
+				<img src="imgs/zhangfei.jpg" id='zhangfei'>
+				<img src="imgs/liubei.jpg" id='liubei'>
+				<img src="imgs/zhaoyun.jpg" id='zhaoyun'>
+				<img src="imgs/zhugeliang.jpg" id='zhugeliang'>
+				<img src="imgs/huangzhong.jpg" id='huangzhong'>
+				<img src="imgs/default.jpg" id='default'>
+				<img src="imgs/guanyu.jpg" id='guanyu'>
+				<img src="imgs/message.png" id='message'>
+				<img src="imgs/ready.png" id='img-ready'>
+				<img src="imgs/notready.png" id='img-notready'>
+				<img src="imgs/troops.png" id='img-troops'>
+				<img src="imgs/supply.png" id='img-supply'>
+				<img src="imgs/weather.png" id='img-weather'>
+				<img src="imgs/timer.png" id='img-timer'>
+				<img src="imgs/randomer.png" id='img-randomer'>
+				<img src="imgs/army.jpg" id='img-army'>	
+				<img src="imgs/town.png" id='img-town'>		
+
+			</div>
+		</div>
+
+	</body>
+</html>

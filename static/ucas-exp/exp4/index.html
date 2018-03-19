@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>实验4:三国战役</title>
+		<meta charset="UTF-8">
+		<meta name="renderer" content="webkit">
+		<meta name="viewport" content="user-scalable=1.0,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="format-detection" content="telephone=no">
+		<link rel="stylesheet" href="css/jquery.mobile-1.4.3.min.css" />
+		<script type="text/javascript" src="js/jquery-1.11.1.min.js"></script>
+		<script src="http://apps.bdimg.com/libs/jquerymobile/1.4.3/jquery.mobile-1.4.3.min.js"></script>
+		<script src="js/iealert.min.js" type="text/javascript"></script>
+  		<link rel="stylesheet" type="text/css" href="css/iealert/style.css" />
+  		<script src="js/ajax.js"></script>
+		<script>
+			$(function() {
+				$("body").iealert();
+			})
+			Ajax = new modAjax(5,this)
+			Ajax.getinfo(getSuccessHandler,getErrorHandler)
+			function getSuccessHandler(data){
+				name = data["name"]
+				$("#login_info").text(name)
+			}
+			function getErrorHandler(data){
+				alert('The experiment is not available!')
+				$('body').html("Sorry, failed to connect to server, please check if you have logged in the course website, or the game is opened for you.")
+			}
+		</script>
+	</head>
+	<body>
+		<div data-role="page">
+			<div data-role="header">
+				<a href="#nav-panel" data-icon="bars" data-iconpos="notext">菜单</a>
+				<h1>系统角度实验:三国战役</h1>
+				<a href="#" data-icon="user" data-iconpos="left" id="login_info">未登录</a>
+			</div>
+			<div data-role="content">
+				<h1>实验指导</h1>
+				<h2>注意须知</h2>
+				<p>
+				<ul>
+					<li>在进行本实验前，强烈建议您使用Chrome或者基于Chrome实现的浏览器，使用其他浏览器看到的效果可能不正确，或解析速度异常缓慢。</li>
+					<li>你应该首先和您的组员共同阅读本指导手册，保证充分理解后，进行测试模式，充分理解后进行提交模式。测试模式和提交模式通过本界面左上角进入。注意：本游戏需要您的组员全部在线时才可进行游戏，因此你要保证你们的网络是畅通的。</li>
+					<li>建议你和你的组员选择时间充裕的时候，突击完成全部提交模式，而不要分散时间。本实验是希望帮助大家真正理解学习到一些知识的，如果组员之间互相偷看屏幕，通过语言进行沟通协商就没趣了。分数并不是最关键的，我最后都会进行一些调整。只是希望同学们尊重助教的劳动成果，多多思考，尽量做到提交模式中全程保持不沟通。</li>
+				</ul>
+				</p>
+				<h2>实验目的</h2>
+				<p>
+				<ul>
+					<li>理解系统的模块化，抽象化概念，能够使用多种模块完成一个独立抽象系统的构建，完成指定目标。</li>
+					<li>理解分布式系统与独立系统的关系，尝试约定一种协议保证分布式系统的容错性。</li>
+				</ul>
+				</p>
+				<h2>实验内容</h2>
+				<h3>
+					<p>基础概念：</p>
+					<ul>
+						<li>抽象化是指以缩减一个概念、屏蔽一个现象的信息含量来将其广义化（Generalization）的过程。在计算机科学中，良好的抽象可以屏蔽实现细节，降低描述复杂度，提高概念的通用性。</li>
+						<li>模块化：模块化是指解决一个复杂问题时自顶向下逐层把硬件或软件系统划分成若干模块的过程。每个模块完成一个特定的子功能，模块之间相互独立，或者近似独立，模块间联系远少于模块内部；模块可以按照设计规则分散设计（即分布设计）并独立测试，同类模块相互竞争，所有的模块可以供自由选择，按某种方法组装起来，成为一个整体，完成整个系统所要求的功能。该系统在本实验中为部队子系统。</li>
+						<li>属性，接口，逻辑：属性，接口，逻辑均可以表现模块的内部特性；接口，属性也可以表现模块的外部特性。</li>
+						<li>关系：模块与模块之间的连接方式。</li>
+						<li>子系统与分布式系统：分布式系统是基于网络将相对独立的子系统通过网络进行连接得到的松散组织形式。</li>
+						<li>容错性：容错性在分布式系统中是在容忍其内部出现一定错误的情况下，系统仍可正确有效的运转的性质。</li>
+					</ul>
+				</h3>
+				<h3>构建部队子系统</h3>
+				<p>
+					部队子系统是本实验中你所能控制的最小的抽象化操作单元。一个子系统由若干相应的模块，关系，接口，逻辑构成。
+				</p>
+				<p>
+					为了使你的部队能够顺利参加即将开始的三国战役，你需要构建这样具备如下功能的一个部队子系统：
+					<ul>
+					<li>有唯一的标示可以将你的部队子系统与其他人的部队子系统进行区分。</li>
+					<li>你能与其他人的部队子系统进行通信，决策。</li>
+					<li>你进行决策时，应该依据部队的状态进行调整，即整备状态与就绪状态。</li>
+					<li>部队状态是反映你的部队能否进行战斗的直接建议指标，它受到粮草数量，士兵数量，天气状况的共同影响。你应该指明部队这三个外在变量变化满足什么样的条件时，部队状态如何被调整。</li>
+					<li>粮草数量，士兵数量，天气状态会在每一天到来时发生随机的变化（比如补给或消耗）。</li>
+					</ul>
+				</p>
+				<p>
+					现在可供你使用的模块，属性，接口已经在游戏模式中显示，把鼠标悬浮在相应的部件上，右侧区域将显示该部件的详细信息。
+				</p>
+				<h3>三国战役分布式系统</h3>
+				<p>
+					在本场战役持续0~n天，每天的持续时间为现实时间20分钟。战役由你的全部组员共5~6人参加，其中5人的身份之中，1人为奸臣，其余为忠臣。在新的一天到达时，根据前一小节所描述，每个部队子系统状态都将发生变化，同时你的身份也将随机的发生变化。你的子系统和其余子系统交互的方式仅限信鸽通信，和作出决策（每一天只能作出一次决策）。其中通信用于告知自己或者其他部队的状态（假设通信过程无丢失，无错误，无消息泄密），各位玩家之间的拓扑连接为全互联，决策是根据你判断到的全局状态作出开始攻击或拒绝攻击决策。
+				</p>
+				<p>
+					忠臣与奸臣有不同的作战目标：忠臣的目的为全力避免奸臣的误导作出决策，使忠臣们共同满足胜利条件，即满足容错性。奸臣的目的为尽全力破坏忠臣共同作出正确的决策，使得忠臣们不能满足胜利条件。
+				</p>
+				<p>三国战役分布式系统的容错性（即胜利条件）由游戏后台通过三个子条件共同判断：</p>
+				<ul>
+					<li>一致性条件：所有忠臣将军作出相同的决策。</li>
+					<li>有效性条件：少数忠臣将军应服从多数忠臣将军的状态进行决策，数量相同时进行任意决策，即：</li>
+
+					<style type="text/css">
+					.tg  {border-collapse:collapse;border-spacing:0;border-color:#999;}
+					.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#444;background-color:#F7FDFA;}
+					.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#fff;background-color:#26ADE4;}
+					</style>
+					<table class="tg">
+					  <tr>
+					    <th class="tg-031e">忠臣部队中为就绪状态的数量</th>
+					    <th class="tg-031e">应做出决策</th>
+					  </tr>
+					  <tr>
+					    <td class="tg-031e">4</td>
+					    <td class="tg-031e">攻击</td>
+					  </tr>
+					  <tr>
+					    <td class="tg-031e">３</td>
+					    <td class="tg-031e">攻击</td>
+					  </tr>
+					  <tr>
+					    <td class="tg-031e">2</td>
+					    <td class="tg-031e">攻击或拒绝攻击</td>
+					  </tr>
+					  <tr>
+					    <td class="tg-031e">1</td>
+					    <td class="tg-031e">拒绝攻击</td>
+					  </tr>
+					  <tr>
+					    <td class="tg-031e">0</td>
+					    <td class="tg-031e">拒绝攻击</td>
+					  </tr>
+					</table>
+					<li>终止性条件：所有忠臣将军都做出了决策。</li>
+				</ul>
+				值得一提的是，每天游戏进行的时间并不是以20分钟为结束，而是以终止性条件进行判断结束。
+				<h3>提交模式评分机制</h3>
+				<p>本分数机制仅供评分参考，并不代表你在该实验的最终分数，分数或许低于0分，或许超过100分。每个组员在第0天初始分数均为80分，经过5天过后的分数为提交分数。</p>
+				<ul>
+					<li>若在某天达到胜利条件：忠臣+10分，奸臣-40分 </li>
+					<li>若在某天没有达到胜利条件：忠臣-10分，奸臣+40分 </li>
+					<li>若在某天截止之前忠臣没有全部进行决策：所有玩家-20分。</li>
+				</ul>
+				<h2>实验步骤</h2>
+				<h3>第一阶段：构建部队子系统</h3>
+				<p>
+					<img src="imgs/stage-1.png" style="width:50%;"></img>
+					上图所示，左上部分为游戏区，你需要在这里进行操作。下半部分为日志区，显示最近的事件。右部分显示当前的状态和提示信息，绿色的名字表示用户在线，灰色表示离线。
+				</p>
+				<p>你可以将鼠标悬浮在指定部件上，查看该部件的详细信息。其中深蓝色的部件为模块，可以与其他模块进行连接。浅绿色的部件为属性或借口，不可以连接，但可以放入其他模块中。浅蓝色的部件为最终构建的抽象子系统。</p>
+				<p>当你把鼠标靠近某个模块的边缘时，可以从按住周围的4个连接点中抻拉出一条连接线，当释放鼠标在其他模块的某个连接点时，一条连接线就完成了。</p>
+				<p>点击抽象子系统，你可以进一步设置其中的内部逻辑。</p>
+				<p>只有当你构建出唯一符合要求的系统结构图时，点击构建完成才可进入第二阶段。</p>
+				<h3>第二阶段：进行分布式战役</h3>
+				<p>该阶段必须在全部组员同时在线时才可以进行，否则会停留在等待界面。</p>
+				<p>点击“释放信鸽”会激活以下窗口：</p>
+				<img src="imgs/stage-2-comm.png" style="width:20%;"></img>
+				<p>在上部分选择你要发送信息给哪些部队。在下部分指定消息的内容为某部队是什么状态。在这里不管是忠臣和奸臣，都可以自行决定发送内容是什么（不一定符合实际情况），但给奸臣的一个小提示是，奸臣可以告知不同的人不相同的消息。点击确定后将发送。</p>
+				<p>下面以在一人向两人发送消息为例。赵云向诸葛亮发送了自己是整备状态，关羽是整备状态，刘备是整备状态的消息。但赵云向关羽发送了自己是就绪状态，张飞是就绪状态诸葛亮是就绪状态的消息。在三个组员看来，每个人的视角都将因收到的消息显示的不一致。</p>
+				<img src="imgs/s2-zhaoyun.png" style="width:22%;">赵云视角</img>
+				<img src="imgs/s2-zhuge.png" style="width:22%;">诸葛亮视角</img>
+				<img src="imgs/s2-guanyu.png" style="width:22%;">关羽视角</img>
+				<p>以诸葛亮视角为例，其中绿色为就绪状态，红色为整备状态。赵云的头像背景的颜色为红色表示赵云声称自己为整备状态。赵云指向关羽的箭头为红色，表示赵云声称关羽为整备状态。</p>
+				<p>游戏的一天并不限制通信的次数，但在图例里，后一次同一链路的颜色会覆盖之前的链路颜色。玩家此时需要借助日志区的信息进行辅助判断。</p>
+				<p>经过若干轮的通信后，玩家便可做出决策，进行攻击或者不攻击。若在指定时间内无法完成决策，系统将进入下一天。</p>
+				<p>
+				<span style='color:red'>一个不完善的算法举例</span><br>
+				每个忠臣都忠诚的广播自己的状态，随后，每个忠臣依据收到的就绪数量判断是否进行攻击，若大于等于3，则攻击，反之则不攻击。<br>
+				好的情况中：
+				<table class="tg">
+				  <tr>
+				    <th class="tg-031e">忠臣1</th>
+				    <th class="tg-031e">忠臣2</th>
+				    <th class="tg-031e">忠臣3</th>
+				    <th class="tg-031e">忠臣4</th>
+				    <th class="tg-031e">奸臣</th>
+				  </tr>
+				  <tr>
+				    <td class="tg-031e">就绪</td>
+				    <td class="tg-031e">就绪</td>
+				    <td class="tg-031e">就绪</td>
+				    <td class="tg-031e">整备</td>
+				    <td class="tg-031e">任意</td>
+				  </tr>
+				</table>
+				广播过后，不论奸臣发任意消息，各玩家收到的就绪数量(包括自己)：
+				<table class="tg">
+				  <tr>
+				    <th class="tg-031e">忠臣1</th>
+				    <th class="tg-031e">忠臣2</th>
+				    <th class="tg-031e">忠臣3</th>
+				    <th class="tg-031e">忠臣4</th>
+				    <th class="tg-031e">奸臣</th>
+				  </tr>
+				  <tr>
+				    <td class="tg-031e">&gt;=3</td>
+				    <td class="tg-031e">&gt;=3</td>
+				    <td class="tg-031e">&gt;=3</td>
+				    <td class="tg-031e">&gt;=3</td>
+				    <td class="tg-031e"></td>
+				  </tr>
+				</table>
+				忠臣将一致决定进行攻击，符合胜利条件，游戏胜利。<br>
+				坏的情况中：	
+				<table class="tg">
+				  <tr>
+				    <th class="tg-031e">忠臣1</th>
+				    <th class="tg-031e">忠臣2</th>
+				    <th class="tg-031e">忠臣3</th>
+				    <th class="tg-031e">忠臣4</th>
+				    <th class="tg-031e">奸臣</th>
+				  </tr>
+				  <tr>
+				    <td class="tg-031e">就绪</td>
+				    <td class="tg-031e">就绪</td>
+				    <td class="tg-031e">整备</td>
+				    <td class="tg-031e">整备</td>
+				    <td class="tg-031e">任意</td>
+				  </tr>
+				</table>
+				忠臣广播过后，若奸臣给忠臣1发送了自己是就绪状态，给忠臣2发送了自己是整备状态，给其余两人发是就绪状态，那么：
+				<table class="tg">
+				  <tr>
+				    <th class="tg-031e">忠臣1</th>
+				    <th class="tg-031e">忠臣2</th>
+				    <th class="tg-031e">忠臣3</th>
+				    <th class="tg-031e">忠臣4</th>
+				    <th class="tg-031e">奸臣</th>
+				  </tr>
+				  <tr>
+				    <td class="tg-031e">3</td>
+				    <td class="tg-031e">2</td>
+				    <td class="tg-031e">3</td>
+				    <td class="tg-031e">3</td>
+				    <td class="tg-031e"></td>
+				  </tr>
+				</table>
+				此时，忠臣1，3，4会做出攻击决策，而忠臣2做出拒绝攻击决策，不符合一致性条件，游戏失败。
+				</p>
+				<h2>实验结果</h2>
+				<p>请提交演示ppt和实验报告，详细阐述你对实验目的的理解和实现，实验报告。</p>
+				<p>实验展示和报告必须对两个阶段都进行思考，例如，探讨如何利用抽象帮助设计系统；在本实验中，为什么要设置部分接口，模块，属性对外可见？为什么有些不不可见？；第一阶段与第二阶段怎样通过子系统进行关联？第二阶段中：奸臣做哪些举动可能导致忠臣判断失误？可不可以利用现有的通信手段实现较为完善的容错保障？
+				</p>
+				<h2>其他</h2>
+				<p>如果你有其他任何问题，欢迎联系我的邮箱zhangxingzhou@ict.ac.cn</p>
+
+			</div>
+			<div data-role="panel" data-position-fixed="true" data-display="push" data-ajax="false" data-theme="b" id="nav-panel">
+				<ul data-role="listview">
+					<li data-icon="delete"><a href="#" data-rel="close">关闭菜单</a></li>
+					<li><a href="index.html" data-ajax="false">实验介绍</a></li>
+					<li><a href="game.html?test" data-ajax="false"><span style='color:green'>测试模式</span></a></li>
+					<li><a href="game.html?submit" data-ajax="false"><span style='color:red'>提交模式</span></a></li>
+
+				</ul>
+			</div><!-- /panel -->
+				</div>
+			</body>
+		</html>

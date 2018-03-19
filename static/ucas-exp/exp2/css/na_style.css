@@ -1,0 +1,154 @@
+img{
+	width: 100%;
+	height: 100%;
+}
+
+.container{
+width: 100%;
+height:100%;
+}
+.container .ui-block-game,
+.container .ui-block-submit{
+	padding: 20px;
+}
+.container .ui-block-game{
+	position: absolute;
+	width: 70%;
+	left: 20px;
+	top: 30px;
+	bottom: 20px;
+}
+.container .ui-block-submit{
+	position: absolute;
+	right :20px;
+	width: 20%;
+	top: 30px;
+	bottom: 20px;
+}
+
+
+ #bottles-container, #mice-container{ 
+ 	width: 100%;
+ 	 }
+
+ #bottles-container{height: 50%}
+ #mice-container{height: 35%}
+
+ #bottles-container .bottle, #mice-container .mice { 
+ 	position:relative;
+ 	margin: 3px 3px 3px 0;  
+ 	float: left; 
+ 	width: 55px;  
+ 	height:55px; 
+ 	z-index: 1000;
+ }
+
+ #mice-container .mice p{
+ 	position: absolute;
+ 	font-size: 1.2em; 
+ 	text-align: center;
+ 	top:-30px;
+ 	right:0px;
+ 	width:24px;
+ 	height: 24px;
+ 	background-color: red;
+ 	border-radius: 12px;
+
+ }
+ #mice-container .mice .i-del{
+ 	position: absolute;
+ 	top:-8px;
+ 	left:-20px;
+ }
+ #mice-container .mice .i-id{
+ 	position: absolute;
+ 	bottom:-8px;
+ 	left:-9px;
+ }
+
+
+#bottles-container .bottle{
+	width: 30px; 
+	height:45px;
+	margin: 3px 10px 3px 0; 
+	z-index: 3000;
+}
+
+#bottles-container .bottle p{
+	position:absolute;
+	font-size: 1em;
+	color:black;
+	text-align: center;
+	top:1px;right: 0px;bottom: 0px;left: 0px;
+	/*left:  20px;*/
+}
+
+ .bottle-container{
+ 	 /*position:absolute;*/
+ 	 overflow: visible;
+ 	 height: 520px;
+ 	 left:0px;
+ 	 right:0px;
+ 	 padding: 10px 10px 10px 10px;
+ }
+
+.bottle-container .bottle{
+	position: relative;
+	float: left;
+	width: 45px; 
+	height:67.5px;
+	margin: 3px 3px 3px 0; 
+	z-index: 3000
+}
+.bottle-container .bottle p{
+	position:absolute;
+	font-size: 1.2em;
+	text-align: center;
+	margin: auto;
+	top: 30px; left: 0; bottom: 0; right: 0;
+}
+
+.mouse-popup{
+	width: 450px;
+	height: 340px;
+}
+
+.panel-number{
+	text-align: center;
+	font-size: 30px;
+}
+#SubmitBoard{
+	height: 100%
+}
+.middle-text-large{
+	text-align: center;
+	font-size: 50px;
+}
+
+.submit .bottle{
+	width:30%;
+	position: relative;
+}
+.submit .bottle{
+	width:30%;
+	position: relative;
+}
+
+.submit .bottle p{
+	position: absolute;
+	font-size: 20px; 
+	text-align: center;
+	top:2px;
+	left:10px;
+	color:black;
+}
+.submit .bottle img{
+	width:30px;
+}
+
+.ui-selectable-helper {
+	position: absolute;
+	z-index: 1200;
+	border: 2px dotted black;
+}
+

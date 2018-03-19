@@ -1,0 +1,62 @@
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Network Experiment</title>
+		<script type="text/javascript" src="js/jquery-1.11.1.min.js" charset="utf-8"></script>
+		<link rel="stylesheet" href="css/jquery.mobile-1.4.3.min.css" />
+		<link rel="stylesheet" href="css/style.css" />
+		<script type="text/javascript" src="http://apps.bdimg.com/libs/jquerymobile/1.4.3/jquery.mobile-1.4.3.min.js" charset="utf-8"></script>
+
+		<script src="js/iealert.min.js" type="text/javascript"></script>
+		<link rel="stylesheet" type="text/css" href="css/iealert/style.css" />
+		<script type="text/javascript" src="http://cdn.bootcss.com/paper.js/0.9.20/paper-full.min.js"  charset="utf-8"></script>
+		<script type="text/javascript" src="js/topo.js" charset="utf-8"></script>
+		<script type="text/javascript" src="js/ajax.js" charset="utf-8"></script>
+		<script type="text/paperscript" canvas="canvas" src="js/render.js" id="script" ></script>
+		<script type="text/javascript" src="js/gameManager.js" charset="utf-8"></script>
+		<script type="text/javascript" src="js/initialize.js" charset="utf-8"></script>
+	</head>
+	<body>
+		<div data-role="page" id = "main-page">
+			<div data-role="header">
+				<h1>Network Experiment</h1>
+				<a href="#nav-panel" data-icon="bars" data-shadow="false" data-iconshadow="false" class="ui-nodisc-icon">Choose Experiment Mode</a>
+				<a href="#" data-icon="user" data-iconpos="left" id="login_info">Not login</a>
+			</div>
+			<div data-role="content" id="container">
+				<div class="Left">
+					<div class="ui-body ui-body-b ui-corner-all"  id="Main">
+						<div class="canvas" id="canvas_container">
+							<canvas resize="true" id="canvas"></canvas>
+						</div>
+					</div>
+				</div>
+				<div class="ui-body ui-body-b ui-corner-all"  id="ControlBoard">
+					<div id="group-info"><h3 id="group-head" style="margin-top: 0;">Group Members</h3></div>
+					<div><h3>Experiment Mode</h3>
+						<div class="middle-text" id="gameMode"></div>
+					</div><!-- 
+					<div id="status"><h2 id="statusLabel">游戏目标</h2>
+						<h5 id="target1">1. 路由通路</h5>
+						<h5 id="target2">2. 增加吞吐率</h5>
+					</div> -->
+					<div id="status"><h3 id="statusLabel">Experiment Status</h3>
+						<div id="statusText"></div>
+					</div>
+					<div id="gameAction"><h3 id="actionLable">Experiment Action</h3>
+					</div>
+				</div>
+			</div>
+
+			<div data-role="panel" id="nav-panel" data-theme="b" ddata-ajax="false" ata-position-fixed="true" data-display="push">
+			<ul data-role="listview">
+			    <li data-icon="delete"><a href="#" data-rel="close">Close</a></li>
+			    <li><a href="index.html" data-ajax="false">Experiment Guide</a></li>
+			    <li><a href="route.html?test" data-ajax="false">Test Mode</a></li>
+			    <li><a href="route.html?formal" data-ajax="false">Formal Mode</a></li>
+			</ul>
+			 </div>
+		</div>
+
+	</body>
+</html>

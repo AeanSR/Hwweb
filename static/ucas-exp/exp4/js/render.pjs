@@ -1,0 +1,628 @@
+var hitOptions = {
+	segments: true,
+	stroke: false,
+	fill: true,
+	tolerance: 5
+};
+var conPosition = [
+	[0, 1],
+	[1, 0],
+	[-1, 0],
+	[0, -1]
+]
+var LIUBEI = "刘备";
+var ZHANGFEI = "张飞";
+var ZHAOYUN = "赵云";
+var GUANYU = "关羽";
+var ZHUGELIANG = "诸葛亮";
+var HUANGZHONG = "黄忠"
+//DONE
+var segment, item, connection, endPoint;
+connections = {}
+var movePath = false;
+var isDragging = false;
+var connId;
+var previousGroup;
+var mainBody;
+var textLineItems = {}
+var avatars_url = ['liubei','zhangfei','zhaoyun','guanyu','zhugeliang','huangzhong']
+var default_url = 'default'
+var avatars_name = [LIUBEI,ZHANGFEI,ZHAOYUN,GUANYU,ZHUGELIANG,HUANGZHONG];
+var dragElem = null;
+numInBody = 0
+DAG = {}
+var ModuleInfo={
+	"模块：随机数生成器":'<p style="color:blue;">接口：</p>【输出】生成的随机数{整数}。<p style="color:blue;">内部逻辑：</p>生成随机数。',
+	"模块：日期发生器":'<p style="color:blue;">接口：</p>【输出】当前天数{整数}。<p style="color:blue;">内部逻辑：</p>每隔20分钟（现实世界时间）天数增加1。',
+	"模块：兵力":'<p style="color:blue;">接口：</p>【输入】天数{整数}，随机数{整数}<br>【输出】当前兵力{整数}。<p style="color:blue;">内部逻辑：</p> 在不同的天数依据随机数获得获得不同的兵力数量。',
+	"模块：粮食":'<p style="color:blue;">接口：</p>【输入】天数{整数}，随机数{整数}<br>【输出】当前粮食{整数}。<p style="color:blue;">内部逻辑：</p> 在不同的天数依据随机数获得获得不同的粮食数量。',
+	"模块：天气":'<p style="color:blue;">接口：</p>【输入】天数{整数}，随机数{整数}<br>【输出】当前天气{晴天，雨天}。<p style="color:blue;">内部逻辑：</p> 在不同的天数依据随机数获得获得不同的天气状况。',
+	"模块：部队":'<p style="color:blue;">内部接口：</p>【输入】兵力数{整数}，粮食数{整数}，天气{晴天，雨天}<br>'+
+		'【输出】部队状态{就绪，整备}。<p style="color:blue;">内部逻辑：</p> 点击界面中的模块进行填写。'+
+		'<p style="color:blue;">外部接口：</p> 可与与其他部队子系统发生交互。请点击界面中的模块进行填写。'+
+		'<p style="color:blue;">属性：</p> 这里的属性，模块内部可读写，模块外部只读。请点击界面中的模块进行填写。',
+	"属性：整备状态":'<p style="color:blue;">属性：</p><p>状态类：该状态下部队进攻的基本条件没有达到。</p>',
+	"属性：就绪状态":'<p style="color:blue;">属性：</p><p>状态类：该状态下部队进攻的基本条件已经达到。</p>',
+	"接口：拒绝攻击":'<p style="color:blue;">接口：</p><p>决策类：通过该接口可做出拒绝战斗决策。</p>',
+	"接口：开始攻击":'<p style="color:blue;">接口：</p><p>决策类：通过该接口可做出开始战斗决策。</p>',
+	"接口：释放信鸽":'<p style="color:blue;">接口：</p><p>动作类：通过该接口可做出开始战斗决策。</p>'
+
+}
+
+
+var createArray2D = function(m,n){
+	array = {}
+	for(var x=0;x<m;x++){
+		array[x] = {}
+		for(var y=0;y<n;y++){
+			array[x][y] = null;
+		}
+	}
+	return array
+}
+
+edges = createArray2D(5,5)
+pos_crwon = {}
+avatars = {}
+profiles = {}
+nameText = {}
+attacks = {}
+selfCrwon = null
+poly5out = null
+
+
+
+function Connector(point,size,item,connectable,color, connectname) {
+	this.group = new Group()
+	this.group.name = 'connector';
+	// Container
+	this.container = new Path.Rectangle({
+		point: [0, 0],
+		size: size,
+		radius: 20,
+		fillColor: color,
+		strokeColor: 'black',
+		position: point,
+		opacity: 0.2,
+		name: 'backgroud'
+	})
+	this.group.addChild(this.container)
+	this.connectGroup = new Group({name: 'connectpoints'})
+	if(connectable){
+		// connect points
+		for (var i = 0; i < conPosition.length; i++) {
+			this.connectGroup.addChild(
+				new Path.Circle({
+					center: new Point(conPosition[i])*size/2 + point,
+					radius: 5,
+					strokeColor: 'blue',
+					fillColor: 'grey',
+					name: 'connectpoint',
+					visible: false
+				})
+			)
+		}
+		this.group.addChild(this.connectGroup)
+	}
+
+	// Add moudule name
+	
+		var h = new PointText({
+		fillColor : 'purple',
+		name: 'textMoudule',
+		content : connectname,
+		position: new Point([0,1])*size/2 + new Point([0,20]) + point
+		}).bringToFront()
+	this.group.addChild(h)
+	h.sendToBack()
+
+	// add content
+	innerSize = new Size(size) - new Size(20,20)
+	if(item){
+		item.fitBounds(new Rectangle({
+			point:point - innerSize/2,
+			size: innerSize
+		}))
+		this.group.addChild(item)
+		item.sendToBack()
+	}
+	this.group.onMouseEnter = function(event) {
+		$('#module-info').html(ModuleInfo[connectname])
+	}
+	this.group.onMouseLeave = function(event) {
+		$('#module-info').html('把鼠标移动到相应部件上显示详细信息，蓝色部件可以通过连接点进行连接，绿色部件不可连接，只能放入另一个部件中。')
+	}
+}
+
+function onMouseDown(event) {
+	isDragging = false;
+	segment = item = connId = null;
+	var hitResult = project.hitTest(event.point, hitOptions);
+	if (!hitResult)
+		return;
+	if (hitResult) {
+		//console.log(hitResult.type)
+		if (hitResult.type == 'segment') {
+			segment = hitResult.segment;
+			if (segment.path.name != 'connectpoint') return
+			connId = segment.path.parent.parent.children['backgroud'].id
+			to =  segment.path.parent.parent.firstChild.name
+			connection = new Path();
+			connection.sendToBack();
+			connection.strokeColor = 'red'
+			startPoint = segment.path.position
+			connection.add(startPoint);
+			endPoint = new Point(event.point);
+			connection.add(endPoint);
+			if (!(connId in connections)) connections[connId] = []
+			connections[connId].push(connection.firstSegment)
+		}
+		if (hitResult.type == 'fill') {
+			item = hitResult.item;
+			connId = item.id
+		}
+	}
+}
+
+
+
+function onMouseMove(event) {
+	if (event.item && event.item.name == 'connector') {
+		if(previousGroup!=null && previousGroup!=event.item)
+		hideConnectpoint(previousGroup)
+		showConnectpoint(event.item)
+		previousGroup = event.item;
+	} else {
+		if (previousGroup)
+			hideConnectpoint(previousGroup)
+	}
+}
+
+function onMouseDrag(event) {
+	isDragging = true
+	var hitResult = project.hitTest(event.point, hitOptions);
+	dragElem = null;
+	if (segment && segment.path.name == 'connectpoint') {
+		connection.lastSegment.point += event.delta;
+		if (hitResult) {
+			if (hitResult.type == 'fill') {
+				group = hitResult.item.parent;
+				if (previousGroup)
+					hideConnectpoint(previousGroup)
+				showConnectpoint(group)
+				previousGroup = group
+			}
+		}
+	} else if (item && item.parent.name == 'connector') {
+		item.parent.position += event.delta;
+		// Move the connect points.
+		if (connId in connections)
+			for (var i in connections[connId]) {
+				connections[connId][i].point += event.delta;
+			}
+		if (hitResult && !item.parent.children['mainBody']) {
+			if (hitResult.type == 'fill') {
+				group = hitResult.item.parent;
+				if(group.children['mainBody']){
+					dragElem = item.parent  
+					console.log('find body')
+				}
+
+			}
+		}
+	}
+}
+
+function onMouseUp(event) {
+	var hitResult = project.hitTest(event.point, hitOptions);
+	if (!hitResult) {
+		//return;
+	}
+	else{
+		if (hitResult.type == 'segment') {
+			segment = hitResult.segment;
+			console.log(segment.path.name)
+			if (segment.path.name == 'connectpoint') {
+				connection.lastSegment = segment.path.position
+				newconnId = segment.path.parent.parent.children['backgroud'].id
+				from =  segment.path.parent.parent.firstChild.name
+				if(connId !=newconnId){
+					line = new Path.Line({
+						from:connection.firstSegment.point,
+						to:connection.lastSegment.point,
+						strokeColor:'black',
+						strokeWidth: 2
+						})
+					line.sendToBack()
+					connections[connId].push(line.firstSegment)
+					if (!(newconnId in connections)) connections[newconnId] = []
+					connections[newconnId].push(line.lastSegment)
+					addEdge(from, to)
+				}
+
+				//connection = null
+			}
+		}
+		else if(hitResult.type == 'fill'){
+			group = hitResult.item.parent;
+			if(dragElem){
+				addElem(mainBody, dragElem)
+				console.log('drop elem')
+			}
+			if(!isDragging && group.children['mainBody']){
+				$('#condition-panel .group')[0].style["display"]=('food-mainBody' in DAG)?"Block":"None"
+				$('#condition-panel .group')[1].style["display"]=('army-mainBody' in DAG)?"Block":"None"
+				$('#condition-panel .group')[2].style["display"]=('mainBody-weather' in DAG)?"Block":"None"
+				$("#condition-panel").panel("open")
+			}
+			
+
+		}
+	}
+	dragElem = null;
+	if (connection)
+		connection.remove();
+}
+
+function showConnectpoint(group) {
+	for (i = 0; i < 4; i++) {
+		if(group.children['connectpoints'])
+		group.children['connectpoints'].children[i].visible = true;
+	}
+	group.children['backgroud'].opacity = 0.5;
+}
+
+function hideConnectpoint(group) {
+	for (i = 0; i < 4; i++) {
+		if(group.children['connectpoints'])
+		group.children['connectpoints'].children[i].visible = false;
+	}
+	group.children['backgroud'].opacity = 0.2;
+}
+function addEdge(point1, point2){
+	point1<=point2?DAG[point1 + '-' + point2] = 1 :DAG[point2 + '-' + point1] = 1
+}
+
+function addElem(body, elem){
+	e = elem.firstChild
+	if(body.children['line-' + e.name]){
+		textLine = body.children['line-' + e.name ]
+		if(!(e.name in textLineItems)){
+			textLine.content = textLine.content.split(':')[0] + ":"
+			textLineItems[e.name] = 0
+		}
+		body.addChild(e)
+		//e.position = body.children['line-' + e.name].position +[60,0]+ new Point([20,0])*textLineItems[e.name]
+		//e.fitBounds[60,60]
+		e.fitBounds(body.children['line-' + e.name].bounds.topLeft +[100,0]+ new Point([30,0])*textLineItems[e.name],[20,20])
+		elem.remove()
+		textLineItems[e.name] +=1
+		numInBody ++;
+	}
+}
+initStep1 = function(id){
+	onResize()
+	project.activeLayer.removeChildren()
+	view.draw()
+
+	var commander = new Raster(avatars_url[id]);
+	commander.name = 'attributes'
+	var message = new Raster('message');
+	message.name = 'sockets'
+	var attack = new Raster('img-attack');
+	attack.name = 'sockets'
+	var shield = new Raster('img-shield');
+	shield.name = 'sockets'
+	var ready = new Raster('img-ready');
+	ready.name = 'attributes'
+	var notready = new Raster('img-notready');
+	notready.name = 'attributes'
+
+	var troops =  new Group();
+	troops.name = "army"
+	troops.addChild(new Raster('img-troops'))
+
+	var food =  new Group();
+	food.name = "food"
+	food.addChild(new Raster('img-supply'))
+
+	var weather =  new Group();
+	weather.name = 'weather'
+	weather.addChild(new Raster('img-weather'))
+
+	var timer =  new Group();
+	timer.name = 'timer'
+	timer.addChild(new Raster('img-timer'))
+
+	var randomer =  new Group();
+	randomer.name = 'randomer'
+	randomer.addChild(new Raster('img-randomer'))
+
+
+	mainBody =  new Group({name:"mainBody"});
+
+	mainBody.addChild(new PointText({
+		fillColor : 'black',
+		content : avatars_name[id] + '部队',
+		position: [0,-50]
+		}))
+	mainBody.addChild(new PointText({
+		fillColor : 'black',
+		name: 'line-attributes',
+		content : '属　　性:请拖动至此处',
+		position: [0,0]
+		}))
+	mainBody.addChild(new PointText({
+		fillColor : 'black',
+		name: 'line-sockets',
+		content : '外部接口:请拖动至此处',
+		position: [0,20]
+		}))
+	mainBody.addChild(new PointText({
+		fillColor : 'black',
+		name : 'conditions',
+		content : '控制逻辑:点击此处修改',
+		position: [0,40]
+		}))
+	// mainBody.addChild(new Raster({
+	// 	source:'img-army',
+	// 	position:[0,-50],
+	// 	size:[1000,1000]
+	// }).sendToBack())
+
+	objects = []
+	objects.push(new Connector(new Point(230, 60), [70,70],commander,false,'green', "属性：" + avatars_name[id]))
+	objects.push(new Connector(new Point(230, 200), [70,70],message,false,'green',"接口：释放信鸽"))
+	objects.push(new Connector(new Point(230, 340), [70,70],attack,false,'green',"接口：开始攻击"))
+	
+	objects.push(new Connector(new Point(340, 60), [70,70],shield,false,'green',"接口：拒绝攻击"))
+	objects.push(new Connector(new Point(340, 200), [70,70],ready,false,'green',"属性：就绪状态"))
+	objects.push(new Connector(new Point(340, 340), [70,70],notready,false,'green',"属性：整备状态"))
+
+	objects.push(new Connector(new Point(700, 60), [70,70],troops,true,'blue',"模块：兵力"))
+	objects.push(new Connector(new Point(700, 200), [70,70],food,true,'blue',"模块：粮食"))
+	objects.push(new Connector(new Point(700, 340), [70,70],weather,true,'blue',"模块：天气"))
+
+	objects.push(new Connector(new Point(530, 200), [200,250],mainBody,true,'white',"模块：部队"))
+
+	objects.push(new Connector(new Point(100, 150), [70,70],timer,true,'blue',"模块：日期发生器"))
+	objects.push(new Connector(new Point(100, 300), [70,70],randomer,true,'blue',"模块：随机数生成器"))
+
+	DAG = {}
+	numInBody = 0
+	connections = {}
+	textLineItems = {}
+}
+
+
+
+initStep2 = function (id){
+	onResize()
+	project.activeLayer.removeChildren()
+	view.draw()
+	towns = new Raster("img-town")
+	towns.position = view.center
+	towns.scale(0.4)
+	new PointText({
+			content: '益州',
+			fillColor:'white',
+			position: view.center+ [0,30]
+		})
+
+	poly5in = new Path.RegularPolygon(view.center,5,170)
+	for(var i=0;i<5;i++){
+		for(var j=0;j<5;j++){
+			if(i!=j){
+				var vector = (poly5in.segments[j].point - poly5in.segments[i].point).normalize(1)
+				var vert_vector = vector.rotate(90)*3
+				var line = new Path.Line({
+					from:poly5in.segments[i].point + vert_vector + vector*20,
+					to:poly5in.segments[j].point + vert_vector - vector*20,
+					strokeColor:'grey',
+					strokeWidth: 2
+				})
+				line.lineBy(
+				    new Point({
+				        angle:vector.getAngle()+160,
+				        length:20
+				    })
+				)
+				edges[i][j] = line;
+			}
+		}
+	}
+	poly5out = new Path.RegularPolygon(view.center,5,200)
+	
+	for(var i=0;i<5;i++){
+		s = poly5out.segments[i].point
+		profiles[i] = new Raster(default_url);
+		profiles[i].position = s;
+		profiles[i].scale(0.5)
+		pos_crwon[i] = new Point(profiles[i].bounds.x + profiles[i].bounds.width-10, profiles[i].bounds.y-20)
+		avatars[i] = new Path.Rectangle({
+			position: s,
+			size: [profiles[i].bounds.width+10,profiles[i].bounds.height+10],
+			radius: 20,
+			fillColor: 'grey'
+		})
+		avatars[i].sendToBack();
+	}
+
+	showLegend()
+	view.draw()
+}
+// setAttack = function (id, attack){
+// 	var temp = new Raster(attack==true?'img-attack':'img-shield')
+// 	temp.fitBounds(new Rectangle({
+// 			point:pos_crwon[id] +[26,0],
+// 			size:[30,30]
+// 		}))
+// 	attacks[id] = temp
+// }
+setStep2 = function(from, to, ready){
+	if(from!=to)
+		edges[from][to].strokeColor = ready?"green":"red"
+	else{
+		avatars[from].fillColor = ready?"green":"red"
+	}
+	view.draw()
+}
+resetStep2 = function(id,playersList){
+	for(var i=0;i<5;i++){
+		for (var j=0; j<5; j++) {
+			if(i!=j)
+			edges[i][j].strokeColor = 'grey';
+		};
+		avatars[i].fillColor = 'grey';
+
+		if((i in attacks)&&(attacks[i]!=null)){
+			attacks[i].remove()
+			attacks[i] = null
+		}
+		if((i in profiles)&&(profiles[i]!=null)){
+			profiles[i].remove()
+			profiles[i] = null
+		}
+		if((i in nameText)&&(nameText[i]!=null)){
+			nameText[i].remove()
+			nameText[i] = null
+		}
+	}
+	if (selfCrwon !=null){
+		selfCrwon.remove()
+		selfCrwon = null
+	}
+	for(var i=0;i<5;i++){
+		s = poly5out.segments[i].point
+
+		//var r = new Raster(avatars_url[i]);
+		profiles[i] = new Raster(avatars_url[parseInt(playersList[i])]);
+		profiles[i].position = s;
+		profiles[i].scale(0.5)
+
+		nameText[i] = new PointText({
+		fillColor : 'white',
+		name: 'line-attributes',
+		//content : avatars_name[i],
+		content : avatars_name[parseInt(playersList[i])],
+		position: new Point(profiles[i].bounds.x + profiles[i].bounds.width-10, profiles[i].bounds.y+profiles[i].bounds.height +10) 
+		})
+	}
+	var idMaps = 0
+	var isStandby = true
+	for(var i=0;i<5;i++){
+		if (playersList[i] == id){
+			isStandby = false
+			idMaps = i
+			break
+		}
+	}
+	if(!isStandby){
+		selfCrwon = new Raster('img-crown')
+		selfCrwon.fitBounds(new Rectangle({
+			point:pos_crwon[idMaps],
+			size:[30,30]
+		}))
+		selfCrwon.rotate(30)
+	}
+
+	view.draw()
+}
+showLegend = function(){
+	var temp = new Raster('img-crown')
+	temp.fitBounds(new Rectangle({
+			point:[20,10],
+			size:[30,30]
+		}))
+	new PointText({
+		position:[80,30],
+ 		fillColor : 'black',
+ 		content : '您控制的角色'
+ 	})
+	new Path.Line({
+		from: [20,50],
+		to:[50,50],
+		strokeColor:'grey',
+		strokeWidth: 2
+	}).lineBy(
+	    new Point({
+	        angle: 160,
+	        length:10
+	    })
+	)
+	new PointText({
+		position:[80,50],
+ 		fillColor : 'black',
+ 		content : '信鸽可通过的路径'
+ 	})
+
+	new Path.Line({
+		from: [20,70],
+		to:[50,70],
+		strokeColor:'green',
+		strokeWidth: 2
+	}).lineBy(
+	    new Point({
+	        angle: 160,
+	        length:10
+	    })
+	)
+	new PointText({
+		position:[80,70],
+ 		fillColor : 'black',
+ 		content : '起点玩家声称终点玩家为就绪状态'
+ 	})
+
+	new Path.Line({
+		from: [20,90],
+		to:[50,90],
+		strokeColor:'red',
+		strokeWidth: 2
+	}).lineBy(
+	    new Point({
+	        angle: 160,
+	        length:10
+	    })
+	)
+	new PointText({
+		position:[80,90],
+ 		fillColor : 'black',
+ 		content : '起点玩家声称终点玩家为整备状态'
+ 	})
+ // 	var temp = new Raster('img-attack')
+	// temp.fitBounds(new Rectangle({
+	// 		point:[20,100],
+	// 		size:[20,20]
+	// 	}))
+	// new PointText({
+	// 	position:[80,110],
+ // 		fillColor : 'black',
+ // 		content : '该角色发起攻击'
+ // 	})
+ // 	var temp = new Raster('img-shield')
+	// temp.fitBounds(new Rectangle({
+	// 		point:[20,120],
+	// 		size:[20,20]
+	// 	}))
+	// new PointText({
+	// 	position:[80,130],
+ // 		fillColor : 'black',
+ // 		content : '该角色拒绝攻击'
+ // 	})
+}
+
+onResize = function() {
+	view.viewSize.width = view.element.clientWidth;
+	view.viewSize.height = view.element.clientHeight;
+}
+
+refreshCanvas =function(){
+	view.draw()
+}
+
+
+onResize()
+
+
+
+

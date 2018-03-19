@@ -1,0 +1,143 @@
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Network Experiment Guide</title>
+		<script type="text/javascript" src="js/jquery-1.11.1.min.js" charset="utf-8"></script>
+		<link rel="stylesheet" href="css/jquery.mobile-1.4.3.min.css" />
+		<link rel="stylesheet" href="css/style.css" />
+		<script type="text/javascript" src="http://apps.bdimg.com/libs/jquerymobile/1.4.3/jquery.mobile-1.4.3.min.js" charset="utf-8"></script>
+		
+		<script src="js/iealert.min.js" type="text/javascript"></script>
+		<link rel="stylesheet" type="text/css" href="css/iealert/style.css" />
+		<script type="text/javascript" src="http://cdn.bootcss.com/paper.js/0.9.20/paper-full.min.js"  charset="utf-8"></script>
+		<script type="text/javascript" src="js/topo.js" charset="utf-8"></script>
+		<script type="text/javascript" src="js/ajax.js" charset="utf-8"></script>
+		
+		<script type="text/javascript" src="js/gameManager.js" charset="utf-8"></script>
+		<script type="text/javascript" src="js/initialize.js" charset="utf-8"></script>
+		<script type="text/x-mathjax-config">
+			MathJax.Hub.Config({
+			  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+			});
+		</script>
+		<script type="text/javascript" src="http://cdn.bootcss.com/mathjax/2.6.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+	</head>
+	<body>
+		<div data-role="page" id = "main-page">
+			<div data-role="header">
+				<h1>Network Experiment</h1>
+				<a href="#nav-panel" data-icon="bars" data-shadow="false" data-iconshadow="false" class="ui-nodisc-icon">Choose Experiment Mode</a>
+				<a href="#" data-icon="user" data-iconpos="left" id="login_info">Not login</a>
+			</div>
+			<div data-role="content" id="container">
+				<h1>Guide</h1>
+				<h2>Introduction</h2>
+				<p>This experiment has two missions:</p>
+				<ul>
+				<li> To teach students basic network concepts: network topology(网络拓扑) / network edge(网络边界) / route table(路由表) / network delay(网络延迟) / transmission rate(传输速率) / throughput(吞吐量) / client-server model(客户端-服务器模型).</li>
+				<li>to make students realize the importance of network protocol in complex and huge environment by teamwork. </li>
+				</ul>
+				<p>In order to make the experiment clear and easy, the experiment background is based on the <b>video conference(视频会议)</b>, which need all of the involvers see others, like the multiple persons video communications on QQ. The experiment has a few elements: 
+					<ul>
+					<li><b>Client-Server Model(C-S)</b> is the usual model in network service. Client send a request to server, then the server accept the request and response to the respective client. In our experiment about the video conference, the client send his video information to the server, and receive all others' video information from the server. For simplicity, we just consider that a client sends data to the server when simulate the whole network.</li> 
+					<li><b>Network topology</b> is the arrangement of the various elements (links, clients, routers, servers, etc.) of a computer network. In our experiment, the network topology is a given physical structure.</li> 
+					<li><b>Client</b> which communicate with the server. It sends itself’s video information to server and get the other clients' video information from server. The clients can be PC / Phone / Pad etc.</li> 
+					<li><b>Server</b> which provides the video conference service to clients on the internet, like the QQ server.</li> 
+					<li><b>Datagram(数据报文)</b> which contains the information of video and the destination of the server. Datagrams is pieces of video streaming information.</li> 
+					<li><b>Router(路由器)</b> which is the crossing in network and indicate the direction where the router forward the datagram to the next network device(may be another router or a server).</li> 
+					<li><b>Communication Link(通信链路)</b> which transports the video datagram like the roads transporting the vehicles. In our experiment, the length of link between adjacent devices is 1.</li>
+					</ul>
+				<p>Thus, in many ways, <b>datagram</b>s are analogous to trucks, <b>communication link</b>s are analogous to highways and roads, <b>router</b>s are analogous to intersections, and <b>client</b>s and <b>server</b>s are analogous to buildings. Just as a truck takes a path through the transportation network, a datagram takes a path through a computer network</p>
+
+				<h2>Requirements</h2>
+				<p>Because the students have learn the basic knowledge in class, the basic concept will be skipped or talked in brief.</p>
+				<p>For simplicity, the experiment just account for the Network Layer. The link and physical layer is neglected in this experiment.</p>
+				<ul>
+					<li><b>Datagram</b></br>
+					<p>Because of the video data is very big and streaming like a river, so we cut data into pieces and we transport the piece to destination in order. The <b>datagram</b> on the network layer mainly contains a data piece, source address and destination address. Other elements are neglected for simplicity. In this experiment, the node‘s index(from 0 to n-1) represents the address of the router devices. For example, the figure below reveals that datagram containing video data is transported from 0 to 5. </p>
+					<p><b style="color:red">P.S.</b> : Typically a client and a server is attached directly to one router, the default router for the client or the server (also called the <b>first-hop router(第一跳路由器)</b> for  the client or the server). Whenever a client or the server sends a packet, the packet is transferred to its default router. We refer to the default router of the source client as the source router and the default router of the destination server as the destination router. The figure below shows the router 1 is the first-hop router for the client, and the route 5 is the first-hop router for the server.</p>
+					</li>
+					<li><b>Router &amp; Routing table</b>
+					<p>Let’s turn our attention to its forwarding function—the actual transfer of datagrams from a router’s incoming links to the appropriate outgoing links at that router. The router mainly has three components:</p>
+					<ul>
+						<li><b>Input ports</b>: accept the datagram</li>
+						<li><b>Routing processor</b>: maintains routing tables and attached link state information, and computes the forwarding table for the router.</li>
+						<li><b>Output ports</b>: send the datagram. The output and input ports can share the same physical link. In the experiment we can neglect the difference between output and input ports.</li>
+					</ul>
+					<p>So every router knows its adjacent routers, clients and servers. Let's talk about the routing table below.</p>
+					<p>Each router has a <b>routing table</b> (forwarding table) that maps destination addresses to that router’s outbound links. When a datagram arrives at a router, the router examines the address and searches its forwarding table, using this destination address, to find the appropriate outbound link. The router then directs the datagram to this outbound link.</p>
+					<p>A routing table is a table that contains many rows. For simplicity, the routing table has just two columns. The first column is the destination addresses. The second column indicates the identity of the next router. A routing table contains many records, but in our experiment, the number of the routing table is <b>5</b>. If the destination of a datagram is in the destination addresses of a record, the router will forward the datagram to the next router indicated by the respective second column. </p>
+					<p><b>Notice</b>: Router forwards the datagram scanning from the first record to last record in the routing table, if the datagram's destination is in a record destination which is being scanned, the router will stop scanning the rest records and forward the datagram soon. If there is no record in routing table satisfies the datagram, the datagram will be thrown and the transmission failed.</p>
+					<p>In our experiment, the destination of a record of routing table is represented with this format: "1,2,4", numbers split by "," (英文半角逗号) or "default". "default" means if the former record's destination don't satisfy the destination of datagram, "default" will satisfy it. So "default" is always filled in the last and it will reduce the routing table's designing work when there are many destinations to be filled in the end of the table. For example, the first row in the below routing table of router 1 reveals that if the destination of datagram is 2, then go to the route 2, if the destination of datagram isn't 2, then go to the route 3.</p>
+					<p>For example, the figure below show how the datagram is transported from the client(the address of its first-hop router is 1) to server(the address of its first-hop router is 5) based on the routing tables among the network.</p>
+					<img src="imgs/route.png" alt="" />
+					<p>In most environments, routing table is dynamic and adjusted all the time by the network situations.  In our experiment, for simplicity, the routing table is <b>static</b> designed by students before forwarding the datagrams and it can't be modified during the simulation for forwarding the datagrams.</p>
+					</li>
+					<li><b>Protocol(optional Reading)</b>
+						<p>In our human protocol, there are specific messages we send, and specific actions we take in response to the received reply messages or other events (such as no reply within some given amount of time). Clearly, transmitted and received messages, and actions taken when these messages are sent or received or other events occur, play a central role in a human protocol. If people run different protocols (for example, if one person has manners but the other does not, or if one understands the concept of time and the other does not) the protocols do not interoperate and no useful work can be accomplished. The same is true in networking—it takes two (or more) communicating entities running the same protocol in order to accomplish a task.</p>
+						<p><i>A <b>protocol</b> defines the format and the order of messages exchanged between two or more communicating entities, as well as the actions taken on the transmission and/or receipt of a message or other event.</i></p>
+						<p>In our experiment, the protocol is the routing protocol. It indicates us how to design a good routing table with every team member's independent work. There are many routing protocols which are too complex for us. So we neglect the existence of protocol. Instead, we team members design the routing table together and needn't care the protocol meaning. <b>It's enough for us to get the first target and take close to second target</b>(We will talk about it below).</p>
+					</li>
+					<li><b>Performance Criterion about Routing Table Designing</b>
+					<p>There are many properties about the performance of routing protocol. In out experiments, we just take account these two properties:
+						<ul>
+							<li><b>Delay</b>
+								<p>Delay of a datagram is the time interval between being sent by the source and being received by the destination. So delay is affected by many factors, such as link length, processing capability of a router etc. But in our experiment about reducing delay, we only consider the time transporting over the physical links. The longer the path is, the more time the transport needs. So reducing the path length is a way to reduce the delay.</p>
+							</li>
+							<li><b>Througtput</b></li>
+								<p>Every router has a limited capability to forward the datagram, which is named <b>transmission rate</b>. We measure transmission rate by size of datagrams forwarded per second. For example, 100Mbps represents a router can forward datagrams of 100M bits per second. The better capability router costs more. In reality, we use 100Mbps routers for our computers in home, and 500Mbps or 1Gbps routers in high-level network for servers.</p>
+								<p>Because the transporting path has different routers whose transmission rate are different too, so a question is how to calculate the final transmission rate of the datagram. Like the traffic in road, the rate of the trunk is most limited by the most crowded traffic. We assume the router list of the path for a client to server is $ \{r_1, r_2, ..., r_m\} $, and the  transmission rate of them are $ \{R_1, R_2, ..., R_m\} $ So in the network, the final transmission rate of the client is decided by the least transmission rate of the routers over the path, that is $ min\{R_1, R_2, ..., R_m\} $ , it is the transmission rate of the <b>bottleneck link</b>.</p>
+								<p>In situation where many datagram from $ N_i $ different clients come to the same router($ r_{i} $), every client on this router just gets average transmission rate($ R_{i}/N_{i} $). Assuming the number of clients whose datagrams come to the router($ r_{i} $) is $ N_{i} $, the router list of the path for a client to server is $ \{r_1, r_2, ..., r_m\} $. Then we can conclude that the final transmission rate of the client is $ min\{R_{1}/N_{1}, R_{2}/N_{2}, ..., R_{m}/N_{m}\} $<p>
+								<p>The throughput is the size of transmission of data in a period of time. In our experiments, the throughput is calculated by accumulation of the final transmission rate of all clients. We increase the final transmission rate of a client by reduce the number of clients that come to the same router. From the view of the network, we can adjust the routing table for better throughput.</p>
+						</ul>
+					</p>
+					</li>
+				</ul>
+				<h2>Experiment Targets</h2>
+				<p>In the experiment, the team members design the routing table together and experience the delay and throughput bought by different routing table design. </p>
+				<p>Every team can choose a network topology which is connected graph and includes 30 routers. The graph is constructed by three regular decagon(正十边形) of different size. The transsimisson rate of routers on the inner decagon is 500Mbps, that of routers on the middle decagon is 300Mbps and that of routes on the outer decagon is 150Mbps. There are two targets in our experiment:</p>
+				<ol>
+					<li>All routers can communicate each other. It means datagram from a router to an arbitrary router can be transported normally.</li>
+					<li>Get less delay and better throughput of the network. After got to the taget 1, the team must simulate the network by video conference of 8 clients. The game system will randomize 8 routers at the outer decagon as the default routers of the clients and 1 router at the inner decagon as the default router of the server. Experiment system will use clients each to send theirself's video information datagram to the server. <b>For simplicity, we don't account for the datagrams from the server to clients.</b> The simulation will reveal the average rate of routers, traffic on a link and final transmission of clients <b>from clients to the only server</b>. In order to get less delay and better throughput of the network, the team should redesign the routing table and simulate many times.</li>
+				</ol>
+				<h2>Experiment Operation</h2>
+				<p>The experiment has two modes. One is <a href="route.html?test" data-ajax="false">Test-Mode</a>, another is <a href="route.html?formal" data-ajax="false">Formal-Mode</a>.  Test-Mode is for trying and learning for students. We support every team start the experiment from the Test-Mode. <b>Every team can clear the experiment record and restart the Test-Mode <input type='button' data-inline="true" data-mini="true" data-icon="delete" data-theme="b" value='Clear and Restart'/> anytime</b>.  <b>But the Formal-Mode can't be restart once your team has decided a network topology</b>.</p>
+				<p>The experiment has four steps:</p>
+				<ol>
+					<li>Choose a network topology for your team. Click <input type='button' data-shadow="false" data-inline="true" data-mini="true" data-icon="tag" data-theme="b" value='Choose Network Topology'/> into the choosing page, then click <input type='button' data-shadow="false" data-inline="true" data-mini="true" data-icon="lock" data-theme="b" value='Choose This'/> for deciding, or click <input type='button' data-shadow="false" data-inline="true" data-mini="true" data-icon="refresh" data-theme="b" value='Change'/> for changing another random network topology.  Anyone in the team can choose network topology until someone in your team click <input type='button' data-shadow="false" data-inline="true" data-mini="true" data-icon="lock" data-theme="b" value='Choose This'/> for deciding.</li>
+					<li>Design the routing table on your own routers. After the Step1, every member will get 6 routers randomly and will get into the design page. You can click the <b style="color:yellow">yellow router </b>for filling your routing table. Every table has only 5 rows. You can fill numbers split by "," (英文半角逗号) into the first column, such as "1,3,4" or you can fill "default" into it. The 5 rows needn't be all fiiled, and the blank rows will be neglected when router forward the datagram. For the second column, you can select the next router address.</br>
+					You can click <input type='button' data-shadow="false" data-inline="true" data-mini="true" data-icon="check" data-theme="b" value='Save the Design'/> to save your work. You can click <input type='button' data-shadow="false" data-inline="true" data-mini="true" data-icon="eye" data-theme="b" value='Test and Simulate'/> to test whether the whole network routing table satisfies the <i>Target 1</i> and do simulating if the Target 1 is satisfied. If Target 1 is not satisfied, the system will warn you from which source to which destination can't be communicated. So the team member can modify the routing table to get the Target 1.
+					</li>
+					<li>Simulate the network and calculate the delay factor and throughput. After take the Target 1 in step 2, the team member can simulate the network. The game system will randomize 8 routers at the outer decagon as the default routers of the clients and 1 router at the inner decagon as the default router of the server. The simulation of 8 clients video conference will reveal the average rate of routers, traffic on a link and final transmission of clients. 
+					</br><i><b style="color:red">P.S.</b>: In the simulation, you can view all the routing tables in the whole network by clicking the arbitrary router.</i>
+
+						<ul><li>Click <input type='button' data-shadow="false" data-inline="true" data-mini="true" data-icon="edit" data-theme="b" value='Return to Modify'/> to return the step 2 to modify the routing table.</li>
+						<li>Click <input type='button' data-shadow="false" data-inline="true" data-mini="true" data-icon="refresh" data-theme="b" value='Simulate Again'/> to simulate again. </li>
+						<li>Click <input type='button' data-shadow="false" data-inline="true" data-mini="true" data-icon="action" data-theme="b" value='Download Image'/> to download the image for later presentation.</li>
+						<li>Click <input type='button' data-shadow="false" data-inline="true" data-mini="true" data-icon="lock" data-theme="b" value='Submit Experiment'/> to submit the experiment result.</li>
+						</ul>
+					</li>
+					<li>Submit the experiment result including your routing tables and 20-times random simulate result. If the routing table design get the Target 1, the submit will succeed. The system will do 20-time random simulation for the evaluation of your network. That is to say, the position of clients and servers will be random for 20-times.</li>
+				</ol>
+				<h2>Experiment Score</h2>
+				<p>The target 1 is 65 grades. Once you can get through the simulation, you can get the 65 grades. <br/>The target 2 is 35 grades, average transmission rate of clients for 20 grades and average path length from clients to server for 15 grades.</p>
+				<p>When you submit your experiment, the system will give an evaluation score. When all the students finished the experiments, we will give you a more appropriate score based on all the teams performances in the experiment.
+				<h2>Further Reading</h2>
+				<ul>
+					<li><a href="/static/download/Computer-Networking-A-Top-Down-Approach-6th-Edition.pdf" target="_blank">计算机网络_自顶向下方法（英文第6版）</a></li>
+					<li><a href="/static/download/F99rout.PDF" target="_blank">Routing protocols</a></li>
+				</ul>
+				<i style="font-size:1.2em">If you have any questions or experiment errors, please contact me. <b>(me囧wangyifan.tech)</b>(将囧替换成@)</i>
+			</div>
+			<div data-role="panel" id="nav-panel" data-theme="b" ddata-ajax="false" ata-position-fixed="true" data-display="push">
+			<ul data-role="listview">
+			    <li data-icon="delete"><a href="#" data-rel="close">Close</a></li>
+			    <li><a href="index.html" data-ajax="false">Experiment Guide</a></li>
+			    <li><a href="route.html?test" data-ajax="false">Test Mode</a></li>
+			    <li><a href="route.html?formal" data-ajax="false">Formal Mode</a></li>
+			</ul>
+			 </div>
+		</div>
+
+	</body>
+</html>

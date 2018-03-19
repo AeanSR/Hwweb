@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Mice and poisons</title>
+		<meta charset="UTF-8">
+		<meta name="renderer" content="webkit">
+		<meta name="viewport" content="user-scalable=1.0,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="format-detection" content="telephone=no">
+		<link rel="stylesheet" href="css/jquery.mobile-1.4.3.min.css" />
+		<script type="text/javascript" src="js/jquery-1.11.1.min.js"></script>
+		<script src="http://apps.bdimg.com/libs/jquerymobile/1.4.3/jquery.mobile-1.4.3.min.js"></script>
+		<script src="js/iealert.min.js" type="text/javascript"></script>
+  		<link rel="stylesheet" type="text/css" href="css/iealert/style.css" />
+  		<script src="js/ajax.js"></script>
+		<script>
+			$(function() {
+				$("body").iealert();
+			})
+			Ajax = new modAjax(1,this)
+			Ajax.getinfo(getSuccessHandler,getErrorHandler)
+			function getSuccessHandler(data){
+				name = data["name"]
+				$("#login_info").text(name)
+			}
+			function getErrorHandler(data){
+				alert('The experiment is not available!')
+				$('body').html("Sorry, failed to connect to server, please check if you have logged in the course website, or the game is opened for you.")
+			}
+		</script>
+	</head>
+	<body>
+		<div data-role="page">
+			<div data-role="header">
+				<a href="#nav-panel" data-icon="bars" data-iconpos="notext">Menu</a>
+				<h1>Mice and poisons</h1>
+				<a href="#" data-icon="user" data-iconpos="left" id="login_info">Not login</a>
+			</div>
+			<div data-role="content">
+				<h1>Guidance</h1>
+				<h2>Introduction</h2>
+				<p>
+					Before the experiment, it's highly recommended to use Chrome web browser to view this page. Using IE will bring unexpected results.
+				</p>
+				<p>In this experiment, you need to complete all the four games as below. You can test 
+					the games in the <a href='#test' data-ajax="false">Games(Test Mode)</a> 
+					with unlimited chances. In the formal <a href='#nav-panel'>
+					submit-mode</a>, <b>only <span style='color:red'>3/5 chances</span> are provided for <span style='color:red'>your team</span>.</b> It is noticed that you and your partners share the limited trial chances!</p>
+				<p>You can get back by clicking <a href="#nav-panel" data-icon="bars" data-iconpos="notext" data-role="button">Menu</a> any time.
+				</p>
+				<h2>Experimental Purposes</h2>
+				<p>
+				<ul>
+					<li>Grasp the method of designing an correct algorithm.</li>
+					<li>Learn how to evaluate an algorithm by Time/Space Complexity.</li> 
+				</ul>
+				</p>
+				<h2>Experimental Contents</h2>
+				<p>
+				<h3>Games(Test Mode)</h3>
+				<p>
+					In the test-mode, problem set is much easier than the submit-mode. So, to practise 
+					your algorithm/policy is very important here. After fully testing, you and your partners can be ready to finish a submit-mode(bottles are more).
+				</p>
+ 				<ul>
+					<li><a href='adaptive.html?testA' data-ajax="false">Adaptive Game 1</a></li>
+						<b>Rule:</b> 2 mice, 1 poisoned bottle, you can feed a mouse in 1 step with some bottles. Mouse will die immediately when drinks the poisoned bottle. <br>
+						<b>Target:</b> Use the least steps.<br>
+						<b>Introduction:</b>
+						<p>
+						Try to find the only poisoned bottle with the least steps. If your strategy covers all the situations, you win , otherwise, you lose. The best result will be counted.<br>
+						You and your partners will have 3 chances to submit totally.
+						</p>
+					<li><a href='adaptive.html?testN' data-ajax="false">Adaptive Game 2</a></li>
+						<b>Rule:</b> 2 mice, 1 poisoned bottle, you can feed a mouse in 1 step with some bottles. Mouse will die immediately when drinks the poisoned bottle(counted as 1 step). <br>
+						<b>Target:</b> Use the least steps.<br>
+						<b>Introduction:</b>
+						<p>
+						Try to find the only poisoned bottle with the least steps. If your strategy covers all the situations, you win , otherwise, you lose.  The average results will be counted.<br>
+						You and your partners <span style='color:red'> must use up all 5 chances </span> to submit totally, otherwise you won't get a score.
+						</p>
+					<li><a href='non-adaptive.html' data-ajax="false">Non-Adaptive Game</a></li>
+						<b>Rule:</b> 1 poisoned bottle, limited to 1 step to find out the poisoned bottle.<br>
+						<b>Target:</b> Use the least mice.<br>
+						<b>Introduction:</b>
+						<p>
+						Try to find the only poisoned bottle with the least mice. Note that 
+						you must arrange the bottles to each mouse, then submit the result. If your strategy covers all the situations, you win , otherwise, you lose. Best result will be counted.<br>
+						You and your partners will have 3 chances to submit totally.
+						</p>
+					<li><a href='hybrid-adaptive.html' data-ajax="false">Hybrid-Adaptive Game</a></li>
+						<b>Rule:</b> 2 mice, 1 poisoned bottle, poisoned mouse will die a week later.<br>
+						<b>Target:</b> Use the least weeks.<br>
+						<b>Introduction:</b>
+						<p>
+						Try to find the only poisoned bottle with the least weeks. Arrange
+						 the bottles to the mice, then click the "Next week" button and poisoned 
+						 bottles will effect in the next week. The best result will be counted.<br>
+						 You and your partners will have 3 chances to submit totally.
+						</p>
+				</ul>
+				<h3>Games(Submit Mode)</h3>
+				In case of mis-operation, click <a href='#nav-panel'>here</a> and enter different games in submit mode.
+			</p>
+				<h2>Experimental Results</h2>
+				<p>
+					After you and your team members have finished all the four games, please do an analysis and give a presentation in the next class. A scientific and reasonable presentation is appreciated.
+				</p>
+			</div>
+			<div data-role="panel" data-position-fixed="true" data-display="push" data-ajax="false" data-theme="b" id="nav-panel">
+				<ul data-role="listview">
+					<li data-icon="delete"><a href="#" data-rel="close">Close menu</a></li>
+					<li><a href="index.html" data-ajax="false">Introduction</a></li>
+					<li><a href="adaptive.html?testA" data-ajax="false"><span style='color:green'>Test:Adaptive 1</span></a></li>
+					<li><a href="adaptive.html?testN" data-ajax="false"><span style='color:green'>Test:Adaptive 2</span></a></li>
+					<li><a href="non-adaptive.html?test" data-ajax="false"><span style='color:green'>Test:Non-Adaptive</span></a></li>
+					<li><a href="hybrid-adaptive.html?test" data-ajax="false"><span style='color:green'>Test:Hybrid-Adaptive</span></a></li>
+					<li><a href="adaptive.html?submitA" data-ajax="false"><span style='color:red'>Submit:Adaptive 1</span></a></li>
+					<li><a href="adaptive.html?submitN" data-ajax="false"><span style='color:red'>Submit:Adaptive 2</span></a></li>
+					<li><a href="non-adaptive.html?submit" data-ajax="false"><span style='color:red'>Submit:Non-Adaptive</span></a></li>
+					<li><a href="hybrid-adaptive.html?submit" data-ajax="false"><span style='color:red'>Submit:Hybrid-Adaptive</span></a></li>
+				</ul>
+			</div><!-- /panel -->
+				<div data-role="panel" data-position="right" data-position-fixed="true" data-display="overlay" data-theme="b" id="add-form">
+					<form class="userform">
+						<h2>Login</h2>
+						<label for="name">Username:</label>
+						<input type="text" name="name" id="name" value="" data-clear-btn="true" data-mini="true">
+						<label for="password">Password:</label>
+						<input type="password" name="password" id="password" value="" data-clear-btn="true" autocomplete="off" data-mini="true">
+						<div class="ui-grid-a">
+							<div class="ui-block-a"><a href="#" data-rel="close" class="ui-btn ui-shadow ui-corner-all ui-btn-b ui-mini">Cancel</a></div>
+							<div class="ui-block-b"><a href="#" data-rel="close" class="ui-btn ui-shadow ui-corner-all ui-btn-a ui-mini">Save</a></div>
+						</div>
+					</form>
+					</div><!-- /panel -->
+				</div>
+			</body>
+		</html>

@@ -793,11 +793,11 @@ class APIGetHandler(BaseHandler):
     @tornado.gen.coroutine
     def post(self):
 
-        if deployed:
-            self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn:8889')
-        else:
-            self.set_header('Access-Control-Allow-Origin','http://project.csintro.ucas.ac.cn:8080')
-        self.set_header('Access-Control-Allow-Credentials','true')
+        # if deployed:
+        #     self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn')
+        # else:
+        #     self.set_header('Access-Control-Allow-Origin','http://project.csintro.ucas.ac.cn:8080')
+        # self.set_header('Access-Control-Allow-Credentials','true')
         try:
             gameId = int(self.get_argument("gameId", 1))
         except:
@@ -841,11 +841,11 @@ class APIPutHandler(BaseHandler):
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def post(self):
-        if deployed:
-            self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn:8889')
-        else:
-            self.set_header('Access-Control-Allow-Origin','http://project.csintro.ucas.ac.cn:8080')
-        self.set_header('Access-Control-Allow-Credentials','true')
+        # if deployed:
+        #     self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn')
+        # else:
+        #     self.set_header('Access-Control-Allow-Origin','http://project.csintro.ucas.ac.cn:8080')
+        # self.set_header('Access-Control-Allow-Credentials','true')
         try:
             gameId = int(self.get_argument("gameId", 1))
             gameLoop = int(self.get_argument("gameLoop", 1))
@@ -912,8 +912,8 @@ class RouteAPIGetInfoHandler(BaseHandler):
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def post(self):
-        self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn:8889')
-        self.set_header('Access-Control-Allow-Credentials','true')
+        # self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn')
+        # self.set_header('Access-Control-Allow-Credentials','true')
         if not self.canDoExperiment(3):
             return
         mode = int(self.get_argument("mode", 1))
@@ -958,8 +958,8 @@ class RouteAPISubmitRouteHandler(BaseHandler):
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def post(self):
-        self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn:8889')
-        self.set_header('Access-Control-Allow-Credentials','true')
+        # self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn')
+        # self.set_header('Access-Control-Allow-Credentials','true')
         if not self.canDoExperiment(3):
             return
         mode = int(self.get_argument("mode", 1))
@@ -1007,8 +1007,8 @@ class RouteAPISubmitTopoHandler(BaseHandler):
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def post(self):
-        self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn:8889')
-        self.set_header('Access-Control-Allow-Credentials','true')
+        # self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn')
+        # self.set_header('Access-Control-Allow-Credentials','true')
         if not self.canDoExperiment(3):
             return
 
@@ -1054,8 +1054,8 @@ class RouteAPIGetTopoHandler(BaseHandler):
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def post(self):
-        self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn:8889')
-        self.set_header('Access-Control-Allow-Credentials','true')
+        # self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn')
+        # self.set_header('Access-Control-Allow-Credentials','true')
         if not self.canDoExperiment(3):
             return
 
@@ -1162,8 +1162,8 @@ class RouteAPIClearRouteInTestModeHandler(BaseHandler):
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def post(self):
-        self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn:8889')
-        self.set_header('Access-Control-Allow-Credentials','true')
+        # self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn')
+        # self.set_header('Access-Control-Allow-Credentials','true')
         if not self.canDoExperiment(3):
             return
         mode = int(self.get_argument("mode", 1))
@@ -1190,8 +1190,8 @@ class RouteAPISubmitRouteEvaluationHandler(BaseHandler):
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def post(self):
-        self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn:8889')
-        self.set_header('Access-Control-Allow-Credentials','true')
+        # self.set_header('Access-Control-Allow-Origin','http://csintro.ucas.ac.cn')
+        # self.set_header('Access-Control-Allow-Credentials','true')
         if not self.canDoExperiment(3):
             return
 
@@ -1760,11 +1760,6 @@ class LoginHandler(BaseHandler):
         #self.redirect("/admin")
         #return
         # delete when releasing
-
-        # compatible code
-        if pre_match.search(self.request.host) is not None:
-            self.redirect(new_main_page)
-            return
 
         userId = self.get_secure_cookie("userId")
         if userId:
