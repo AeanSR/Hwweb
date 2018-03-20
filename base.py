@@ -35,6 +35,10 @@ logger = logging.getLogger("index")
 
 class BaseHandler(tornado.web.RequestHandler):
     online_data = {}
+
+    def set_default_headers(self, *args, **kwargs):
+        self.set_header("Cache-Control","no-cache")
+
     # admin 登录
     def get_current_admin(self):
         adminId = self.get_secure_cookie("adminId")
@@ -152,6 +156,9 @@ class StaticFileHandler(BaseHandler):
             "bmp":  "image/bmp",
             "jpg":  "image/jpeg",
             "svg":  "text/xml"}
+
+    def set_default_headers(self, *args, **kwargs):
+        self.set_header("Cache-Control","max-age=120")
 
     def get(self, relative_path):
         path = os.path.join(os.path.dirname(__file__), "static", relative_path)
