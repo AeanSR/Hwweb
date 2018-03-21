@@ -3,8 +3,8 @@
 echo "admin"
 mongoimport -h localhost --port 27017 -d hwweb -c admin --jsonArray --file admin.mongo
 
-echo "users"
-mongoimport -h localhost --port 27017 -d hwweb -c users --jsonArray --file users.mongo
+echo "users_test"
+mongoimport -h localhost --port 27017 -d hwweb -c users --jsonArray --file users_test.mongo
 
 echo "notices"
 mongoimport -h localhost --port 27017 -d hwweb -c notices --jsonArray --file notices.mongo

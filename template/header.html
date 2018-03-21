@@ -47,7 +47,6 @@ var global_classNo = "{{info['classNo']}}";
         <h2 class="legend">Experiment</h2>
         <ul id="project_menu" data-role="listview" data-corners="false">
           <li><a href="/project" data-ajax="false">实验日程表和实验报告提交入口</a></li>
-          <li><a href="/code_project" data-ajax="false">信息隐藏编程</a></li>
           </ul>
        </li>
      </ul>
@@ -69,7 +68,8 @@ if(global_group_name=="") {
 else{
 	var tmp ='\
         <li><a href="/static/ucas-exp/exp2/index.html" target="_blank" data-ajax="false">实验二（算法）</a></li>\
-        <li><a href="/static/ucas-exp/exp3/index.html" target="_blank" data-ajax="false">实验三（网络）</a></li>\
+        <!-- <li><a href="/static/ucas-exp/exp3/index.html" target="_blank" data-ajax="false">实验三（网络）</a></li> -->\
+        <li><a href="/code_project" data-ajax="false">实验三（信息隐藏编程）</a></li>\
 	      <li><a href="/static/ucas-exp/exp4/index.html" target="_blank" data-ajax="false">实验四（系统）</a></li>'
      	$("#project_menu").append(tmp);
 }
